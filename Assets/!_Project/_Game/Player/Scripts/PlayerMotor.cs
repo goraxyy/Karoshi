@@ -15,6 +15,11 @@ public class PlayerMotor : MonoBehaviour
     public float mouseSensitivity = 2f;
     public float maxLookAngle = 80f;
 
+    [Header("Crouch")]
+    public float crouchControllerHeight = 0.8f;
+    public float crouchCameraY = 0.35f;
+    public float standCameraY = 1.6f;
+
     CharacterController controller;
     Vector3 velocity;
     float pitch;
@@ -39,10 +44,8 @@ public class PlayerMotor : MonoBehaviour
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
         float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
 
-        // Rotate body left/right
         transform.Rotate(Vector3.up * mouseX);
 
-        // Rotate camera up/down
         pitch -= mouseY;
         pitch = Mathf.Clamp(pitch, -maxLookAngle, maxLookAngle);
 
@@ -57,26 +60,21 @@ public class PlayerMotor : MonoBehaviour
         if (isGrounded && velocity.y < 0f)
             velocity.y = -2f;
 
-        // Get input
         float horizontal = Input.GetAxisRaw("Horizontal");
         float vertical = Input.GetAxisRaw("Vertical");
         Vector3 moveDir = (transform.right * horizontal + transform.forward * vertical).normalized;
 
-        // Determine speed
         float speed = walkSpeed;
         if (Input.GetKey(KeyCode.LeftShift) && !isCrouching)
             speed = sprintSpeed;
         else if (isCrouching)
             speed = crouchSpeed;
 
-        // Move character
         controller.Move(moveDir * speed * Time.deltaTime);
 
-        // Jump
         if (isGrounded && Input.GetKeyDown(KeyCode.Space) && !isCrouching)
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
 
-        // Apply gravity
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
     }
@@ -85,10 +83,37 @@ public class PlayerMotor : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.LeftControl))
         {
-            isCrouching = !isCrouching;
-            controller.height = isCrouching ? 1f : 2f;
-            controller.center = new Vector3(0f, controller.height * 0.5f, 0f);
+            if (isCrouching)
+            {
+                if (CanStandUp())
+                    SetCrouch(false);
+            }
+            else
+            {
+                SetCrouch(true);
+            }
         }
+    }
+
+    void SetCrouch(bool crouch)
+    {
+        isCrouching = crouch;
+
+        controller.height = crouch ? crouchControllerHeight : 2f;
+        controller.center = new Vector3(0f, controller.height * 0.5f, 0f);
+
+        if (cameraRoot != null)
+            cameraRoot.localPosition = new Vector3(0f, crouch ? crouchCameraY : standCameraY, 0f);
+    }
+
+    bool CanStandUp()
+    {
+        float skinWidth = 0.1f;
+        float checkRadius = controller.radius - skinWidth;
+        Vector3 checkStart = transform.position + Vector3.up * (controller.radius + skinWidth);
+        float checkDistance = 2f - controller.radius * 2f;
+
+        return !Physics.SphereCast(checkStart, checkRadius, Vector3.up, out _, checkDistance);
     }
 
     public bool IsSprinting() => Input.GetKey(KeyCode.LeftShift) && !isCrouching;
