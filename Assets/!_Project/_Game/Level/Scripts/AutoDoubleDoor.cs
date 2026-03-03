@@ -28,8 +28,8 @@ public class AutoDoubleDoor : MonoBehaviour
         // Use WORLD position, not local
         leftClosed = leftDoor.position;
         rightClosed = rightDoor.position;
-        leftOpen = leftClosed + transform.right * -slideDistance;
-        rightOpen = rightClosed + transform.right * slideDistance;
+        leftOpen = leftClosed + transform.right * slideDistance;
+        rightOpen = rightClosed + transform.right * -slideDistance;
 
         Debug.Log("Door script initialized successfully.");
     }
