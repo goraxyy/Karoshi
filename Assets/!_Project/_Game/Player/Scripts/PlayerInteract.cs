@@ -26,10 +26,34 @@ public class PlayerInteract : MonoBehaviour
 
     void Update()
     {
+        HandleSlotSwitching();
         CheckForInteractable();
 
-        if (Input.GetKeyDown(KeyCode.E) && currentTarget != null)
-            currentTarget.Interact(this);
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            if (currentTarget != null)
+            {
+                // Looking at something interactable — interact with it (pickup or place)
+                currentTarget.Interact(this);
+            }
+            else if (carrySlot.IsCarrying)
+            {
+                // Not looking at anything — drop the active item
+                carrySlot.Drop();
+            }
+        }
+    }
+
+    void HandleSlotSwitching()
+    {
+        if (Input.GetKeyDown(KeyCode.Alpha1)) carrySlot.SetActiveSlot(0);
+        if (Input.GetKeyDown(KeyCode.Alpha2)) carrySlot.SetActiveSlot(1);
+        if (Input.GetKeyDown(KeyCode.Alpha3)) carrySlot.SetActiveSlot(2);
+        if (Input.GetKeyDown(KeyCode.Alpha4)) carrySlot.SetActiveSlot(3);
+
+        float scroll = Input.GetAxis("Mouse ScrollWheel");
+        if (scroll > 0f) carrySlot.SetActiveSlot((carrySlot.activeSlot + 3) % 4);
+        if (scroll < 0f) carrySlot.SetActiveSlot((carrySlot.activeSlot + 1) % 4);
     }
 
     void CheckForInteractable()
@@ -42,7 +66,6 @@ public class PlayerInteract : MonoBehaviour
             if (interactable != null)
             {
                 currentTarget = interactable;
-                // TODO: Show UI prompt with currentTarget.GetPrompt()
                 return;
             }
         }
