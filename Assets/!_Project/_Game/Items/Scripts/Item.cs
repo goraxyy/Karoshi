@@ -1,6 +1,4 @@
 using UnityEngine;
-using System.Collections;
-using System.Collections.Generic;
 
 public enum ItemType
 {
@@ -8,8 +6,7 @@ public enum ItemType
     Soda,
     Bread,
     Milk,
-    Chips,
-    Bar
+    Chips
 }
 
 [RequireComponent(typeof(Rigidbody))]
@@ -17,17 +14,46 @@ public class Item : MonoBehaviour
 {
     public ItemType type;
 
+    [Header("Hold Offset")]
+    public Vector3 holdPositionOffset = Vector3.zero;
+    public Vector3 holdRotationOffset = Vector3.zero;
+
+    [HideInInspector] public bool isCarried;
+    [HideInInspector] public bool isOnShelf;
+    [HideInInspector] public Vector3 shelfRotationOffset;
+
     Rigidbody rb;
+    Collider col;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        col = GetComponent<Collider>();
     }
 
-    // Called when actively held at the holdPoint, or placed on a ShelfSlot snapPoint
+    void Update()
+    {
+        // Live update while held — lets you tweak offset in play mode
+        if (isCarried)
+        {
+            transform.localPosition = holdPositionOffset;
+            transform.localRotation = Quaternion.Euler(holdRotationOffset);
+        }
+
+        // Live update while on shelf — lets you tweak snap rotation in play mode
+        if (isOnShelf)
+        {
+            transform.localPosition = Vector3.zero;
+            transform.localRotation = Quaternion.Euler(shelfRotationOffset);
+        }
+    }
+
+    // Called when player actively holds item or when ejected
     public void SetCarried(bool carried, Transform parent)
     {
-        gameObject.SetActive(true); // Re-enable in case it was stowed
+        gameObject.SetActive(true);
+        isCarried = carried;
+        isOnShelf = false;
 
         if (rb != null)
         {
@@ -35,13 +61,15 @@ public class Item : MonoBehaviour
             rb.useGravity = !carried;
         }
 
-        GetComponent<Collider>().enabled = !carried;
+        // Collider disabled while held so it doesn't push the player
+        if (col != null)
+            col.enabled = !carried;
 
         if (carried && parent != null)
         {
             transform.SetParent(parent);
-            transform.localPosition = Vector3.zero;
-            transform.localRotation = Quaternion.identity;
+            transform.localPosition = holdPositionOffset;
+            transform.localRotation = Quaternion.Euler(holdRotationOffset);
         }
         else
         {
@@ -49,18 +77,46 @@ public class Item : MonoBehaviour
         }
     }
 
-    // Called when stored in a non-active inventory slot — hides the item completely
-    public void SetStowed(Transform stashParent)
+    // Called when placed on a shelf snap point
+    public void SetOnShelf(Transform snapPoint, Vector3 rotationOffset)
     {
+        gameObject.SetActive(true);
+        isCarried = false;
+        isOnShelf = true;
+        shelfRotationOffset = rotationOffset;
+
         if (rb != null)
         {
             rb.isKinematic = true;
             rb.useGravity = false;
         }
 
-        GetComponent<Collider>().enabled = false;
+        // Keep collider DISABLED on shelf — prevents pushing player
+        if (col != null)
+            col.enabled = false;
+
+        transform.SetParent(snapPoint);
+        transform.localPosition = Vector3.zero;
+        transform.localRotation = Quaternion.Euler(rotationOffset);
+    }
+
+    // Called when item goes into a non-active inventory slot
+    public void SetStowed(Transform stashParent)
+    {
+        isCarried = false;
+        isOnShelf = false;
+
+        if (rb != null)
+        {
+            rb.isKinematic = true;
+            rb.useGravity = false;
+        }
+
+        if (col != null)
+            col.enabled = false;
+
         transform.SetParent(stashParent);
         transform.localPosition = Vector3.zero;
-        gameObject.SetActive(false); // Invisible until the slot is selected
+        gameObject.SetActive(false);
     }
 }
