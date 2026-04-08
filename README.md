@@ -101,9 +101,3 @@ Assets/
 - [ ] Score/timer display on HUD
 - [ ] Sound design pass
 - [ ] More level layouts
-
----
-
-## 📄 License
-
-MIT — see [LICENSE](LICENSE) for details.
