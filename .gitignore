@@ -73,3 +73,19 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
+**/.DS_Store
+Assets/BrokenVector/
+Assets/CrowArt - PBR Cardboard Box/
+Assets/Low Poly Cartoon Food and Groceries Pack/
+Assets/Pandazole_Ultimate_Pack/
+Assets/Scalable Grid Prototype Materials/
+Assets/!_Project/_ThirdParty/
+Assets/!_Project/_Art/
+**/.DS_Store
+Assets/BrokenVector/
+Assets/CrowArt - PBR Cardboard Box/
+Assets/Low Poly Cartoon Food and Groceries Pack/
+Assets/Pandazole_Ultimate_Pack/
+Assets/Scalable Grid Prototype Materials/
+Assets/!_Project/_ThirdParty/
+Assets/!_Project/_Art/
