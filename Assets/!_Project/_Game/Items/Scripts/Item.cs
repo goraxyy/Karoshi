@@ -6,7 +6,8 @@ public enum ItemType
     Soda,
     Bread,
     Milk,
-    Chips
+    Chips,
+    Mop      // a tool rather than stock, so it never matches a shelf slot
 }
 
 [RequireComponent(typeof(Rigidbody))]
@@ -31,22 +32,33 @@ public class Item : MonoBehaviour
         col = GetComponent<Collider>();
     }
 
-    void Update()
-    {
-        // Live update while held — lets you tweak offset in play mode
-        if (isCarried)
-        {
-            transform.localPosition = holdPositionOffset;
-            transform.localRotation = Quaternion.Euler(holdRotationOffset);
-        }
+    // No Update(): with thousands of items in a level, re-applying a transform every frame
+    // for every item costs far more than applying it once when the state actually changes.
+    // The Set* methods below do that, and OnValidate keeps the in-editor live tweaking.
 
-        // Live update while on shelf — lets you tweak snap rotation in play mode
-        if (isOnShelf)
-        {
-            transform.localPosition = Vector3.zero;
-            transform.localRotation = Quaternion.Euler(shelfRotationOffset);
-        }
+    public void ApplyCarriedTransform()
+    {
+        transform.localPosition = holdPositionOffset;
+        transform.localRotation = Quaternion.Euler(holdRotationOffset);
     }
+
+    public void ApplyShelfTransform()
+    {
+        transform.localPosition = Vector3.zero;
+        transform.localRotation = Quaternion.Euler(shelfRotationOffset);
+    }
+
+#if UNITY_EDITOR
+    // Tweaking the offsets in the Inspector during play still updates immediately,
+    // but costs nothing at runtime.
+    void OnValidate()
+    {
+        if (!Application.isPlaying) return;
+
+        if (isCarried) ApplyCarriedTransform();
+        else if (isOnShelf) ApplyShelfTransform();
+    }
+#endif
 
     // Called when player actively holds item or when ejected
     public void SetCarried(bool carried, Transform parent)
@@ -68,8 +80,7 @@ public class Item : MonoBehaviour
         if (carried && parent != null)
         {
             transform.SetParent(parent);
-            transform.localPosition = holdPositionOffset;
-            transform.localRotation = Quaternion.Euler(holdRotationOffset);
+            ApplyCarriedTransform();
         }
         else
         {
@@ -96,8 +107,7 @@ public class Item : MonoBehaviour
             col.enabled = false;
 
         transform.SetParent(snapPoint);
-        transform.localPosition = Vector3.zero;
-        transform.localRotation = Quaternion.Euler(rotationOffset);
+        ApplyShelfTransform();
     }
 
     // Called when item goes into a non-active inventory slot

@@ -1,191 +1,349 @@
-using UnityEngine;
+using System;
 using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.AI;
 
-public class CustomerNPC : MonoBehaviour
+public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
 {
-    [System.Serializable]
-    public class Waypoint
+    [Header("Route (leave empty if CustomerSpawner will assign these)")]
+    public Transform[] shelfPoints;
+    public Transform cashierPoint;
+    public Transform exitPoint;
+
+    [Header("Shopping Behaviour")]
+    public Vector2Int shelvesToVisitRange = new Vector2Int(2, 4);
+    public Vector2 shelfStayDurationRange = new Vector2(3f, 8f);
+
+    [Header("Mess & Trash")]
+    public GameObject dirtPrefab;
+    [Range(0f, 1f)] public float dirtChance = 0.5f;
+    [Range(0f, 1f)] public float trashcanVisitChance = 0.5f;
+    public float trashcanUseSeconds = 3f;
+    public float trashcanStandOffset = 1f;
+
+    [Header("Taking Items")]
+    public Transform carryPoint;                 // items hover here, in front of the customer
+    public float shelfReachRadius = 2.5f;        // how far they can reach for a stocked slot
+    public float carryStackSpacing = 0.42f;      // vertical gap between carried items
+    public int maxCarriedItems = 3;
+
+    [Header("Cashier")]
+    public bool waitForPlayerToServe = true;              // wait at the desk until the player presses E
+    public Vector2 cashierWaitDurationRange = new Vector2(4f, 10f); // used only when waitForPlayerToServe is false
+    public float faceTurnSpeed = 6f;
+
+    [Header("Movement")]
+    public NavMeshAgent agent;
+    public float arriveDistance = 0.3f;
+    public float stuckTimeout = 20f; // safety net so a blocked NPC doesn't wait forever at one destination
+
+    // True while standing at the desk waiting to be served by the player.
+    public bool IsWaitingToBeServed { get; private set; }
+
+    Action onDespawn;
+    OutlineHighlight outline;
+    Transform player;
+    bool served;
+    readonly List<Item> basket = new List<Item>();
+
+    void Awake()
     {
-        public Transform point;
-        public float stayDuration = 2f;      // How long to stand here (0 = just pass through)
-        public bool isTurningPoint = false;  // Should NPC rotate smoothly to face next waypoint?
+        if (agent == null)
+            agent = GetComponent<NavMeshAgent>();
+
+        outline = GetComponent<OutlineHighlight>();
+
+        GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
+        if (playerObject != null)
+            player = playerObject.transform;
     }
-
-    [Header("Route")]
-    public float verticalOffset = 1f;      // Lifts NPC up so feet align with waypoint (set to half NPC height)
-    public Waypoint[] waypoints;
-    public bool loopRoute = true;            // Loop back to start or stop at end
-
-    [Header("Movement Timing")]
-    public float totalRouteDuration = 60f;   // Total seconds to complete the full route
-    [Range(0.5f, 3f)]
-    public float speedMultiplier = 1f;       // Quick multiplier on top of auto-calculated speed
-
-    [Header("Rotation")]
-    public float rotationSpeed = 5f;         // How fast NPC rotates at turning points
-
-    // Internal state
-    int currentWaypointIndex = 0;
-    bool isWaiting = false;
-    bool routeComplete = false;
-    float calculatedSpeed;
 
     void Start()
     {
-        if (waypoints == null || waypoints.Length == 0) return;
-
-        calculatedSpeed = CalculateSpeed();
-
-        // Snap to first waypoint
-        transform.position = waypoints[0].point.position + Vector3.up * verticalOffset;
-
-        StartCoroutine(FollowRoute());
+        StartCoroutine(RunRoutine());
     }
 
-    // Automatically calculate speed based on total route distance and desired duration
-    float CalculateSpeed()
+    // Called by CustomerSpawner right after Instantiate to hand over this run's route.
+    public void Init(Transform[] shelves, Transform cashier, Transform exit, Action despawnCallback)
     {
-        float totalDistance = 0f;
-
-        for (int i = 0; i < waypoints.Length - 1; i++)
-        {
-            if (waypoints[i].point != null && waypoints[i + 1].point != null)
-                totalDistance += Vector3.Distance(waypoints[i].point.position, waypoints[i + 1].point.position);
-        }
-
-        if (loopRoute && waypoints.Length > 1)
-        {
-            // Add distance from last waypoint back to first
-            totalDistance += Vector3.Distance(
-                waypoints[waypoints.Length - 1].point.position,
-                waypoints[0].point.position
-            );
-        }
-
-        // Total stay time across all waypoints
-        float totalStayTime = 0f;
-        foreach (var wp in waypoints)
-            totalStayTime += wp.stayDuration;
-
-        float movingTime = Mathf.Max(1f, totalRouteDuration - totalStayTime);
-        float speed = (totalDistance / movingTime) * speedMultiplier;
-
-        return Mathf.Max(0.1f, speed);
+        shelfPoints = shelves;
+        cashierPoint = cashier;
+        exitPoint = exit;
+        onDespawn = despawnCallback;
     }
 
-    IEnumerator FollowRoute()
+    IEnumerator RunRoutine()
     {
-        while (!routeComplete)
+        if (cashierPoint == null || exitPoint == null || shelfPoints == null || shelfPoints.Length == 0)
         {
-            Waypoint current = waypoints[currentWaypointIndex];
-
-            // Stay at waypoint if stayDuration > 0
-            if (current.stayDuration > 0f)
-            {
-                isWaiting = true;
-                yield return new WaitForSeconds(current.stayDuration);
-                isWaiting = false;
-            }
-
-            // Figure out next waypoint index
-            int nextIndex = currentWaypointIndex + 1;
-
-            if (nextIndex >= waypoints.Length)
-            {
-                if (loopRoute)
-                    nextIndex = 0;
-                else
-                {
-                    routeComplete = true;
-                    yield break;
-                }
-            }
-
-            Waypoint next = waypoints[nextIndex];
-
-            // If this is a turning point, rotate to face next waypoint first
-            if (current.isTurningPoint)
-                yield return StartCoroutine(RotateTowards(next.point.position));
-
-            // Move to next waypoint
-            yield return StartCoroutine(MoveToWaypoint(next.point.position));
-
-            currentWaypointIndex = nextIndex;
-        }
-    }
-
-    IEnumerator MoveToWaypoint(Vector3 target)
-    {
-        Vector3 targetWithOffset = target + Vector3.up * verticalOffset;
-        Vector3 start = transform.position;
-        float distance = Vector3.Distance(start, targetWithOffset);
-        float duration = distance / calculatedSpeed;
-        float elapsed = 0f;
-
-        // Face direction of movement — flatten Y so NPC doesn't tilt up/down
-        Vector3 direction = (targetWithOffset - start);
-        direction.y = 0f;
-        direction.Normalize();
-        if (direction != Vector3.zero)
-        {
-            Quaternion targetRot = Quaternion.LookRotation(direction);
-            while (elapsed < duration)
-            {
-                elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / duration);
-
-                transform.position = Vector3.Lerp(start, targetWithOffset, t);
-
-                // Smoothly rotate to face movement direction while walking
-                transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * rotationSpeed);
-
-                yield return null;
-            }
+            Debug.LogWarning("CustomerNPC is missing route points, despawning.");
+            Despawn();
+            yield break;
         }
 
-        transform.position = targetWithOffset;
+        foreach (Transform shelf in PickRandomShelves())
+        {
+            yield return MoveTo(shelf.position);
+
+            // Browse for a moment, then take something off the shelf.
+            float browseTime = UnityEngine.Random.Range(shelfStayDurationRange.x, shelfStayDurationRange.y);
+            yield return new WaitForSeconds(browseTime * 0.5f);
+
+            TakeItemFromNearbyShelf();
+
+            yield return new WaitForSeconds(browseTime * 0.5f);
+        }
+
+        yield return MoveTo(cashierPoint.position);
+        yield return WaitAtCashier();
+
+        yield return VisitTrashcan();
+
+        yield return MoveTo(exitPoint.position);
+
+        Despawn();
     }
 
-    IEnumerator RotateTowards(Vector3 target)
+    IEnumerator WaitAtCashier()
     {
-        Vector3 direction = (target - transform.position);
-        direction.y = 0f;
-        direction.Normalize();
-        if (direction == Vector3.zero) yield break;
-
-        Quaternion targetRotation = Quaternion.LookRotation(direction);
-
-        while (Quaternion.Angle(transform.rotation, targetRotation) > 1f)
+        if (!waitForPlayerToServe)
         {
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * rotationSpeed);
+            yield return new WaitForSeconds(UnityEngine.Random.Range(cashierWaitDurationRange.x, cashierWaitDurationRange.y));
+            yield break;
+        }
+
+        served = false;
+        IsWaitingToBeServed = true;
+
+        // Stand still and look toward the player while queueing to be served.
+        while (!served)
+        {
+            FacePlayer();
             yield return null;
         }
 
-        transform.rotation = targetRotation;
+        IsWaitingToBeServed = false;
     }
 
-    // Draw route in Scene view so you can see the path
-    void OnDrawGizmos()
+    void FacePlayer()
     {
-        if (waypoints == null || waypoints.Length < 2) return;
+        if (player == null) return;
 
-        Gizmos.color = Color.cyan;
+        Vector3 direction = player.position - transform.position;
+        direction.y = 0f;
+        if (direction.sqrMagnitude < 0.01f) return;
 
-        for (int i = 0; i < waypoints.Length - 1; i++)
+        Quaternion target = Quaternion.LookRotation(direction);
+        transform.rotation = Quaternion.Slerp(transform.rotation, target, Time.deltaTime * faceTurnSpeed);
+    }
+
+    // On the way out, some customers stop at a bin and use it, filling it up over time.
+    IEnumerator VisitTrashcan()
+    {
+        if (UnityEngine.Random.value > trashcanVisitChance) yield break;
+
+        Trashcan can = FindNearestTrashcan();
+        if (can == null) yield break;
+
+        // Stand in front of it rather than inside it.
+        Vector3 approach = can.transform.position
+                         + (transform.position - can.transform.position).normalized * trashcanStandOffset;
+        if (!NavMesh.SamplePosition(approach, out NavMeshHit spot, 2f, NavMesh.AllAreas)) yield break;
+
+        // The bin sits out the back — only go if there is a real walkable route to it,
+        // otherwise the customer would stand against a wall and use it through the wall.
+        NavMeshPath path = new NavMeshPath();
+        if (!agent.CalculatePath(spot.position, path) || path.status != NavMeshPathStatus.PathComplete)
+            yield break;
+
+        yield return MoveTo(spot.position);
+
+        // Confirm we actually got there before counting it as a use. Distance alone isn't
+        // enough — the bin sits against a wall, and a customer on the far side can easily be
+        // within a couple of metres of it, so require clear line of sight as well.
+        if (Vector3.Distance(transform.position, can.transform.position) > trashcanStandOffset + 1.5f)
+            yield break;
+        if (!HasLineOfSight(can.transform))
+            yield break;
+
+        yield return new WaitForSeconds(trashcanUseSeconds);
+
+        if (can != null) can.RegisterUse();
+    }
+
+    // True when nothing solid sits between this customer and the target.
+    bool HasLineOfSight(Transform target)
+    {
+        Vector3 from = transform.position + Vector3.up * 0.6f;
+        Vector3 to = target.position + Vector3.up * 0.4f;
+        Vector3 direction = to - from;
+        float distance = direction.magnitude;
+        if (distance < 0.01f) return true;
+
+        foreach (RaycastHit hit in Physics.RaycastAll(from, direction / distance, distance))
         {
-            if (waypoints[i].point != null && waypoints[i + 1].point != null)
-                Gizmos.DrawLine(waypoints[i].point.position, waypoints[i + 1].point.position);
+            if (hit.collider.isTrigger) continue;
+            if (hit.collider.transform.IsChildOf(transform)) continue;   // ourselves
+            if (hit.collider.transform.IsChildOf(target)) continue;      // the bin itself
+            if (target.IsChildOf(hit.collider.transform)) continue;      // a parent of the bin
+            return false;                                               // something is in the way
         }
 
-        if (loopRoute && waypoints[0].point != null && waypoints[waypoints.Length - 1].point != null)
-            Gizmos.DrawLine(waypoints[waypoints.Length - 1].point.position, waypoints[0].point.position);
+        return true;
+    }
 
-        foreach (var wp in waypoints)
+    Trashcan FindNearestTrashcan()
+    {
+        var cans = Trashcan.All;
+        Trashcan nearest = null;
+        float nearestSqr = float.MaxValue;
+
+        for (int i = 0; i < cans.Count; i++)
         {
-            if (wp.point == null) continue;
-
-            Gizmos.color = wp.isTurningPoint ? Color.yellow : Color.green;
-            Gizmos.DrawSphere(wp.point.position, 0.15f);
+            float sqr = (transform.position - cans[i].transform.position).sqrMagnitude;
+            if (sqr < nearestSqr) { nearest = cans[i]; nearestSqr = sqr; }
         }
+
+        return nearest;
+    }
+
+    // Customers are messy: half the time taking something leaves a patch behind.
+    void DropDirt()
+    {
+        if (dirtPrefab == null) return;
+        if (UnityEngine.Random.value > dirtChance) return;
+
+        // The shift allows only so much mess at once.
+        TaskManager tasks = TaskManager.Instance;
+        if (tasks != null && tasks.MaxDirt > 0 && Dirt.ActiveCount >= tasks.MaxDirt) return;
+
+        Vector3 position = transform.position;
+        if (NavMesh.SamplePosition(position, out NavMeshHit hit, 1.5f, NavMesh.AllAreas))
+            position = hit.position;
+
+        Instantiate(dirtPrefab, position + Vector3.up * 0.02f, Quaternion.Euler(90f, UnityEngine.Random.Range(0f, 360f), 0f));
+    }
+
+    // Takes one item from the nearest stocked slot within reach. The item leaves the shelf
+    // (so the slot needs restocking) and hovers in front of the customer from then on.
+    void TakeItemFromNearbyShelf()
+    {
+        if (basket.Count >= maxCarriedItems) return;
+
+        ShelfSlot nearest = FindNearestStockedSlot();
+        if (nearest == null) return;
+
+        Item taken = nearest.TakeItem();
+        if (taken == null) return;
+
+        Transform holder = carryPoint != null ? carryPoint : transform;
+        taken.SetCarried(true, holder);
+
+        // Nothing re-applies this every frame any more, so the stacking offset sticks.
+        taken.transform.localPosition = new Vector3(0f, basket.Count * carryStackSpacing, 0f);
+        taken.transform.localRotation = Quaternion.identity;
+
+        basket.Add(taken);
+
+        DropDirt();
+    }
+
+    ShelfSlot FindNearestStockedSlot()
+    {
+        var slots = ShelfSlot.All;
+        ShelfSlot nearest = null;
+        float nearestSqr = shelfReachRadius * shelfReachRadius;
+        Vector3 position = transform.position;
+
+        for (int i = 0; i < slots.Count; i++)
+        {
+            ShelfSlot slot = slots[i];
+            if (!slot.isFilled) continue;
+
+            float sqr = (position - slot.transform.position).sqrMagnitude;
+            if (sqr < nearestSqr)
+            {
+                nearest = slot;
+                nearestSqr = sqr;
+            }
+        }
+
+        return nearest;
+    }
+
+    List<Transform> PickRandomShelves()
+    {
+        List<Transform> pool = new List<Transform>(shelfPoints);
+        int count = Mathf.Min(UnityEngine.Random.Range(shelvesToVisitRange.x, shelvesToVisitRange.y + 1), pool.Count);
+
+        List<Transform> picked = new List<Transform>(count);
+        for (int i = 0; i < count; i++)
+        {
+            int index = UnityEngine.Random.Range(0, pool.Count);
+            picked.Add(pool[index]);
+            pool.RemoveAt(index);
+        }
+
+        return picked;
+    }
+
+    IEnumerator MoveTo(Vector3 destination)
+    {
+        if (!agent.isOnNavMesh)
+        {
+            Debug.LogWarning($"{name} is not on the NavMesh, despawning.", this);
+            Despawn();
+            yield break;
+        }
+
+        // Route points are authored by hand (ShelfPoint sits in front of each shelf), so snap
+        // to the nearest reachable spot rather than failing on a slightly off-mesh target.
+        if (NavMesh.SamplePosition(destination, out NavMeshHit hit, 3f, NavMesh.AllAreas))
+            destination = hit.position;
+
+        agent.SetDestination(destination);
+
+        float elapsed = 0f;
+        while (agent.pathPending || agent.remainingDistance > agent.stoppingDistance + arriveDistance)
+        {
+            elapsed += Time.deltaTime;
+            if (elapsed >= stuckTimeout)
+                break;
+
+            yield return null;
+        }
+    }
+
+    // --- Player interaction -------------------------------------------------
+
+    public void Interact(PlayerInteract player)
+    {
+        if (!IsWaitingToBeServed) return;
+
+        served = true;
+    }
+
+    public string GetPrompt()
+    {
+        return IsWaitingToBeServed ? "Serve customer" : string.Empty;
+    }
+
+    public void OnHoverEnter()
+    {
+        if (outline != null)
+            outline.SetHighlighted(true);
+    }
+
+    public void OnHoverExit()
+    {
+        if (outline != null)
+            outline.SetHighlighted(false);
+    }
+
+    void Despawn()
+    {
+        onDespawn?.Invoke();
+        Destroy(gameObject);
     }
 }

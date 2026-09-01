@@ -12,11 +12,18 @@ public class ParentMaterialController : MonoBehaviour
     [ContextMenu("Apply Material to Children")]
     public void ApplyMaterialToChildren()
     {
-        MeshRenderer[] allRenderers = GetComponentsInChildren<MeshRenderer>();
+        if (sharedMaterial == null) return;
+
+        MeshRenderer[] allRenderers = GetComponentsInChildren<MeshRenderer>(true);
         foreach (MeshRenderer rend in allRenderers)
         {
-            rend.material = sharedMaterial; // Assigns shared material
-            // Or for color: rend.material.color = Color.red;
+            // Items stocked on this shelf keep their own look.
+            if (rend.GetComponentInParent<Item>() != null) continue;
+
+            // sharedMaterial, not material: assigning .material clones the material per
+            // renderer at runtime, which breaks batching and leaks a material per shelf part.
+            if (rend.sharedMaterial != sharedMaterial)
+                rend.sharedMaterial = sharedMaterial;
         }
     }
 }

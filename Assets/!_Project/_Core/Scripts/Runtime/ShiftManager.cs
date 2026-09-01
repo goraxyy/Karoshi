@@ -1,80 +1,113 @@
+using System;
 using UnityEngine;
 
+// A shift runs from clocking in at the puncher to clocking out again.
+// The clock stops letting customers in once the shift time is up, but the shift itself
+// only ends when the player punches out.
 public class ShiftManager : MonoBehaviour
 {
-    [Header("Layouts")]
-    public GameObject[] layouts;
-
     [Header("Shift Settings")]
-    public float shiftDurationSeconds = 480f; // 8 minutes can be increased
+    [Tooltip("How long customers keep arriving, in seconds.")]
+    public float shiftDurationSeconds = 300f;   // 5 minutes
 
     [Header("References")]
     public TaskManager taskManager;
+    public CustomerSpawner customerSpawner;
     public BurnoutSystem burnoutSystem;
     public EnemyAI enemyAI;
 
-    int currentShiftIndex = -1;
-    float shiftTimeRemaining;
-    bool shiftActive;
+    public bool IsShiftActive { get; private set; }
+    public bool CustomersAllowed { get; private set; }
+    public float TimeRemaining { get; private set; }
+    public int ShiftNumber { get; private set; }
+
+    public event Action ShiftStateChanged;
+
+    void Awake()
+    {
+        if (taskManager == null) taskManager = FindAnyObjectByType<TaskManager>();
+        if (customerSpawner == null) customerSpawner = FindAnyObjectByType<CustomerSpawner>();
+        if (burnoutSystem == null) burnoutSystem = FindAnyObjectByType<BurnoutSystem>();
+        if (enemyAI == null) enemyAI = FindAnyObjectByType<EnemyAI>();
+    }
 
     void Start()
     {
-        StartNextShift();
+        // Nothing runs until the player clocks in.
+        SetCustomersAllowed(false);
     }
 
     void Update()
     {
-        if (!shiftActive) return;
+        if (!IsShiftActive || !CustomersAllowed) return;
 
-        shiftTimeRemaining -= Time.deltaTime;
-
-        if (shiftTimeRemaining <= 0f)
-            EndShift();
+        TimeRemaining -= Time.deltaTime;
+        if (TimeRemaining <= 0f)
+        {
+            TimeRemaining = 0f;
+            SetCustomersAllowed(false);      // doors close; shift ends when the player punches out
+            ShiftStateChanged?.Invoke();
+        }
     }
 
-    public void StartNextShift()
-    {
-        currentShiftIndex++;
+    // The shift can't be closed with spills on the floor, a full bin, or gaps on the shelves.
+    public bool CanClockOut => !IsShiftActive || taskManager == null || taskManager.AllComplete;
 
-        if (currentShiftIndex >= layouts.Length)
+    // Called by the puncher.
+    public void ToggleShift()
+    {
+        if (!IsShiftActive) { StartShift(); return; }
+
+        if (!CanClockOut)
         {
-            Debug.Log("Demo complete! All shifts finished.");
-            // TODO: Show completion screen
+            Debug.Log("Can't clock out yet — finish the shift tasks first.");
             return;
         }
 
-        // Activate correct layout
-        for (int i = 0; i < layouts.Length; i++)
-            layouts[i].SetActive(i == currentShiftIndex);
+        EndShift();
+    }
 
-        shiftTimeRemaining = shiftDurationSeconds;
-        shiftActive = true;
+    public void StartShift()
+    {
+        if (IsShiftActive) return;
 
-        // Initialize systems
+        ShiftNumber++;
+        IsShiftActive = true;
+        TimeRemaining = shiftDurationSeconds;
+        SetCustomersAllowed(true);
+
         if (taskManager != null)
-            taskManager.GenerateShiftTasks();
+            taskManager.BeginShift(ShiftNumber);
 
         if (burnoutSystem != null)
-            burnoutSystem.ResetForNewShift(currentShiftIndex);
+            burnoutSystem.ResetForNewShift(ShiftNumber - 1);
 
         if (enemyAI != null)
             enemyAI.ResetForNewShift();
 
-        Debug.Log($"Shift {currentShiftIndex + 1} started!");
+        Debug.Log($"Shift {ShiftNumber} started ({shiftDurationSeconds:0}s).");
+        ShiftStateChanged?.Invoke();
     }
 
-    public void EndShiftEarly()
+    public void EndShift()
     {
-        Debug.Log("All tasks complete! Ending shift early.");
-        EndShift();
+        if (!IsShiftActive) return;
+
+        IsShiftActive = false;
+        TimeRemaining = 0f;
+        SetCustomersAllowed(false);
+
+        if (taskManager != null)
+            taskManager.EndShift();
+
+        Debug.Log($"Shift {ShiftNumber} ended.");
+        ShiftStateChanged?.Invoke();
     }
 
-    void EndShift()
+    void SetCustomersAllowed(bool allowed)
     {
-        shiftActive = false;
-        Debug.Log($"Shift {currentShiftIndex + 1} complete!");
-
-        // TODO: Show results screen, then:
-        Invoke(nameof(StartNextShift), 3f);
+        CustomersAllowed = allowed;
+        if (customerSpawner != null)
+            customerSpawner.spawningEnabled = allowed;
     }
 }

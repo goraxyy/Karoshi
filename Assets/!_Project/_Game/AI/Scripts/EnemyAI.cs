@@ -31,7 +31,7 @@ public class EnemyAI : MonoBehaviour
         if (agent == null)
             agent = GetComponent<NavMeshAgent>();
 
-        burnoutSystem = FindFirstObjectByType<BurnoutSystem>();
+        burnoutSystem = FindAnyObjectByType<BurnoutSystem>();
     }
 
     void Update()
@@ -154,19 +154,23 @@ public class EnemyAI : MonoBehaviour
 
     ShelfSlot FindNearestFilledSlot()
     {
-        ShelfSlot[] slots = FindObjectsByType<ShelfSlot>(FindObjectsSortMode.None);
+        // Reads the ShelfSlot registry instead of scanning every object in the scene —
+        // this runs per frame while sabotaging, and there can be thousands of slots.
+        var slots = ShelfSlot.All;
         ShelfSlot nearest = null;
-        float nearestDistance = float.MaxValue;
+        float nearestSqr = float.MaxValue;
+        Vector3 position = transform.position;
 
-        foreach (var slot in slots)
+        for (int i = 0; i < slots.Count; i++)
         {
+            ShelfSlot slot = slots[i];
             if (!slot.isFilled) continue;
 
-            float distance = Vector3.Distance(transform.position, slot.transform.position);
-            if (distance < nearestDistance)
+            float sqr = (position - slot.transform.position).sqrMagnitude;
+            if (sqr < nearestSqr)
             {
                 nearest = slot;
-                nearestDistance = distance;
+                nearestSqr = sqr;
             }
         }
 
