@@ -15,6 +15,9 @@ public class PickupInteractable : MonoBehaviour, IInteractable, IHoverable
     {
         if (item != null && player.carrySlot != null)
         {
+            // Already in hand or stowed — don't hand out a second copy.
+            if (item.isCarried || player.carrySlot.Contains(item)) return;
+
             if (player.carrySlot.TryPickup(item))
             {
                 // Picked up — make sure the highlight doesn't linger in the player's hands.

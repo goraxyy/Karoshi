@@ -7,7 +7,9 @@ public enum ItemType
     Bread,
     Milk,
     Chips,
-    Mop      // a tool rather than stock, so it never matches a shelf slot
+    Mop,      // a tool rather than stock, so it never matches a shelf slot
+    Stock,    // the restocking crate — same, it's carried but never shelved
+    TrashBag  // carried out to the container, never shelved
 }
 
 [RequireComponent(typeof(Rigidbody))]

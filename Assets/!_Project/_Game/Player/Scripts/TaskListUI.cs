@@ -103,7 +103,8 @@ public class TaskListUI : MonoBehaviour
             foreach (TaskManager.ShiftTask task in taskManager.Tasks)
             {
                 // TMP renders <s> as a strikethrough, which is how a finished task reads.
-                // These reflect live state, so a task comes back if a customer makes more mess.
+                // Restocking and trash are live states, so they come back if a customer
+                // empties a shelf or uses the bin again.
                 if (task.IsComplete)
                     builder.AppendLine($"<s>{task}</s>");
                 else

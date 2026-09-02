@@ -14,6 +14,12 @@ public class CarrySlot : MonoBehaviour
 
     public bool TryPickup(Item item)
     {
+        if (item == null) return false;
+
+        // Guard against the same object landing in two slots — pressing E twice quickly on
+        // one item used to hand you a duplicate of it.
+        if (Contains(item)) return false;
+
         for (int i = 0; i < items.Length; i++)
         {
             if (items[i] == null)
@@ -63,5 +69,31 @@ public class CarrySlot : MonoBehaviour
         foreach (var item in items)
             if (item == null) return false;
         return true;
+    }
+
+    public bool Contains(Item item)
+    {
+        if (item == null) return false;
+        foreach (var carried in items)
+            if (carried == item) return true;
+        return false;
+    }
+
+    // Takes a specific item out of the inventory without dropping it in the world —
+    // used when a tool is recalled to its snap point.
+    public bool Remove(Item item)
+    {
+        if (item == null) return false;
+
+        for (int i = 0; i < items.Length; i++)
+        {
+            if (items[i] != item) continue;
+
+            items[i] = null;
+            item.SetCarried(false, null);
+            return true;
+        }
+
+        return false;
     }
 }

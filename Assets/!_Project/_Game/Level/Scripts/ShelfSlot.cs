@@ -47,12 +47,15 @@ public class ShelfSlot : MonoBehaviour, IInteractable
 
     public void Interact(PlayerInteract player)
     {
-        // Holding a stock crate restocks the whole shelf in one go.
-        StockCrate crate = player.tools != null ? player.tools.GetHeld<StockCrate>() : null;
-        if (crate != null)
+        // Holding the stock crate restocks the whole shelf in one go.
+        if (player.carrySlot != null && player.carrySlot.IsCarrying)
         {
-            crate.StockShelf(this, player);
-            return;
+            StockCrate crate = player.carrySlot.currentItem.GetComponent<StockCrate>();
+            if (crate != null)
+            {
+                crate.StockShelf(this, player);
+                return;
+            }
         }
 
         if (isFilled)

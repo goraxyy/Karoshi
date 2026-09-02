@@ -64,7 +64,10 @@ public class Dirt : HighlightInteractable, IHoldInteractable
 
     public void OnHoldComplete(PlayerInteract player)
     {
-        // OnDisable updates the count and the task list.
+        // Counts toward the shift's mopping quota; OnDisable refreshes the rest.
+        TaskManager tasks = TaskManager.Instance;
+        if (tasks != null) tasks.ReportMopped();
+
         Destroy(gameObject);
     }
 

@@ -16,9 +16,10 @@ This repo is a **code-only mirror** of the project. It intentionally does **not*
 
 - **Clock in/out** at the time **puncher** to start and end a shift
 - **Shop-floor customers** spawn at the entrance, browse random shelves, take stock, queue at the cashier until served, sometimes leave a mess or use the trash bin, then leave
-- **Restock shelves** — pick up a stock crate from the source pallet and use it on any slot to refill the whole shelf unit
+- **Restock shelves** — carry the stock crate and use it on any slot to refill the whole shelf unit; it never runs out
 - **Mop up spills** customers leave behind — hold the interact key while carrying the mop; progress shows visibly on the mess itself
-- **Empty the trash** once it fills up, carry it to the container out back, then return it
+- **Empty the trash** — bag up a full bin, then drop the bag into the container out back
+- **Put tools back** by looking at their snap point and interacting, from anywhere
 - **Shift tasks** (mopping, trash, restocking) are tracked live and shown in an on-screen checklist (toggle with **F**); a shift can't be clocked out until they're all clear
 - **Avoid the AI supervisor**, who patrols the store, randomly knocks stock off shelves, and chases you on sight
 - **Manage your Burnout meter** — time and being chased drain it; coffee recovers it
@@ -42,17 +43,20 @@ Uses a cone-based vision system with raycast occlusion — hide behind a shelf a
 ### Customers (`Customernpc.cs`, `CustomerSpawner.cs`)
 NavMesh-driven shoppers with their own routine: enter → visit a few random shelf points → take an item if one's in reach (dropping mess behind them some of the time) → queue at the cashier and wait for the player to serve them → maybe detour to the trash can → exit and despawn. Line-of-sight and path-completeness checks keep them from interacting with things through walls.
 
-### Shelves & stocking (`ShelfSlot.cs`, `ShelfUnit.cs`, `StockSource.cs`, `StockCrate.cs`)
-Each shelf is a unit of individual slots. A `ShelfUnit` tracks how many of its slots are empty and highlights itself while understocked. The stock pallet (`StockSource`) hands the player a disposable crate (`StockCrate`) that refills every empty slot on a shelf in one interaction.
+### Shelves & stocking (`ShelfSlot.cs`, `ShelfUnit.cs`, `StockCrate.cs`)
+Each shelf is a unit of individual slots. A `ShelfUnit` tracks how many of its slots are empty and highlights itself while understocked. The stock crate is carried in the inventory; while it's the item in hand, interacting with any slot refills that entire shelf, and the crate is never used up.
 
 ### Cleaning (`Dirt.cs`)
-Spills are capped per shift (growing shift over shift) and require the mop — implemented via `IHoldInteractable`, a hold-to-complete interaction with visible shrink/fade progress on the mess.
+Spills are capped per shift and require the mop — implemented via `IHoldInteractable`, a hold-to-complete interaction with visible shrink/fade progress on the mess.
 
-### Trash (`Trashcan.cs`)
-Fills as customers use it, becomes carryable once it has anything in it, and empties out at the shipping container (`TrashContainer`, in the same file) before returning to its spot.
+### Trash (`Trashcan.cs`, `TrashBag.cs`, `TrashContainer.cs`)
+Bins fill as customers use them. Interacting with a non-empty bin bags it up into a carryable `TrashBag`; the job is only finished once that bag is physically dropped into the container out back, whose trigger volume swallows it.
+
+### Tools & snap points (`ItemHome.cs`, `ToolSnapPoint.cs`)
+The mop and the stock crate are ordinary inventory items — droppable anywhere — but each has a home. Looking at its snap point and interacting recalls the tool from the floor or straight out of the inventory. The spot shows a marker only while its tool is missing, and its trigger switches off while the tool is home so it never blocks picking the tool back up.
 
 ### Shifts & tasks (`ShiftManager.cs`, `TaskManager.cs`, `Puncher.cs`)
-`ShiftManager` runs the clock-in/clock-out lifecycle and shift timer; `TaskManager` derives the live checklist (spills outstanding, trash outstanding, shelves understocked) directly from world state rather than a running tally, so a task un-checks itself the moment something goes wrong again. Clocking out is blocked until everything reads clear.
+`ShiftManager` runs the clock-in/clock-out lifecycle and shift timer. `TaskManager` mixes one counted quota — mop N spills, growing each shift — with two live state checks: shelves all stocked, and all trash disposed of. The state tasks read the world directly rather than a running tally, so they un-check themselves the moment a customer empties a shelf or uses a bin. Clocking out is blocked until everything reads clear.
 
 ### Interaction & highlighting (`PlayerInteract.cs`, `HighlightInteractable.cs`, `OutlineHighlight.cs`)
 A shared `IInteractable` / `IHoverable` / `IHoldInteractable` interface set drives all player interactions. `OutlineHighlight` draws an inverted-hull yellow outline on lookat, either per-mesh (items, customers) or as a single bounding box (shelves, fixtures) depending on the object's geometry.
@@ -98,7 +102,9 @@ Assets/!_Project/
 │   │       └── CustomerOutline.shader
 │   ├── Items/Scripts/
 │   │   ├── Item.cs
-│   │   └── PickupInteractable.cs
+│   │   ├── ItemHome.cs                 # tools that return to a fixed spot
+│   │   ├── PickupInteractable.cs
+│   │   └── ToolSnapPoint.cs            # the spot itself; E here recalls the tool
 │   ├── Level/
 │   │   ├── Editor/
 │   │   │   └── ShelfPrefabBuilder.cs   # editor tool: generates shelf model/stocked prefab variants
@@ -114,8 +120,9 @@ Assets/!_Project/
 │   │       ├── ShelfSlot.cs
 │   │       ├── ShelfUnit.cs
 │   │       ├── StockCrate.cs
-│   │       ├── StockSource.cs
-│   │       └── Trashcan.cs             # also defines TrashContainer
+│   │       ├── TrashBag.cs
+│   │       ├── TrashContainer.cs       # trigger volume that swallows bags
+│   │       └── Trashcan.cs
 │   └── Player/Scripts/
 │       ├── CarrySlot.cs
 │       ├── Inventoryui.cs

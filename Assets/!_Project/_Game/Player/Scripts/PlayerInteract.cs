@@ -124,20 +124,15 @@ public class PlayerInteract : MonoBehaviour
     {
         if (tools != null && tools.IsHolding)
         {
-            // A stock crate is a throwaway clone, so dropping it discards it.
-            if (tools.GetHeld<StockCrate>() != null)
-            {
-                tools.DestroyHeld();
-                return;
-            }
-
             // The bin belongs somewhere specific.
-            var home = tools.HeldTool.GetComponent<IHomeReturnable>();
+            var toolHome = tools.HeldTool.GetComponent<IHomeReturnable>();
             tools.Release();
-            home?.ReturnHome();
+            toolHome?.ReturnHome();
             return;
         }
 
+        // Everything else just goes on the floor. Tools that belong somewhere are
+        // recalled by looking at their snap point and pressing E, not by dropping.
         if (carrySlot != null && carrySlot.IsCarrying)
             carrySlot.Drop();
     }

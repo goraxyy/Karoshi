@@ -82,9 +82,16 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
             yield break;
         }
 
-        foreach (Transform shelf in PickRandomShelves())
+        // Some shoppers get the urge to bin something partway round the store.
+        List<Transform> route = PickRandomShelves();
+        bool willUseBin = UnityEngine.Random.value <= trashcanVisitChance;
+        int binAfterShelf = willUseBin && route.Count > 0
+            ? UnityEngine.Random.Range(0, route.Count)
+            : -1;
+
+        for (int i = 0; i < route.Count; i++)
         {
-            yield return MoveTo(shelf.position);
+            yield return MoveTo(route[i].position);
 
             // Browse for a moment, then take something off the shelf.
             float browseTime = UnityEngine.Random.Range(shelfStayDurationRange.x, shelfStayDurationRange.y);
@@ -93,12 +100,13 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
             TakeItemFromNearbyShelf();
 
             yield return new WaitForSeconds(browseTime * 0.5f);
+
+            if (i == binAfterShelf)
+                yield return VisitTrashcan();
         }
 
         yield return MoveTo(cashierPoint.position);
         yield return WaitAtCashier();
-
-        yield return VisitTrashcan();
 
         yield return MoveTo(exitPoint.position);
 
@@ -138,11 +146,10 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
         transform.rotation = Quaternion.Slerp(transform.rotation, target, Time.deltaTime * faceTurnSpeed);
     }
 
-    // On the way out, some customers stop at a bin and use it, filling it up over time.
+    // Mid-shop, some customers wander to the nearest bin and use it.
+    // The caller decides whether this happens; this just walks there and does it.
     IEnumerator VisitTrashcan()
     {
-        if (UnityEngine.Random.value > trashcanVisitChance) yield break;
-
         Trashcan can = FindNearestTrashcan();
         if (can == null) yield break;
 
@@ -262,14 +269,39 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
             if (!slot.isFilled) continue;
 
             float sqr = (position - slot.transform.position).sqrMagnitude;
-            if (sqr < nearestSqr)
-            {
-                nearest = slot;
-                nearestSqr = sqr;
-            }
+            if (sqr >= nearestSqr) continue;
+
+            // Being close isn't enough — a shelf on the far side of a wall is metres away
+            // but not actually reachable.
+            if (!CanReach(slot)) continue;
+
+            nearest = slot;
+            nearestSqr = sqr;
         }
 
         return nearest;
+    }
+
+    // True when nothing but this slot's own shelf sits between the customer and the slot.
+    bool CanReach(ShelfSlot slot)
+    {
+        Transform shelf = slot.owner != null ? slot.owner.transform : slot.transform.root;
+
+        Vector3 from = transform.position + Vector3.up * 0.8f;
+        Vector3 to = slot.transform.position;
+        Vector3 direction = to - from;
+        float distance = direction.magnitude;
+        if (distance < 0.05f) return true;
+
+        foreach (RaycastHit hit in Physics.RaycastAll(from, direction / distance, distance))
+        {
+            if (hit.collider.isTrigger) continue;                          // slots themselves
+            if (hit.collider.transform.IsChildOf(transform)) continue;     // ourselves
+            if (hit.collider.transform.IsChildOf(shelf)) continue;         // the shelf we're reaching into
+            return false;                                                  // a wall or another fixture
+        }
+
+        return true;
     }
 
     List<Transform> PickRandomShelves()
