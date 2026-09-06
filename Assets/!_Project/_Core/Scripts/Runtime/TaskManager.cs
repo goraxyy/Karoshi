@@ -12,7 +12,7 @@ using UnityEngine;
 // The shift can only be clocked out once all three read complete.
 public class TaskManager : MonoBehaviour
 {
-    public enum TaskKind { Mop, Trash, Stock }
+    public enum TaskKind { Mop, Trash, Stock, Serve }
 
     public readonly struct ShiftTask
     {
@@ -65,7 +65,11 @@ public class TaskManager : MonoBehaviour
     // Bagging a bin isn't enough — the bag has to reach the container out back.
     public bool TrashEmpty => TrashOutstanding == 0 && TrashBag.ActiveCount == 0;
 
-    public bool AllComplete => MopQuotaMet && ShelvesStocked && TrashEmpty;
+    // Nobody may be left standing at the till when the shift closes.
+    public int CustomersWaiting => CustomerNPC.WaitingCount;
+    public bool AllCustomersServed => CustomersWaiting == 0;
+
+    public bool AllComplete => MopQuotaMet && ShelvesStocked && TrashEmpty && AllCustomersServed;
     public bool HasTasks => ShiftRunning;
 
     public IEnumerable<ShiftTask> Tasks
@@ -80,6 +84,9 @@ public class TaskManager : MonoBehaviour
 
             string trashDetail = TrashBag.ActiveCount > 0 ? "take the bag out back" : string.Empty;
             yield return new ShiftTask(TaskKind.Trash, "Empty the trash", trashDetail, TrashEmpty);
+
+            string serveDetail = CustomersWaiting > 0 ? $"{CustomersWaiting} waiting" : string.Empty;
+            yield return new ShiftTask(TaskKind.Serve, "Serve the customers", serveDetail, AllCustomersServed);
         }
     }
 

@@ -1,32 +1,44 @@
 using UnityEngine;
 
-public class CoffeeMachine : MonoBehaviour, IInteractable
+// Refills the burnout bar. Goes on cooldown briefly after each cup.
+public class CoffeeMachine : HighlightInteractable
 {
-    public float cooldownTime = 15f;
+    [Tooltip("Seconds before another cup can be poured.")]
+    public float cooldownTime = 5f;
+    public AudioClip pourSound;
 
     float lastUseTime = -999f;
+    BurnoutSystem burnout;
 
-    public void Interact(PlayerInteract player)
+    protected override void Awake()
     {
-        if (Time.time - lastUseTime < cooldownTime)
+        base.Awake();
+        burnout = FindAnyObjectByType<BurnoutSystem>();
+    }
+
+    bool OnCooldown => Time.time - lastUseTime < cooldownTime;
+
+    public override void Interact(PlayerInteract player)
+    {
+        if (OnCooldown) return;
+
+        if (burnout == null) burnout = FindAnyObjectByType<BurnoutSystem>();
+        if (burnout == null)
         {
-            Debug.Log("Coffee machine on cooldown!");
+            Debug.LogWarning("No BurnoutSystem in the scene for the coffee machine to refill.", this);
             return;
         }
 
-        BurnoutSystem burnout = FindFirstObjectByType<BurnoutSystem>();
-        if (burnout != null)
-        {
-            burnout.DrinkCoffee();
-            lastUseTime = Time.time;
-        }
+        burnout.DrinkCoffee();
+        lastUseTime = Time.time;
+        OneShotAudio.PlayAt(pourSound, transform.position);
     }
 
-    public string GetPrompt()
+    public override string GetPrompt()
     {
-        if (Time.time - lastUseTime < cooldownTime)
-            return $"Cooldown: {(int)(cooldownTime - (Time.time - lastUseTime))}s";
+        if (OnCooldown)
+            return $"Brewing... {(int)(cooldownTime - (Time.time - lastUseTime)) + 1}s";
 
-        return "Drink Coffee [E]";
+        return "Drink coffee";
     }
 }

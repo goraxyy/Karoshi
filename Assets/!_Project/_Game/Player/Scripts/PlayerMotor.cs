@@ -20,6 +20,10 @@ public class PlayerMotor : MonoBehaviour
     public float crouchCameraY = 0.35f;
     public float standCameraY = 1.6f;
 
+    [Header("Stamina")]
+    [Tooltip("Sprinting is disabled when this hits empty. Found automatically if unset.")]
+    public BurnoutSystem burnout;
+
     CharacterController controller;
     Vector3 velocity;
     float pitch;
@@ -28,6 +32,7 @@ public class PlayerMotor : MonoBehaviour
     void Awake()
     {
         controller = GetComponent<CharacterController>();
+        if (burnout == null) burnout = FindAnyObjectByType<BurnoutSystem>();
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
@@ -65,7 +70,7 @@ public class PlayerMotor : MonoBehaviour
         Vector3 moveDir = (transform.right * horizontal + transform.forward * vertical).normalized;
 
         float speed = walkSpeed;
-        if (Input.GetKey(KeyCode.LeftShift) && !isCrouching)
+        if (IsSprinting())
             speed = sprintSpeed;
         else if (isCrouching)
             speed = crouchSpeed;
@@ -116,5 +121,11 @@ public class PlayerMotor : MonoBehaviour
         return !Physics.SphereCast(checkStart, checkRadius, Vector3.up, out _, checkDistance);
     }
 
-    public bool IsSprinting() => Input.GetKey(KeyCode.LeftShift) && !isCrouching;
+    // Holding shift isn't enough — a burnt-out employee can only walk.
+    public bool IsSprinting()
+    {
+        if (isCrouching) return false;
+        if (!Input.GetKey(KeyCode.LeftShift)) return false;
+        return burnout == null || burnout.CanSprint;
+    }
 }

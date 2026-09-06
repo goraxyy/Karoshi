@@ -39,7 +39,23 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
     public float stuckTimeout = 20f; // safety net so a blocked NPC doesn't wait forever at one destination
 
     // True while standing at the desk waiting to be served by the player.
-    public bool IsWaitingToBeServed { get; private set; }
+    public bool IsWaitingToBeServed
+    {
+        get => isWaitingToBeServed;
+        private set
+        {
+            if (isWaitingToBeServed == value) return;
+            isWaitingToBeServed = value;
+            WaitingCount = Mathf.Max(0, WaitingCount + (value ? 1 : -1));
+            TaskManager.NotifyWorldChanged();
+        }
+    }
+
+    // How many customers are queued at the till right now — the shift can't be
+    // closed while anyone is still waiting to be served.
+    public static int WaitingCount { get; private set; }
+
+    bool isWaitingToBeServed;
 
     Action onDespawn;
     OutlineHighlight outline;
@@ -377,5 +393,11 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
     {
         onDespawn?.Invoke();
         Destroy(gameObject);
+    }
+
+    void OnDestroy()
+    {
+        // Don't leave a destroyed customer counted as still waiting.
+        IsWaitingToBeServed = false;
     }
 }
