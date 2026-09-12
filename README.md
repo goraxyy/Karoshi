@@ -1,4 +1,4 @@
-# Karoshi
+# Karoshi - blank
 
 > *karoshi (過労死) — Japanese: "death by overwork"*
 
