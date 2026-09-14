@@ -7,8 +7,20 @@ using UnityEngine;
 public class ShiftManager : MonoBehaviour
 {
     [Header("Shift Settings")]
-    [Tooltip("How long customers keep arriving, in seconds.")]
+    [Min(10f)]
+    [Tooltip("How long one shift lasts, in seconds. 300 = 5 minutes. Safe to change " +
+             "in the Inspector while playing — the clock on a running shift adjusts to match.")]
     public float shiftDurationSeconds = 300f;   // 5 minutes
+
+    // Shown next to the seconds field so the value is readable at a glance.
+    public string ShiftLengthLabel
+    {
+        get
+        {
+            int whole = Mathf.CeilToInt(shiftDurationSeconds);
+            return $"{whole / 60:0}:{whole % 60:00}";
+        }
+    }
 
     [Header("References")]
     public TaskManager taskManager;
@@ -85,7 +97,11 @@ public class ShiftManager : MonoBehaviour
         if (enemyAI != null)
             enemyAI.ResetForNewShift();
 
-        Debug.Log($"Shift {ShiftNumber} started ({shiftDurationSeconds:0}s).");
+#if UNITY_EDITOR
+        appliedDuration = shiftDurationSeconds;
+#endif
+
+        Debug.Log($"Shift {ShiftNumber} started ({ShiftLengthLabel}).");
         ShiftStateChanged?.Invoke();
     }
 
@@ -103,6 +119,29 @@ public class ShiftManager : MonoBehaviour
         Debug.Log($"Shift {ShiftNumber} ended.");
         ShiftStateChanged?.Invoke();
     }
+
+#if UNITY_EDITOR
+    float appliedDuration;
+
+    // Retuning the shift length mid-playtest is the whole point of it being a field, so
+    // move the running clock by however much the length changed instead of waiting for
+    // the next shift. Re-opens the doors if the shift was over and has just been extended.
+    void OnValidate()
+    {
+        if (!Application.isPlaying || !IsShiftActive) return;
+
+        float delta = shiftDurationSeconds - appliedDuration;
+        if (Mathf.Approximately(delta, 0f)) return;
+
+        appliedDuration = shiftDurationSeconds;
+        TimeRemaining = Mathf.Max(0f, TimeRemaining + delta);
+
+        if (TimeRemaining > 0f && !CustomersAllowed) SetCustomersAllowed(true);
+        if (TimeRemaining <= 0f && CustomersAllowed) SetCustomersAllowed(false);
+
+        ShiftStateChanged?.Invoke();
+    }
+#endif
 
     void SetCustomersAllowed(bool allowed)
     {

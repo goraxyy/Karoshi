@@ -51,6 +51,9 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
         }
     }
 
+    // The player, found once at spawn. Read by CustomerRequest while talking and escorting.
+    public Transform PlayerTransform => player;
+
     // How many customers are queued at the till right now — the shift can't be
     // closed while anyone is still waiting to be served.
     public static int WaitingCount { get; private set; }
@@ -59,8 +62,11 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
 
     Action onDespawn;
     OutlineHighlight outline;
+    CustomerRequest request;
     Transform player;
     bool served;
+    bool hovered;
+    bool forcedHighlight;
     readonly List<Item> basket = new List<Item>();
 
     void Awake()
@@ -69,6 +75,7 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
             agent = GetComponent<NavMeshAgent>();
 
         outline = GetComponent<OutlineHighlight>();
+        request = GetComponent<CustomerRequest>();
 
         GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
         if (playerObject != null)
@@ -115,6 +122,11 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
 
             TakeItemFromNearbyShelf();
 
+            // Some shoppers can't find the next thing on their list and stop to ask.
+            // The request owns the customer until it is resolved, so shopping waits here.
+            if (request != null)
+                yield return request.Run();
+
             yield return new WaitForSeconds(browseTime * 0.5f);
 
             if (i == binAfterShelf)
@@ -153,8 +165,13 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
     void FacePlayer()
     {
         if (player == null) return;
+        FaceTowards(player.position);
+    }
 
-        Vector3 direction = player.position - transform.position;
+    // Turn to look at a point, smoothly and without tipping over.
+    public void FaceTowards(Vector3 point)
+    {
+        Vector3 direction = point - transform.position;
         direction.y = 0f;
         if (direction.sqrMagnitude < 0.01f) return;
 
@@ -367,6 +384,9 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
 
     public void Interact(PlayerInteract player)
     {
+        // A customer asking for directions answers E before the till does.
+        if (request != null && request.TryTalk()) return;
+
         if (!IsWaitingToBeServed) return;
 
         served = true;
@@ -374,19 +394,38 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
 
     public string GetPrompt()
     {
+        if (request != null)
+        {
+            string asking = request.GetPrompt();
+            if (!string.IsNullOrEmpty(asking)) return asking;
+        }
+
         return IsWaitingToBeServed ? "Serve customer" : string.Empty;
     }
 
     public void OnHoverEnter()
     {
-        if (outline != null)
-            outline.SetHighlighted(true);
+        hovered = true;
+        ApplyHighlight();
     }
 
     public void OnHoverExit()
     {
+        hovered = false;
+        ApplyHighlight();
+    }
+
+    // Held on while the customer is waiting for help, so looking away doesn't clear it.
+    public void SetForcedHighlight(bool on)
+    {
+        forcedHighlight = on;
+        ApplyHighlight();
+    }
+
+    void ApplyHighlight()
+    {
         if (outline != null)
-            outline.SetHighlighted(false);
+            outline.SetHighlighted(hovered || forcedHighlight);
     }
 
     void Despawn()
