@@ -14,7 +14,7 @@ public class TaskListUI : MonoBehaviour
     public TextMeshProUGUI text;
 
     [Header("Input")]
-    public KeyCode toggleKey = KeyCode.F;
+    public KeyCode toggleKey = KeyCode.C;
 
     [Header("Appearance")]
     public string headerWhenIdle = "OFF SHIFT";

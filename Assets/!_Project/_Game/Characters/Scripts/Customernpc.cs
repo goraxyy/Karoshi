@@ -51,16 +51,26 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
         }
     }
 
+    // The player, found once at spawn. Read by CustomerRequest while talking and escorting.
+    public Transform PlayerTransform => player;
+
     // How many customers are queued at the till right now — the shift can't be
     // closed while anyone is still waiting to be served.
     public static int WaitingCount { get; private set; }
 
     bool isWaitingToBeServed;
 
+    // Nothing shops in the dark: a blackout parks every customer where they stand and
+    // stops their timers until the breakers go back on.
+    bool isFrozen;
+
     Action onDespawn;
     OutlineHighlight outline;
+    CustomerRequest request;
     Transform player;
     bool served;
+    bool hovered;
+    bool forcedHighlight;
     readonly List<Item> basket = new List<Item>();
 
     void Awake()
@@ -69,6 +79,7 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
             agent = GetComponent<NavMeshAgent>();
 
         outline = GetComponent<OutlineHighlight>();
+        request = GetComponent<CustomerRequest>();
 
         GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
         if (playerObject != null)
@@ -78,6 +89,37 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
     void Start()
     {
         StartCoroutine(RunRoutine());
+    }
+
+    void OnEnable()
+    {
+        PowerSystem.PowerChanged += OnPowerChanged;
+        ApplyFreeze(!PowerSystem.PowerOn);
+    }
+
+    void OnDisable()
+    {
+        PowerSystem.PowerChanged -= OnPowerChanged;
+    }
+
+    void OnPowerChanged(bool powered) => ApplyFreeze(!powered);
+
+    void ApplyFreeze(bool frozen)
+    {
+        isFrozen = frozen;
+        if (agent != null && agent.isOnNavMesh) agent.isStopped = frozen;
+    }
+
+    // WaitForSeconds keeps counting through a blackout; this doesn't, so a shopper
+    // picks its routine up exactly where it left off when the lights return.
+    IEnumerator Wait(float seconds)
+    {
+        float left = seconds;
+        while (left > 0f)
+        {
+            if (!isFrozen) left -= Time.deltaTime;
+            yield return null;
+        }
     }
 
     // Called by CustomerSpawner right after Instantiate to hand over this run's route.
@@ -111,11 +153,16 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
 
             // Browse for a moment, then take something off the shelf.
             float browseTime = UnityEngine.Random.Range(shelfStayDurationRange.x, shelfStayDurationRange.y);
-            yield return new WaitForSeconds(browseTime * 0.5f);
+            yield return Wait(browseTime * 0.5f);
 
             TakeItemFromNearbyShelf();
 
-            yield return new WaitForSeconds(browseTime * 0.5f);
+            // Some shoppers can't find the next thing on their list and stop to ask.
+            // The request owns the customer until it is resolved, so shopping waits here.
+            if (request != null)
+                yield return request.Run();
+
+            yield return Wait(browseTime * 0.5f);
 
             if (i == binAfterShelf)
                 yield return VisitTrashcan();
@@ -133,7 +180,7 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
     {
         if (!waitForPlayerToServe)
         {
-            yield return new WaitForSeconds(UnityEngine.Random.Range(cashierWaitDurationRange.x, cashierWaitDurationRange.y));
+            yield return Wait(UnityEngine.Random.Range(cashierWaitDurationRange.x, cashierWaitDurationRange.y));
             yield break;
         }
 
@@ -153,8 +200,13 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
     void FacePlayer()
     {
         if (player == null) return;
+        FaceTowards(player.position);
+    }
 
-        Vector3 direction = player.position - transform.position;
+    // Turn to look at a point, smoothly and without tipping over.
+    public void FaceTowards(Vector3 point)
+    {
+        Vector3 direction = point - transform.position;
         direction.y = 0f;
         if (direction.sqrMagnitude < 0.01f) return;
 
@@ -190,7 +242,7 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
         if (!HasLineOfSight(can.transform))
             yield break;
 
-        yield return new WaitForSeconds(trashcanUseSeconds);
+        yield return Wait(trashcanUseSeconds);
 
         if (can != null) can.RegisterUse();
     }
@@ -355,9 +407,12 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
         float elapsed = 0f;
         while (agent.pathPending || agent.remainingDistance > agent.stoppingDistance + arriveDistance)
         {
-            elapsed += Time.deltaTime;
-            if (elapsed >= stuckTimeout)
-                break;
+            // Standing still in a blackout isn't being stuck, so the timer holds too.
+            if (!isFrozen)
+            {
+                elapsed += Time.deltaTime;
+                if (elapsed >= stuckTimeout) break;
+            }
 
             yield return null;
         }
@@ -367,6 +422,9 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
 
     public void Interact(PlayerInteract player)
     {
+        // A customer asking for directions answers E before the till does.
+        if (request != null && request.TryTalk()) return;
+
         if (!IsWaitingToBeServed) return;
 
         served = true;
@@ -374,19 +432,38 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
 
     public string GetPrompt()
     {
+        if (request != null)
+        {
+            string asking = request.GetPrompt();
+            if (!string.IsNullOrEmpty(asking)) return asking;
+        }
+
         return IsWaitingToBeServed ? "Serve customer" : string.Empty;
     }
 
     public void OnHoverEnter()
     {
-        if (outline != null)
-            outline.SetHighlighted(true);
+        hovered = true;
+        ApplyHighlight();
     }
 
     public void OnHoverExit()
     {
+        hovered = false;
+        ApplyHighlight();
+    }
+
+    // Held on while the customer is waiting for help, so looking away doesn't clear it.
+    public void SetForcedHighlight(bool on)
+    {
+        forcedHighlight = on;
+        ApplyHighlight();
+    }
+
+    void ApplyHighlight()
+    {
         if (outline != null)
-            outline.SetHighlighted(false);
+            outline.SetHighlighted(hovered || forcedHighlight);
     }
 
     void Despawn()

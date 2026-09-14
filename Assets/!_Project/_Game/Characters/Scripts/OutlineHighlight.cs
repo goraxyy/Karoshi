@@ -25,6 +25,10 @@ public class OutlineHighlight : MonoBehaviour
              "frame rather than the products standing on it.")]
     public bool includeItems = false;
 
+    // The Item on this object, if it is one. Stock belonging to something else is what
+    // the filter below is for; an item outlining its own mesh is not.
+    Item ownItem;
+
     readonly List<GameObject> outlineObjects = new List<GameObject>();
     bool isHighlighted;
     bool built;
@@ -33,6 +37,8 @@ public class OutlineHighlight : MonoBehaviour
     {
         if (built) return;
         built = true;
+
+        ownItem = GetComponent<Item>();
 
         if (outlineMaterial == null)
         {
@@ -62,8 +68,10 @@ public class OutlineHighlight : MonoBehaviour
             if (filter.sharedMesh == null) continue;
             if (filter.GetComponent<MeshRenderer>() == null) continue;
 
-            // Products on a shelf are their own objects — highlight the fixture, not the stock.
-            if (!includeItems && filter.GetComponentInParent<Item>() != null) continue;
+            // Products on a shelf are their own objects — highlight the fixture, not the
+            // stock. An item highlighting itself is a different case, so only skip meshes
+            // that belong to some *other* Item.
+            if (!includeItems && BelongsToAnotherItem(filter.transform)) continue;
 
             // A hull wider than the part itself swallows it, so cap the expansion at a
             // quarter of the thinnest world-space dimension of this particular piece.
@@ -85,7 +93,7 @@ public class OutlineHighlight : MonoBehaviour
 
         foreach (Renderer renderer in renderers)
         {
-            if (!includeItems && renderer.GetComponentInParent<Item>() != null) continue;
+            if (!includeItems && BelongsToAnotherItem(renderer.transform)) continue;
             if (renderer.GetComponent<MeshFilter>() == null) continue;
 
             Bounds b = renderer.bounds;   // world space
@@ -109,6 +117,12 @@ public class OutlineHighlight : MonoBehaviour
 
         CreateShell(transform, cube, local.center, Quaternion.identity, local.size,
                     gameObject.layer, CreateMaterial(outlineWidth));
+    }
+
+    bool BelongsToAnotherItem(Transform part)
+    {
+        Item item = part.GetComponentInParent<Item>();
+        return item != null && item != ownItem;
     }
 
     void CreateShell(Transform parent, Mesh mesh, Vector3 localPosition, Quaternion localRotation,

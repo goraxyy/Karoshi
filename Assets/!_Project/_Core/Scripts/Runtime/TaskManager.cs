@@ -12,7 +12,7 @@ using UnityEngine;
 // The shift can only be clocked out once all three read complete.
 public class TaskManager : MonoBehaviour
 {
-    public enum TaskKind { Mop, Trash, Stock, Serve }
+    public enum TaskKind { Mop, Trash, Stock, Serve, Directions }
 
     public readonly struct ShiftTask
     {
@@ -69,7 +69,12 @@ public class TaskManager : MonoBehaviour
     public int CustomersWaiting => CustomerNPC.WaitingCount;
     public bool AllCustomersServed => CustomersWaiting == 0;
 
-    public bool AllComplete => MopQuotaMet && ShelvesStocked && TrashEmpty && AllCustomersServed;
+    // Shoppers who stopped to ask where something is and haven't been dealt with.
+    public int CustomersAsking => CustomerRequest.PendingCount;
+    public bool AllDirectionsGiven => CustomersAsking == 0;
+
+    public bool AllComplete => MopQuotaMet && ShelvesStocked && TrashEmpty
+                            && AllCustomersServed && AllDirectionsGiven;
     public bool HasTasks => ShiftRunning;
 
     public IEnumerable<ShiftTask> Tasks
@@ -87,6 +92,13 @@ public class TaskManager : MonoBehaviour
 
             string serveDetail = CustomersWaiting > 0 ? $"{CustomersWaiting} waiting" : string.Empty;
             yield return new ShiftTask(TaskKind.Serve, "Serve the customers", serveDetail, AllCustomersServed);
+
+            // Unlike the others this one is not a standing job. It appears only while
+            // somebody is actually waiting on an answer and disappears once they aren't,
+            // rather than sitting in the list struck through.
+            if (CustomersAsking > 0)
+                yield return new ShiftTask(TaskKind.Directions, "Help customers find things",
+                    $"{CustomersAsking} asking", false);
         }
     }
 
