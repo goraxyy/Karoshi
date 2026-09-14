@@ -164,7 +164,7 @@ public class CustomerRequest : MonoBehaviour
 
         originalStoppingDistance = agent.stoppingDistance;
         agent.stoppingDistance = followStandoff;
-        agent.isStopped = false;
+        agent.isStopped = !PowerSystem.PowerOn;   // don't walk off mid-blackout
 
         ShowEscortMarkers();
 

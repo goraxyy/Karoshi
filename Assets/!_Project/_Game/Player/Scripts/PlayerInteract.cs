@@ -35,7 +35,27 @@ public class PlayerInteract : MonoBehaviour
     public LayerMask interactLayer;
 
     [Header("Input")]
+    public KeyCode interactKey = KeyCode.E;
     public KeyCode dropKey = KeyCode.Q;
+
+    [Header("Dropping and throwing")]
+    [Tooltip("A Q shorter than this just puts the item down; longer winds up a throw.")]
+    public float tapThreshold = 0.15f;
+
+    [Tooltip("Holding Q this long winds the throw up to full power.")]
+    public float throwChargeTime = 1.1f;
+
+    [Tooltip("Speed of the weakest throw, the moment a tap becomes a hold.")]
+    public float minThrowSpeed = 3f;
+
+    [Tooltip("Speed of a fully wound-up throw. The charge is capped here.")]
+    public float maxThrowSpeed = 13f;
+
+    [Tooltip("Tumble put on a thrown item, scaled by the charge.")]
+    public float throwSpin = 3f;
+
+    // 0 while the key is untouched, ramping to 1 at full power — for a charge meter.
+    public float ThrowCharge01 { get; private set; }
 
     [HideInInspector] public CarrySlot carrySlot;
     [HideInInspector] public PlayerTools tools;
@@ -67,13 +87,53 @@ public class PlayerInteract : MonoBehaviour
         if (HandleHoldInteraction())
             return;   // a hold is in progress; don't also fire tap interactions
 
-        // E is purely "use what I'm looking at".
-        if (Input.GetKeyDown(KeyCode.E) && currentTarget != null)
-            currentTarget.Interact(this);
+        // E uses whatever is under the crosshair; with nothing there it falls through to
+        // the thing in your hand, which is how the torch is switched on and off.
+        if (Input.GetKeyDown(interactKey))
+        {
+            if (currentTarget != null) currentTarget.Interact(this);
+            else UseHeldItem();
+        }
 
-        // Q always drops, whether or not something is under the crosshair.
+        HandleDropAndThrow();
+    }
+
+    // Tap Q to put an item down, hold it to wind up a throw.
+    void HandleDropAndThrow()
+    {
         if (Input.GetKeyDown(dropKey))
-            DropHeld();
+        {
+            dropHeldSince = Time.time;
+            ThrowCharge01 = 0f;
+        }
+
+        if (Input.GetKey(dropKey) && dropHeldSince >= 0f)
+        {
+            float winding = Time.time - dropHeldSince - tapThreshold;
+            ThrowCharge01 = Mathf.Clamp01(winding / Mathf.Max(0.01f, throwChargeTime - tapThreshold));
+        }
+
+        if (Input.GetKeyUp(dropKey) && dropHeldSince >= 0f)
+        {
+            float held = Time.time - dropHeldSince;
+            dropHeldSince = -1f;
+
+            float speed = held < tapThreshold
+                ? 0f
+                : Mathf.Lerp(minThrowSpeed, maxThrowSpeed, ThrowCharge01);
+
+            DropHeld(speed, ThrowCharge01);
+            ThrowCharge01 = 0f;
+        }
+    }
+
+    // Nothing under the crosshair, so the item in hand gets the key instead.
+    void UseHeldItem()
+    {
+        if (carrySlot == null || !carrySlot.IsCarrying) return;
+
+        Flashlight torch = carrySlot.currentItem.GetComponent<Flashlight>();
+        if (torch != null) torch.Toggle();
     }
 
     void HandleSlotSwitching()
@@ -120,7 +180,9 @@ public class PlayerInteract : MonoBehaviour
     }
 
     // Q: put down whatever is in hand — a bulky tool first, otherwise the active inventory item.
-    void DropHeld()
+    float dropHeldSince = -1f;
+
+    void DropHeld(float throwSpeed, float charge)
     {
         if (tools != null && tools.IsHolding)
         {
@@ -131,10 +193,23 @@ public class PlayerInteract : MonoBehaviour
             return;
         }
 
-        // Everything else just goes on the floor. Tools that belong somewhere are
-        // recalled by looking at their snap point and pressing E, not by dropping.
-        if (carrySlot != null && carrySlot.IsCarrying)
-            carrySlot.Drop();
+        // Everything else gets tossed out in front of you. Tools that belong somewhere
+        // are recalled by looking at their snap point and pressing E, not by dropping.
+        if (carrySlot == null || !carrySlot.IsCarrying) return;
+
+        Item dropped = carrySlot.Drop();
+        if (dropped == null) return;
+
+        var body = dropped.GetComponent<Rigidbody>();
+        if (body == null || throwSpeed <= 0f) return;
+
+        // Start it clear of the player so it doesn't immediately collide with them.
+        body.position = rayOrigin.position + rayOrigin.forward * 0.6f;
+
+        // Set the velocity rather than adding a force: AddForce waits for the next
+        // physics step, and the item has only just stopped being kinematic.
+        body.linearVelocity = rayOrigin.forward * throwSpeed;
+        body.angularVelocity = rayOrigin.right * throwSpin * charge;
     }
 
     // Returns true while a hold-to-use action (mopping) is running.

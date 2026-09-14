@@ -9,7 +9,8 @@ public enum ItemType
     Chips,
     Mop,      // a tool rather than stock, so it never matches a shelf slot
     Stock,    // the restocking crate — same, it's carried but never shelved
-    TrashBag  // carried out to the container, never shelved
+    TrashBag, // carried out to the container, never shelved
+    Flashlight // a tool as well — carried and dropped, never shelved
 }
 
 [RequireComponent(typeof(Rigidbody))]

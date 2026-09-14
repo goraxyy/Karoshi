@@ -32,10 +32,20 @@ public class BurnoutSystem : MonoBehaviour
 
     [Header("Vision")]
     public Volume globalVolume;
-    [Tooltip("Vignette while fully rested.")]
-    public float restedVignette = 0.15f;
+
+    [Range(0f, 1f)]
+    [Tooltip("Your sight is untouched until energy falls to this. 0.5 = half the bar.")]
+    public float fadeStartEnergy = 0.5f;
+
+    [Tooltip("Vignette above the threshold — normally none at all.")]
+    public float restedVignette = 0f;
+
     [Tooltip("Vignette when completely burnt out.")]
-    public float burntOutVignette = 0.55f;
+    public float burntOutVignette = 0.85f;
+
+    [Range(0.01f, 1f)]
+    [Tooltip("Lower is a harder edge to the darkness creeping in.")]
+    public float vignetteSmoothness = 0.28f;
 
     public float Energy01 => Mathf.Clamp01(energy);
 
@@ -63,6 +73,7 @@ public class BurnoutSystem : MonoBehaviour
                 vignette.active = true;
                 vignette.intensity.overrideState = true;
                 vignette.color.overrideState = true;
+                vignette.smoothness.overrideState = true;
                 vignette.color.value = Color.black;
             }
             else
@@ -103,8 +114,12 @@ public class BurnoutSystem : MonoBehaviour
     {
         if (vignette == null) return;
 
-        // Screen edges close in as the bar empties.
-        vignette.intensity.value = Mathf.Lerp(burntOutVignette, restedVignette, Energy01);
+        // Nothing happens while you are over the threshold; past it the dark closes
+        // in fast, so the second half of a shift is where you feel it.
+        float fade = Mathf.InverseLerp(fadeStartEnergy, 0f, Energy01);
+
+        vignette.intensity.value = Mathf.Lerp(restedVignette, burntOutVignette, fade);
+        vignette.smoothness.value = vignetteSmoothness;
     }
 
     public void SetChaseState(bool chasing)

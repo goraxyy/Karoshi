@@ -60,6 +60,10 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
 
     bool isWaitingToBeServed;
 
+    // Nothing shops in the dark: a blackout parks every customer where they stand and
+    // stops their timers until the breakers go back on.
+    bool isFrozen;
+
     Action onDespawn;
     OutlineHighlight outline;
     CustomerRequest request;
@@ -85,6 +89,37 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
     void Start()
     {
         StartCoroutine(RunRoutine());
+    }
+
+    void OnEnable()
+    {
+        PowerSystem.PowerChanged += OnPowerChanged;
+        ApplyFreeze(!PowerSystem.PowerOn);
+    }
+
+    void OnDisable()
+    {
+        PowerSystem.PowerChanged -= OnPowerChanged;
+    }
+
+    void OnPowerChanged(bool powered) => ApplyFreeze(!powered);
+
+    void ApplyFreeze(bool frozen)
+    {
+        isFrozen = frozen;
+        if (agent != null && agent.isOnNavMesh) agent.isStopped = frozen;
+    }
+
+    // WaitForSeconds keeps counting through a blackout; this doesn't, so a shopper
+    // picks its routine up exactly where it left off when the lights return.
+    IEnumerator Wait(float seconds)
+    {
+        float left = seconds;
+        while (left > 0f)
+        {
+            if (!isFrozen) left -= Time.deltaTime;
+            yield return null;
+        }
     }
 
     // Called by CustomerSpawner right after Instantiate to hand over this run's route.
@@ -118,7 +153,7 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
 
             // Browse for a moment, then take something off the shelf.
             float browseTime = UnityEngine.Random.Range(shelfStayDurationRange.x, shelfStayDurationRange.y);
-            yield return new WaitForSeconds(browseTime * 0.5f);
+            yield return Wait(browseTime * 0.5f);
 
             TakeItemFromNearbyShelf();
 
@@ -127,7 +162,7 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
             if (request != null)
                 yield return request.Run();
 
-            yield return new WaitForSeconds(browseTime * 0.5f);
+            yield return Wait(browseTime * 0.5f);
 
             if (i == binAfterShelf)
                 yield return VisitTrashcan();
@@ -145,7 +180,7 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
     {
         if (!waitForPlayerToServe)
         {
-            yield return new WaitForSeconds(UnityEngine.Random.Range(cashierWaitDurationRange.x, cashierWaitDurationRange.y));
+            yield return Wait(UnityEngine.Random.Range(cashierWaitDurationRange.x, cashierWaitDurationRange.y));
             yield break;
         }
 
@@ -207,7 +242,7 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
         if (!HasLineOfSight(can.transform))
             yield break;
 
-        yield return new WaitForSeconds(trashcanUseSeconds);
+        yield return Wait(trashcanUseSeconds);
 
         if (can != null) can.RegisterUse();
     }
@@ -372,9 +407,12 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
         float elapsed = 0f;
         while (agent.pathPending || agent.remainingDistance > agent.stoppingDistance + arriveDistance)
         {
-            elapsed += Time.deltaTime;
-            if (elapsed >= stuckTimeout)
-                break;
+            // Standing still in a blackout isn't being stuck, so the timer holds too.
+            if (!isFrozen)
+            {
+                elapsed += Time.deltaTime;
+                if (elapsed >= stuckTimeout) break;
+            }
 
             yield return null;
         }
