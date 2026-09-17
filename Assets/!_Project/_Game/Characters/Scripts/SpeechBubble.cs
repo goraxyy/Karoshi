@@ -13,13 +13,17 @@ public class SpeechBubble : MonoBehaviour
     public Transform anchor;
     public float height = 2.1f;
 
+    [Tooltip("Metres out along the anchor's facing direction, so the caption hangs in " +
+             "front of the character instead of on top of it.")]
+    public float forwardOffset = 0.75f;
+
     RectTransform panel;
     TextMeshProUGUI label;
     Camera view;
 
     readonly StringBuilder builder = new StringBuilder();
 
-    public static SpeechBubble Create(Transform anchor, float height)
+    public static SpeechBubble Create(Transform anchor, float height, float forwardOffset = 0.75f)
     {
         GameObject root = new GameObject("SpeechBubble");
 
@@ -67,6 +71,7 @@ public class SpeechBubble : MonoBehaviour
         SpeechBubble bubble = root.AddComponent<SpeechBubble>();
         bubble.anchor = anchor;
         bubble.height = height;
+        bubble.forwardOffset = forwardOffset;
         bubble.panel = panelRect;
         bubble.label = text;
         bubble.view = Camera.main;
@@ -120,7 +125,15 @@ public class SpeechBubble : MonoBehaviour
             if (view == null) return;
         }
 
-        transform.position = anchor.position + Vector3.up * height;
+        // Out in front of whoever is speaking. Customers turn to face the player while they
+        // talk, so their forward vector is the direction the caption should sit in.
+        Vector3 facing = anchor.forward;
+        facing.y = 0f;
+        if (facing.sqrMagnitude < 0.0001f) facing = Vector3.forward;
+
+        transform.position = anchor.position
+                           + Vector3.up * height
+                           + facing.normalized * forwardOffset;
 
         // Face the camera, upright — billboarding by rotation, not by LookAt, so the
         // caption never rolls when the player tilts their view.

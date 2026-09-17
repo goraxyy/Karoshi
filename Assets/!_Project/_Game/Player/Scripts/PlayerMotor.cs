@@ -12,7 +12,7 @@ public class PlayerMotor : MonoBehaviour
 
     [Header("Look")]
     public Transform cameraRoot;
-    public float mouseSensitivity = 2f;
+    public float mouseSensitivity = 4f;
     public float maxLookAngle = 80f;
 
     [Header("Crouch")]
@@ -65,8 +65,10 @@ public class PlayerMotor : MonoBehaviour
         if (isGrounded && velocity.y < 0f)
             velocity.y = -2f;
 
-        float horizontal = Input.GetAxisRaw("Horizontal");
-        float vertical = Input.GetAxisRaw("Vertical");
+        // Read WASD directly rather than through the Horizontal/Vertical axes: those also
+        // carry the arrow keys, which belong to menus now.
+        float horizontal = Axis(KeyCode.D, KeyCode.A);
+        float vertical = Axis(KeyCode.W, KeyCode.S);
         Vector3 moveDir = (transform.right * horizontal + transform.forward * vertical).normalized;
 
         float speed = walkSpeed;
@@ -82,6 +84,14 @@ public class PlayerMotor : MonoBehaviour
 
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
+    }
+
+    static float Axis(KeyCode positive, KeyCode negative)
+    {
+        float value = 0f;
+        if (Input.GetKey(positive)) value += 1f;
+        if (Input.GetKey(negative)) value -= 1f;
+        return value;
     }
 
     void HandleCrouch()
