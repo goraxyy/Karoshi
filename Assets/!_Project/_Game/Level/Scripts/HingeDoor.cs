@@ -8,6 +8,11 @@ public class HingeDoor : MonoBehaviour
     public float openSpeed = 3f;   // Swing speed
     public float interactRange = 3f; // Max distance to interact
 
+    [Header("Audio")]
+    public AudioClip openCreak;
+    public AudioClip closeCreak;
+    [Range(0f, 1f)] public float creakVolume = 0.8f;
+
     private Quaternion closedRot;
     private Quaternion openRot;
     private bool isOpen = false;
@@ -40,6 +45,9 @@ public class HingeDoor : MonoBehaviour
 
             StartCoroutine(RotateDoor(isOpen ? closedRot : openRot));
             isOpen = !isOpen;
+
+            // isOpen has already flipped, so it now describes the swing that just started.
+            OneShotAudio.PlayAt(isOpen ? openCreak : closeCreak, transform.position, creakVolume);
         }
 
         // Optional: show a prompt when in range

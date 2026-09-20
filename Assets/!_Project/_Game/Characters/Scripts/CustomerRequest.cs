@@ -25,7 +25,10 @@ public class CustomerRequest : MonoBehaviour
     [Header("Talking")]
     [Tooltip("How far the player can stand and still hold the conversation.")]
     public float talkRange = 5f;
-    public float bubbleHeight = 2.15f;
+    public float bubbleHeight = 1.65f;
+
+    [Tooltip("How far in front of the customer the bubble hangs.")]
+    public float bubbleForward = 0.75f;
 
     [Tooltip("{0} is the product name.")]
     public string[] questionTemplates =
@@ -40,7 +43,6 @@ public class CustomerRequest : MonoBehaviour
     public string declineLabel = "Sorry, I'm busy";
     public string thanksLine = "Oh, there it is. Thanks!";
     public string declineLine = "...right. Thanks anyway.";
-    public string waitingLine = "?";
     public string followingLine = "Right behind you.";
     public string strandedLine = "Hey - where did you go?";
 
@@ -54,10 +56,18 @@ public class CustomerRequest : MonoBehaviour
     [Tooltip("Size of the spot in front of the shelf the customer has to walk into.")]
     public float arriveRadius = 1.6f;
 
-    [Header("Colours")]
+    [Header("Markers")]
     public Color radiusColour = new Color(1f, 0.84f, 0.1f, 0.30f);
     public Color targetColour = new Color(0.35f, 1f, 0.45f, 0.35f);
-    public Color beaconColour = new Color(1f, 0.84f, 0.1f, 0.95f);
+
+    [Tooltip("The cone over the shelf they are looking for.")]
+    public Color shelfConeColour = new Color(0.25f, 1f, 0.40f, 0.95f);
+    public float shelfConeSize = 0.35f;
+
+    [Tooltip("The cone over a customer who is waiting to be spoken to.")]
+    public Color customerConeColour = new Color(1f, 0.84f, 0.1f, 0.95f);
+    public float customerConeSize = 0.28f;
+    public float customerConeHeight = 2.25f;
 
     // How many customers are waiting on an answer right now — the directions task reads this.
     public static int PendingCount { get; private set; }
@@ -72,6 +82,7 @@ public class CustomerRequest : MonoBehaviour
     CustomerNPC npc;
     NavMeshAgent agent;
     SpeechBubble bubble;
+    GuideMarker askMarker;
     GuideMarker radiusRing;
     GuideMarker targetRing;
     GuideMarker beacon;
@@ -105,6 +116,7 @@ public class CustomerRequest : MonoBehaviour
         if (!talkRequested) { Finish(strandedLine, 0f); yield break; }
 
         // 2. The conversation: two options, arrows to move, E to pick.
+        ClearAskMarker();
         SetStage(Stage.Talking);
         yield return null;                 // don't let the E that opened this also confirm it
 
@@ -119,8 +131,9 @@ public class CustomerRequest : MonoBehaviour
 
             npc.FaceTowards(talker.position);
 
-            if (Pressed(KeyCode.UpArrow) || Pressed(KeyCode.W)) selected = 0;
-            if (Pressed(KeyCode.DownArrow) || Pressed(KeyCode.S)) selected = 1;
+            // Arrows only — W/S are movement keys and would pick an option while walking.
+            if (Pressed(KeyCode.UpArrow)) selected = 0;
+            if (Pressed(KeyCode.DownArrow)) selected = 1;
             if (Pressed(KeyCode.E) || Pressed(KeyCode.Return)) confirmed = true;
             if (!PlayerWithin(talkRange * 1.6f)) abandoned = true;
 
@@ -296,8 +309,11 @@ public class CustomerRequest : MonoBehaviour
         StopWalking();
         npc.SetForcedHighlight(true);
 
-        bubble = SpeechBubble.Create(transform, bubbleHeight);
-        bubble.Show(waitingLine);
+        bubble = SpeechBubble.Create(transform, bubbleHeight, bubbleForward);
+
+        // Nothing is said until the player asks — the cone overhead is the whole hint.
+        askMarker = GuideMarker.CreateBeaconOver(
+            "AskMarker", customerConeColour, customerConeSize, transform, customerConeHeight);
 
         SetStage(Stage.Asking);
     }
@@ -321,7 +337,7 @@ public class CustomerRequest : MonoBehaviour
             above = new Vector3(bounds.center.x, bounds.max.y + 0.85f, bounds.center.z);
         }
 
-        beacon = GuideMarker.CreateBeacon("EscortBeacon", beaconColour, 0.35f);
+        beacon = GuideMarker.CreateBeacon("EscortBeacon", shelfConeColour, shelfConeSize);
         beacon.transform.position = above;
         beacon.SetAnchor(above);
     }
@@ -360,6 +376,8 @@ public class CustomerRequest : MonoBehaviour
 
         npc.SetForcedHighlight(false);
 
+        ClearAskMarker();
+
         if (bubble != null) { Destroy(bubble.gameObject); bubble = null; }
         if (radiusRing != null) { Destroy(radiusRing.gameObject); radiusRing = null; }
         if (targetRing != null) { Destroy(targetRing.gameObject); targetRing = null; }
@@ -370,6 +388,13 @@ public class CustomerRequest : MonoBehaviour
             if (originalStoppingDistance > 0f) agent.stoppingDistance = originalStoppingDistance;
             agent.isStopped = false;
         }
+    }
+
+    void ClearAskMarker()
+    {
+        if (askMarker == null) return;
+        Destroy(askMarker.gameObject);
+        askMarker = null;
     }
 
     void StopWalking()

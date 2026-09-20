@@ -47,12 +47,27 @@ public class BurnoutSystem : MonoBehaviour
     [Tooltip("Lower is a harder edge to the darkness creeping in.")]
     public float vignetteSmoothness = 0.28f;
 
+    [Header("Blur")]
+    [Tooltip("Blur the view as well as darkening it. Uses Gaussian depth of field.")]
+    public bool blurWhenTired = true;
+
+    [Range(0.5f, 1.5f)]
+    [Tooltip("Blur radius when completely burnt out.")]
+    public float burntOutBlur = 1.3f;
+
+    [Tooltip("Distance at which blur begins when rested — far enough to be invisible.")]
+    public float restedBlurStart = 12f;
+
+    [Tooltip("Distance at which blur begins when burnt out. Small = everything is soft.")]
+    public float burntOutBlurStart = 0.6f;
+
     public float Energy01 => Mathf.Clamp01(energy);
 
     // The whole point of the mechanic: run out and you can't run.
     public bool CanSprint => energy > 0f;
 
     Vignette vignette;
+    DepthOfField depthOfField;
     ShiftManager shiftManager;
     PlayerMotor playerMotor;
     bool isInChase;
@@ -80,7 +95,29 @@ public class BurnoutSystem : MonoBehaviour
             {
                 Debug.LogWarning("No Vignette override on the Volume profile; vision fade is off.", this);
             }
+
+            SetUpBlur();
         }
+    }
+
+    void SetUpBlur()
+    {
+        if (!blurWhenTired) return;
+
+        // .profile is this Volume's own runtime copy, so adding the override when the
+        // profile hasn't got one costs nothing on disk and the project asset is untouched.
+        if (!globalVolume.profile.TryGet(out depthOfField))
+            depthOfField = globalVolume.profile.Add<DepthOfField>(true);
+
+        if (depthOfField == null) return;
+
+        depthOfField.active = false;                       // switched on once you tire
+        depthOfField.mode.overrideState = true;
+        depthOfField.mode.value = DepthOfFieldMode.Gaussian;
+        depthOfField.gaussianStart.overrideState = true;
+        depthOfField.gaussianEnd.overrideState = true;
+        depthOfField.gaussianMaxRadius.overrideState = true;
+        depthOfField.gaussianEnd.value = restedBlurStart;
     }
 
     void Update()
@@ -120,6 +157,28 @@ public class BurnoutSystem : MonoBehaviour
 
         vignette.intensity.value = Mathf.Lerp(restedVignette, burntOutVignette, fade);
         vignette.smoothness.value = vignetteSmoothness;
+
+        UpdateBlur(fade);
+    }
+
+    // Pulling the blur's start distance in toward the camera is what makes the whole
+    // view go soft rather than just the far wall.
+    void UpdateBlur(float fade)
+    {
+        if (depthOfField == null) return;
+
+        // Below a whisker of fade there is nothing to show, and an inactive override
+        // costs nothing in the frame.
+        if (fade <= 0.001f)
+        {
+            depthOfField.active = false;
+            return;
+        }
+
+        depthOfField.active = true;
+        depthOfField.gaussianStart.value = Mathf.Lerp(restedBlurStart, burntOutBlurStart, fade);
+        depthOfField.gaussianEnd.value = Mathf.Max(depthOfField.gaussianStart.value + 0.1f, restedBlurStart);
+        depthOfField.gaussianMaxRadius.value = Mathf.Lerp(0.5f, burntOutBlur, fade);
     }
 
     public void SetChaseState(bool chasing)

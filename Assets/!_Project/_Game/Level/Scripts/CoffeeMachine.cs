@@ -1,10 +1,11 @@
 using UnityEngine;
 
-// Refills the burnout bar. Goes on cooldown briefly after each cup.
+// Refills the burnout bar. Pour as many cups as you like: cooldownTime is 0 by default,
+// and only gates the machine if you deliberately dial one in.
 public class CoffeeMachine : HighlightInteractable
 {
-    [Tooltip("Seconds before another cup can be poured.")]
-    public float cooldownTime = 5f;
+    [Tooltip("Seconds before another cup can be poured. 0 means no waiting at all.")]
+    public float cooldownTime = 0f;
     public AudioClip pourSound;
 
     float lastUseTime = -999f;
@@ -16,7 +17,7 @@ public class CoffeeMachine : HighlightInteractable
         burnout = FindAnyObjectByType<BurnoutSystem>();
     }
 
-    bool OnCooldown => Time.time - lastUseTime < cooldownTime;
+    bool OnCooldown => cooldownTime > 0f && Time.time - lastUseTime < cooldownTime;
 
     public override void Interact(PlayerInteract player)
     {

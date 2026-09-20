@@ -34,6 +34,11 @@ public class PlayerInteract : MonoBehaviour
 
     public LayerMask interactLayer;
 
+    [Header("Audio")]
+    [Tooltip("Played whenever the player takes an item into their hands.")]
+    public AudioClip pickupSound;
+    [Range(0f, 1f)] public float pickupVolume = 0.8f;
+
     [Header("Input")]
     public KeyCode interactKey = KeyCode.E;
     public KeyCode dropKey = KeyCode.Q;
