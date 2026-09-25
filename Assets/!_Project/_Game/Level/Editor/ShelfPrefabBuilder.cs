@@ -296,6 +296,8 @@ public static class ShelfPrefabBuilder
                     snap.transform.localPosition = new Vector3(0f, ItemHalfHeight, 0f);
 
                     var slot = slotGO.AddComponent<ShelfSlot>();
+                    // Every facing starts as cereal; StoreLayoutBuilder gives it its
+                    // real section and product once the prefab is placed in the scene.
                     slot.requiredType = ItemType.Cereal;
                     slot.snapPoint = snap.transform;
                     slot.snapRotationOffset = Vector3.zero;

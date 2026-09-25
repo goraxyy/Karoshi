@@ -42,6 +42,6 @@ public class PickupInteractable : MonoBehaviour, IInteractable, IHoverable
 
     public string GetPrompt()
     {
-        return "Pick up " + (item != null ? item.type.ToString() : "item");
+        return "Pick up " + (item != null ? item.DisplayName : "item");
     }
 }

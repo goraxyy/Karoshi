@@ -25,23 +25,35 @@ public class CustomerRequest : MonoBehaviour
     [Header("Talking")]
     [Tooltip("How far the player can stand and still hold the conversation.")]
     public float talkRange = 5f;
-    public float bubbleHeight = 1.65f;
 
-    [Tooltip("How far in front of the customer the bubble hangs.")]
-    public float bubbleForward = 0.75f;
+    [Tooltip("Height of the bottom edge of the bubble above the floor. It sits down by " +
+             "the customer's shins and grows upward from there.")]
+    public float bubbleHeight = 0.25f;
 
-    [Tooltip("{0} is the product name.")]
+    [Tooltip("How far in front of the customer's legs the bubble hangs.")]
+    public float bubbleForward = 0.4f;
+
+    [Tooltip("{0} is the product. Both a named line - \"Pipisi Zero\" - and a loose one " +
+             "- \"a tin of Tunatastic\" - drop into these, so they all read as object " +
+             "phrases rather than \"the {0}\".")]
     public string[] questionTemplates =
     {
-        "Excuse me - where is the {0}?",
-        "Sorry, I can't find the {0} anywhere.",
-        "Hi! Which aisle has the {0}?",
-        "Do you still have any {0}?"
+        "Excuse me - I'm looking for {0}.",
+        "Sorry, I can't find {0} anywhere.",
+        "Hi! Do you still have {0}?",
+        "Excuse me - where do you keep {0}?",
+        "I've been round twice and I still can't see {0}."
     };
+
+    [Range(0f, 1f)]
+    [Tooltip("How often they ask for a whole section - \"where's the milk?\" - instead of " +
+             "naming the product they came in for.")]
+    public float sectionQuestionChance = 0.2f;
 
     public string acceptLabel = "Follow me";
     public string declineLabel = "Sorry, I'm busy";
-    public string thanksLine = "Oh, there it is. Thanks!";
+    [Tooltip("{0} is the product, so they can thank you for the right thing.")]
+    public string thanksLine = "Oh, {0}. There it is - thanks!";
     public string declineLine = "...right. Thanks anyway.";
     public string followingLine = "Right behind you.";
     public string strandedLine = "Hey - where did you go?";
@@ -91,6 +103,7 @@ public class CustomerRequest : MonoBehaviour
     Vector3 destination;
     ShelfUnit destinationShelf;
     string question;
+    string wanted;
     string[] options;
     bool talkRequested;
     bool counted;
@@ -152,7 +165,7 @@ public class CustomerRequest : MonoBehaviour
         //    reset by wandering off — walk back into the circle and it picks up again.
         yield return Escort();
 
-        Finish(thanksLine, 1.6f);
+        Finish(thanksLine.Contains("{0}") ? string.Format(thanksLine, wanted) : thanksLine, 1.6f);
     }
 
     IEnumerator WaitToBeAsked()
@@ -261,13 +274,24 @@ public class CustomerRequest : MonoBehaviour
 
             destination = hit.position;
             destinationShelf = slot.owner;
+            wanted = WantedFrom(slot);
             question = string.Format(
-                questionTemplates.Length > 0 ? questionTemplates[Random.Range(0, questionTemplates.Length)] : "Where is the {0}?",
-                ProductName(slot.requiredType));
+                questionTemplates.Length > 0 ? questionTemplates[Random.Range(0, questionTemplates.Length)] : "Where is {0}?",
+                wanted);
             return true;
         }
 
         return false;
+    }
+
+    // What they came in for. Taken from the facing itself rather than invented, so the
+    // shelf the beacon lands on really does stock the thing they asked about.
+    string WantedFrom(ShelfSlot slot)
+    {
+        if (Random.value < sectionQuestionChance)
+            return "the " + ProductCatalog.SectionName(slot.requiredType);
+
+        return slot.Label;
     }
 
     static ShelfSlot NearestSlotTo(Vector3 position, float radius)
@@ -285,19 +309,6 @@ public class CustomerRequest : MonoBehaviour
         }
 
         return nearest;
-    }
-
-    static string ProductName(ItemType type)
-    {
-        switch (type)
-        {
-            case ItemType.Cereal: return "cereal";
-            case ItemType.Soda: return "soda";
-            case ItemType.Bread: return "bread";
-            case ItemType.Milk: return "milk";
-            case ItemType.Chips: return "crisps";
-            default: return "that thing";
-        }
     }
 
     void Begin()
