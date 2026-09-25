@@ -20,6 +20,9 @@ public class PickupInteractable : MonoBehaviour, IInteractable, IHoverable
 
             if (player.carrySlot.TryPickup(item))
             {
+                // The clip lives on the player rather than on every item prefab.
+                OneShotAudio.PlayAt(player.pickupSound, transform.position, player.pickupVolume);
+
                 // Picked up — make sure the highlight doesn't linger in the player's hands.
                 if (outline != null) outline.SetHighlighted(false);
             }

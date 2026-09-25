@@ -18,6 +18,19 @@ public class Item : MonoBehaviour
 {
     public ItemType type;
 
+    [Header("Impact Sound")]
+    [Tooltip("Played when this lands on the floor, a shelf, or another item.")]
+    public AudioClip impactSound;
+
+    [Tooltip("Slower contacts than this are a nudge, not a knock, and stay silent.")]
+    public float impactMinSpeed = 1.2f;
+
+    [Tooltip("Contacts at or above this speed play at full volume.")]
+    public float impactLoudSpeed = 6f;
+
+    [Tooltip("One clatter per landing: a bouncing item makes several contacts in a row.")]
+    public float impactCooldown = 0.12f;
+
     [Header("Hold Offset")]
     public Vector3 holdPositionOffset = Vector3.zero;
     public Vector3 holdRotationOffset = Vector3.zero;
@@ -27,17 +40,46 @@ public class Item : MonoBehaviour
     [HideInInspector] public Vector3 shelfRotationOffset;
 
     Rigidbody rb;
-    Collider col;
+    Collider[] colliders;
+    float nextImpactTime;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
-        col = GetComponent<Collider>();
+
+        // Every collider, not just the one on the root. The mop keeps two more on its
+        // children, and leaving those live while carried let them swing across the
+        // crosshair as the player turned or strafed, re-targeting the mop in your hands.
+        colliders = GetComponentsInChildren<Collider>(true);
     }
 
     // No Update(): with thousands of items in a level, re-applying a transform every frame
     // for every item costs far more than applying it once when the state actually changes.
     // The Set* methods below do that, and OnValidate keeps the in-editor live tweaking.
+
+    void SetCollidersEnabled(bool on)
+    {
+        if (colliders == null) return;
+        for (int i = 0; i < colliders.Length; i++)
+            if (colliders[i] != null) colliders[i].enabled = on;
+    }
+
+    // Dropped, thrown, or knocked off a shelf — anything that actually strikes something.
+    // Held and shelved items are kinematic with their collider off, so they never get here.
+    void OnCollisionEnter(Collision collision)
+    {
+        if (impactSound == null || isCarried || isOnShelf) return;
+        if (Time.time < nextImpactTime) return;
+
+        float speed = collision.relativeVelocity.magnitude;
+        if (speed < impactMinSpeed) return;
+
+        nextImpactTime = Time.time + impactCooldown;
+
+        Vector3 where = collision.contactCount > 0 ? collision.GetContact(0).point : transform.position;
+        float loudness = Mathf.InverseLerp(impactMinSpeed, impactLoudSpeed, speed);
+        OneShotAudio.PlayAt(impactSound, where, Mathf.Lerp(0.3f, 1f, loudness));
+    }
 
     public void ApplyCarriedTransform()
     {
@@ -76,9 +118,8 @@ public class Item : MonoBehaviour
             rb.useGravity = !carried;
         }
 
-        // Collider disabled while held so it doesn't push the player
-        if (col != null)
-            col.enabled = !carried;
+        // Colliders disabled while held so it neither pushes the player nor re-targets itself
+        SetCollidersEnabled(!carried);
 
         if (carried && parent != null)
         {
@@ -105,9 +146,8 @@ public class Item : MonoBehaviour
             rb.useGravity = false;
         }
 
-        // Keep collider DISABLED on shelf — prevents pushing player
-        if (col != null)
-            col.enabled = false;
+        // Keep colliders DISABLED on shelf — prevents pushing player
+        SetCollidersEnabled(false);
 
         transform.SetParent(snapPoint);
         ApplyShelfTransform();
@@ -125,8 +165,7 @@ public class Item : MonoBehaviour
             rb.useGravity = false;
         }
 
-        if (col != null)
-            col.enabled = false;
+        SetCollidersEnabled(false);
 
         transform.SetParent(stashParent);
         transform.localPosition = Vector3.zero;

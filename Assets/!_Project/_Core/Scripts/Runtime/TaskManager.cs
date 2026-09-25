@@ -4,10 +4,10 @@ using UnityEngine;
 
 // The shift checklist.
 //
-// Mopping is a counted quota: clean the shift's allowance of spills (5, then 7, ...).
-// Restocking and the bin are simple states — either everything is stocked / the bin is
-// empty, or the task is open again. A state task un-checks itself the moment a customer
-// takes something off a shelf or uses the bin.
+// Every task is a simple state. Mopping, restocking and the bin are all "is it clean
+// right now?" — the task un-checks itself the moment a customer spills something, takes
+// something off a shelf, or uses the bin. Customers spill on a chance roll and there is
+// no ceiling on how many spills can be down at once.
 //
 // The shift can only be clocked out once all three read complete.
 public class TaskManager : MonoBehaviour
@@ -32,23 +32,16 @@ public class TaskManager : MonoBehaviour
         }
     }
 
-    [Header("Mopping quota")]
-    [Tooltip("How many spills must be mopped on the first shift.")]
-    public int baseMopQuota = 5;
-    [Tooltip("Added to the quota each following shift (5, 7, 9, ...).")]
-    public int mopQuotaGrowth = 2;
-
-    public int MopQuota { get; private set; }
-    public int MoppedThisShift { get; private set; }
     public bool ShiftRunning { get; private set; }
-
-    // Spills on the floor at once are capped at the same number as the quota.
-    public int MaxDirt => MopQuota;
 
     public event Action Changed;
 
     // ---- live world state ----
-    public bool MopQuotaMet => MoppedThisShift >= MopQuota;
+    // Spills currently on the floor. The job is done when there are none, however many
+    // there have been over the shift.
+    public int SpillsOutstanding => Dirt.ActiveCount;
+    public bool FloorClean => Dirt.ActiveCount == 0;
+
     public bool ShelvesStocked => ShelfUnit.NotFullCount == 0;
 
     public int TrashOutstanding
@@ -73,7 +66,7 @@ public class TaskManager : MonoBehaviour
     public int CustomersAsking => CustomerRequest.PendingCount;
     public bool AllDirectionsGiven => CustomersAsking == 0;
 
-    public bool AllComplete => MopQuotaMet && ShelvesStocked && TrashEmpty
+    public bool AllComplete => FloorClean && ShelvesStocked && TrashEmpty
                             && AllCustomersServed && AllDirectionsGiven;
     public bool HasTasks => ShiftRunning;
 
@@ -81,8 +74,9 @@ public class TaskManager : MonoBehaviour
     {
         get
         {
+            // No running total — just whether the floor needs attention at all.
             yield return new ShiftTask(TaskKind.Mop, "Mop up spills",
-                $"{Mathf.Min(MoppedThisShift, MopQuota)}/{MopQuota}", MopQuotaMet);
+                string.Empty, FloorClean);
 
             yield return new ShiftTask(TaskKind.Stock, "Restock the shelves",
                 string.Empty, ShelvesStocked);
@@ -105,8 +99,6 @@ public class TaskManager : MonoBehaviour
     // shiftNumber is 1-based: the first shift uses the base quota.
     public void BeginShift(int shiftNumber)
     {
-        MopQuota = Mathf.Max(1, baseMopQuota + mopQuotaGrowth * Mathf.Max(0, shiftNumber - 1));
-        MoppedThisShift = 0;
         ShiftRunning = true;
         NotifyChanged();
     }
@@ -114,13 +106,6 @@ public class TaskManager : MonoBehaviour
     public void EndShift()
     {
         ShiftRunning = false;
-        NotifyChanged();
-    }
-
-    // Counted by Dirt when a spill is fully mopped.
-    public void ReportMopped()
-    {
-        MoppedThisShift++;
         NotifyChanged();
     }
 

@@ -1,7 +1,7 @@
 using UnityEngine;
 
-// The skip out back. Its trigger volume swallows any trash bag dropped into it —
-// that's what actually clears the trash task.
+// The skip out back. A trash bag dropped into it stops counting against the trash task,
+// and is left lying in the skip rather than deleted.
 [RequireComponent(typeof(Collider))]
 public class TrashContainer : MonoBehaviour
 {
@@ -27,13 +27,13 @@ public class TrashContainer : MonoBehaviour
     void TryDispose(Collider other)
     {
         TrashBag bag = other.GetComponentInParent<TrashBag>();
-        if (bag == null) return;
+        if (bag == null || bag.IsDisposed) return;   // OnTriggerStay keeps firing otherwise
 
         // Ignore a bag still in the player's hands hovering over the skip.
         Item item = bag.GetComponent<Item>();
         if (item != null && item.isCarried) return;
 
         OneShotAudio.PlayAt(disposeSound, transform.position);
-        Destroy(bag.gameObject);   // OnDisable refreshes the task list
+        bag.MarkDisposed();   // refreshes the task list; the sack stays in the skip
     }
 }

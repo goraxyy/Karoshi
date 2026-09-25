@@ -33,6 +33,10 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
     public Vector2 cashierWaitDurationRange = new Vector2(4f, 10f); // used only when waitForPlayerToServe is false
     public float faceTurnSpeed = 6f;
 
+    [Tooltip("Register beep when the player serves this customer.")]
+    public AudioClip serveSound;
+    [Range(0f, 1f)] public float serveVolume = 0.9f;
+
     [Header("Movement")]
     public NavMeshAgent agent;
     public float arriveDistance = 0.3f;
@@ -283,15 +287,12 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
         return nearest;
     }
 
-    // Customers are messy: half the time taking something leaves a patch behind.
+    // Customers are messy: dirtChance of the time, taking something leaves a patch behind.
+    // That roll is the only thing gating it — there is no ceiling on spills underfoot.
     void DropDirt()
     {
         if (dirtPrefab == null) return;
         if (UnityEngine.Random.value > dirtChance) return;
-
-        // The shift allows only so much mess at once.
-        TaskManager tasks = TaskManager.Instance;
-        if (tasks != null && tasks.MaxDirt > 0 && Dirt.ActiveCount >= tasks.MaxDirt) return;
 
         Vector3 position = transform.position;
         if (NavMesh.SamplePosition(position, out NavMeshHit hit, 1.5f, NavMesh.AllAreas))
@@ -428,6 +429,7 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
         if (!IsWaitingToBeServed) return;
 
         served = true;
+        OneShotAudio.PlayAt(serveSound, transform.position, serveVolume);
     }
 
     public string GetPrompt()

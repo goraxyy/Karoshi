@@ -7,6 +7,11 @@ public class AutoDoubleDoor : MonoBehaviour
     public float slideSpeed = 3f;
     public float closeDelay = 2f;
 
+    [Header("Audio")]
+    [Tooltip("Shop chime, once each time the doors start opening.")]
+    public AudioClip openChime;
+    [Range(0f, 1f)] public float chimeVolume = 0.85f;
+
     private Transform leftDoor, rightDoor;
     private Vector3 leftClosed, rightClosed;
     private Vector3 leftOpen, rightOpen;
@@ -49,7 +54,14 @@ public class AutoDoubleDoor : MonoBehaviour
     {
         Debug.Log("Trigger entered by: " + other.name);
         playersInside++;
-        isOpen = true;
+
+        // Only on the closed -> open transition: a second body walking in behind the
+        // first shouldn't set the chime off again while the doors are already open.
+        if (!isOpen)
+        {
+            isOpen = true;
+            OneShotAudio.PlayAt(openChime, transform.position, chimeVolume);
+        }
     }
 
     void OnTriggerExit(Collider other)

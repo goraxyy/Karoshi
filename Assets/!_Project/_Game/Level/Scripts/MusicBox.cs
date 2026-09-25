@@ -17,6 +17,10 @@ using UnityEngine;
 public class MusicBox : HighlightInteractable
 {
     [Header("Track")]
+    [Tooltip("One of these is picked at random each time the radio starts from the top.")]
+    public AudioClip[] tracks;
+
+    [Tooltip("The record currently on. Chosen from the playlist at runtime.")]
     public AudioClip track;
 
     [Tooltip("Start the shift with the radio already on.")]
@@ -30,7 +34,7 @@ public class MusicBox : HighlightInteractable
     [Header("Mix")]
     [Range(0f, 1f)]
     [Tooltip("Volume of every ceiling speaker. Safe to drag while playing.")]
-    public float volume = 0.25f;
+    public float volume = 0.12f;
 
     [Min(0.1f)]
     [Tooltip("Right under a speaker it is at full volume out to this radius.")]
@@ -65,6 +69,7 @@ public class MusicBox : HighlightInteractable
 
     double startDsp;
     int playhead;              // where the track was when it was last switched off
+    bool needsNewTrack = true; // true only when the next start should reshuffle
     float nextSyncTime;
 
     float appliedVolume = -1f;
@@ -119,9 +124,10 @@ public class MusicBox : HighlightInteractable
 
         if (IsPlaying) SetPlaying(false);
 
-        // Switching the radio off with E pauses it; pulling the mains wipes it, so the
-        // track starts from the top once the power is back.
+        // Switching the radio off with E pauses it; pulling the mains wipes it, so a new
+        // record starts from the top once the power is back.
         playhead = 0;
+        needsNewTrack = true;
     }
 
     // --- transport -----------------------------------------------------------
@@ -140,9 +146,19 @@ public class MusicBox : HighlightInteractable
             return;
         }
 
+        // Starting from the top puts a new record on; resuming after E keeps the one that
+        // was playing. This is an explicit flag rather than a playhead==0 test, because a
+        // pause taken in the first instant of a track would otherwise count as a fresh
+        // start and reshuffle on resume.
+        if (needsNewTrack || track == null)
+        {
+            PickTrack();
+            needsNewTrack = false;
+        }
+
         if (track == null)
         {
-            Debug.LogWarning("MusicBox has no track assigned.", this);
+            Debug.LogWarning("MusicBox has no tracks assigned.", this);
             return;
         }
 
@@ -161,6 +177,28 @@ public class MusicBox : HighlightInteractable
         nextSyncTime = 0f;
 
         SyncSpeakers();
+    }
+
+    // Picks a record, avoiding an immediate repeat when there is more than one to choose.
+    void PickTrack()
+    {
+        if (tracks == null || tracks.Length == 0) return;
+
+        AudioClip next = tracks[Random.Range(0, tracks.Length)];
+        for (int guard = 0; next == track && tracks.Length > 1 && guard < 8; guard++)
+            next = tracks[Random.Range(0, tracks.Length)];
+
+        if (next == null) return;
+
+        if (next != track)
+        {
+            track = next;
+            // The speakers are stopped at this point, so clear the old clip off them;
+            // SyncSpeakers loads the new one as each speaker comes back in.
+            if (speakers != null)
+                for (int i = 0; i < speakers.Length; i++)
+                    if (speakers[i] != null) speakers[i].clip = track;
+        }
     }
 
     void StopAll()

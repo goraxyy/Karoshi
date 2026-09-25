@@ -3,13 +3,13 @@ using UnityEngine;
 using UnityEngine.Rendering;
 
 // "Look here" markers built entirely in code, so nothing needs authoring in the scene:
-// a flat ring that lies on the floor and a bobbing arrow that hangs over a shelf.
+// a flat ring that lies on the floor and a bobbing cone that hangs over a shelf or a head.
 //
 // Meshes and materials are shared between every marker in the level — a hundred of these
 // cost one draw call each and no assets.
 public class GuideMarker : MonoBehaviour
 {
-    [Tooltip("Stay flat on the floor under this transform. Leave null to sit still.")]
+    [Tooltip("Track this transform, offset by followHeight. Leave null to sit still.")]
     public Transform follow;
     public float followHeight = 0.03f;
 
@@ -30,12 +30,10 @@ public class GuideMarker : MonoBehaviour
 
     void LateUpdate()
     {
-        Vector3 position = follow != null ? follow.position : anchor;
+        Vector3 position = follow != null ? follow.position + Vector3.up * followHeight : anchor;
 
-        if (follow != null)
-            position.y = follow.position.y + followHeight;
-        else if (bobAmplitude > 0f)
-            position.y = anchor.y + Mathf.Sin((Time.time + phase) * bobSpeed) * bobAmplitude;
+        if (bobAmplitude > 0f)
+            position.y += Mathf.Sin((Time.time + phase) * bobSpeed) * bobAmplitude;
 
         transform.position = position;
 
@@ -53,13 +51,23 @@ public class GuideMarker : MonoBehaviour
         return marker;
     }
 
-    // A downward-pointing arrow that floats above something and can be seen from a distance.
+    // A downward-pointing cone that floats above something and can be seen from a distance.
     public static GuideMarker CreateBeacon(string name, Color colour, float size)
     {
-        GuideMarker marker = Build(name, ArrowMesh(), colour, true);
+        GuideMarker marker = Build(name, ConeMesh(), colour, true);
         marker.transform.localScale = new Vector3(size, size * 1.4f, size);
         marker.bobAmplitude = size * 0.35f;
         marker.spinSpeed = 55f;
+        return marker;
+    }
+
+    // The same cone, but pinned over a moving target instead of a fixed point.
+    public static GuideMarker CreateBeaconOver(string name, Color colour, float size, Transform target, float height)
+    {
+        GuideMarker marker = CreateBeacon(name, colour, size);
+        marker.follow = target;
+        marker.followHeight = height;
+        marker.transform.position = target.position + Vector3.up * height;
         return marker;
     }
 
@@ -122,7 +130,7 @@ public class GuideMarker : MonoBehaviour
     // --- shared meshes ------------------------------------------------------
 
     static readonly Dictionary<int, Mesh> ringMeshes = new Dictionary<int, Mesh>();
-    static Mesh arrowMesh;
+    static Mesh coneMesh;
 
     // Unit-radius ring in the XZ plane. Scale the transform to size it.
     static Mesh RingMesh(float innerRatio)
@@ -164,31 +172,44 @@ public class GuideMarker : MonoBehaviour
         return mesh;
     }
 
-    // A four-sided pyramid with its point at the origin, opening upwards.
-    static Mesh ArrowMesh()
+    // A cone with its point at the origin, opening upwards.
+    static Mesh ConeMesh()
     {
-        if (arrowMesh != null) return arrowMesh;
+        if (coneMesh != null) return coneMesh;
 
-        Vector3[] vertices =
+        const int segments = 20;
+
+        // tip, then the rim, then a centre vertex to cap the open end
+        var vertices = new Vector3[segments + 2];
+        vertices[0] = Vector3.zero;                  // tip, pointing down at the target
+        for (int i = 0; i < segments; i++)
         {
-            new Vector3(0f, 0f, 0f),        // tip, pointing down at the target
-            new Vector3(-0.5f, 1f, -0.5f),
-            new Vector3(0.5f, 1f, -0.5f),
-            new Vector3(0.5f, 1f, 0.5f),
-            new Vector3(-0.5f, 1f, 0.5f)
-        };
+            float angle = i / (float)segments * Mathf.PI * 2f;
+            vertices[i + 1] = new Vector3(Mathf.Cos(angle) * 0.5f, 1f, Mathf.Sin(angle) * 0.5f);
+        }
+        vertices[segments + 1] = new Vector3(0f, 1f, 0f);
 
-        int[] triangles =
+        var triangles = new int[segments * 6];
+        for (int i = 0; i < segments; i++)
         {
-            0, 2, 1,  0, 3, 2,  0, 4, 3,  0, 1, 4,   // sides
-            1, 2, 3,  1, 3, 4                        // cap
-        };
+            int rim = i + 1;
+            int next = (i + 1) % segments + 1;
 
-        arrowMesh = new Mesh { name = "GuideArrow", hideFlags = HideFlags.DontSave };
-        arrowMesh.vertices = vertices;
-        arrowMesh.triangles = triangles;
-        arrowMesh.RecalculateNormals();
-        arrowMesh.RecalculateBounds();
-        return arrowMesh;
+            int t = i * 6;
+            triangles[t] = 0;                        // side
+            triangles[t + 1] = next;
+            triangles[t + 2] = rim;
+
+            triangles[t + 3] = segments + 1;         // cap
+            triangles[t + 4] = rim;
+            triangles[t + 5] = next;
+        }
+
+        coneMesh = new Mesh { name = "GuideCone", hideFlags = HideFlags.DontSave };
+        coneMesh.vertices = vertices;
+        coneMesh.triangles = triangles;
+        coneMesh.RecalculateNormals();
+        coneMesh.RecalculateBounds();
+        return coneMesh;
     }
 }
