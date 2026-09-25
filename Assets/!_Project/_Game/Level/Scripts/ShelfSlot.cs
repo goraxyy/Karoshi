@@ -9,9 +9,22 @@ public class ShelfSlot : MonoBehaviour, IInteractable
     static readonly List<ShelfSlot> all = new List<ShelfSlot>();
     public static IReadOnlyList<ShelfSlot> All => all;
 
+    [Tooltip("The section this facing belongs to. Only items from the same section fit.")]
     public ItemType requiredType;
+
+    [Tooltip("The planogram: which ProductCatalog id this facing is stocked with. " +
+             "Within a section any item still fits — this is what the shelf *should* hold, " +
+             "and it's what a customer asks for by name. Set by Karoshi/Store/Apply Layout.")]
+    public string productId;
+
     public Transform snapPoint;
     public AudioClip itemDropSound;
+
+    // The SKU stocked here, or null on a facing that has only been given a section.
+    public ProductDef Product => ProductCatalog.Get(productId);
+
+    // What to call whatever belongs here: the product if there is one, the section if not.
+    public string Label => ProductCatalog.Label(requiredType, productId);
 
     [Header("Snap Rotation")]
     public Vector3 snapRotationOffset = Vector3.zero;
@@ -117,6 +130,12 @@ public class ShelfSlot : MonoBehaviour, IInteractable
         Item item = spawned.GetComponent<Item>();
         if (item == null) { Object.Destroy(spawned); return false; }
 
+        // One placeholder prefab restocks the whole store, so the spawned item takes on
+        // this facing's identity. Without this every restocked shelf in the building would
+        // fill up with cereal, whatever its sign said.
+        item.type = requiredType;
+        item.productId = productId;
+
         item.SetOnShelf(snapPoint, snapRotationOffset);
         storedItem = item;
         isFilled = true;
@@ -148,7 +167,10 @@ public class ShelfSlot : MonoBehaviour, IInteractable
 
     public string GetPrompt()
     {
-        return isFilled ? "Pick up " + requiredType : "Place " + requiredType;
+        if (isFilled)
+            return "Pick up " + (storedItem != null ? storedItem.DisplayName : Label);
+
+        return "Place " + Label;
     }
 
 #if UNITY_EDITOR

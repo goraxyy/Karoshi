@@ -9,6 +9,16 @@ public class ShelfUnit : MonoBehaviour
     [Tooltip("Highlight the shelf whenever at least one slot is empty.")]
     public bool highlightWhenNotFull = true;
 
+    [Header("Planogram")]
+    [Tooltip("Which part of the shop floor this bay stands in — \"Aisle 3 · Cereal & " +
+             "Breakfast\". Written by Karoshi/Store/Apply Layout; shown on signage and in " +
+             "the customer's directions.")]
+    public string section;
+
+    [Tooltip("The section every slot on this bay belongs to. Kept in step by the layout " +
+             "pass; read it instead of digging through the slots.")]
+    public ItemType category = ItemType.Cereal;
+
     // How many shelves in the level currently need restocking — the stocking task reads this.
     public static int NotFullCount { get; private set; }
 

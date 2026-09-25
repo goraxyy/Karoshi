@@ -1,22 +1,49 @@
 using UnityEngine;
 
+// The section of the store a thing belongs to — not the product itself. A shelf slot
+// accepts anything from its own section, and which SKU is actually stacked there is
+// Item.productId, resolved through ProductCatalog.
+//
+// The numbers are written out and must never be reshuffled: every ShelfSlot and item in
+// the scene stores its type as an int, so renumbering these silently restocks the whole
+// store with the wrong goods. New sections go on the end.
 public enum ItemType
 {
-    Cereal,
-    Soda,
-    Bread,
-    Milk,
-    Chips,
-    Mop,      // a tool rather than stock, so it never matches a shelf slot
-    Stock,    // the restocking crate — same, it's carried but never shelved
-    TrashBag, // carried out to the container, never shelved
-    Flashlight // a tool as well — carried and dropped, never shelved
+    Cereal = 0,        // cereal and breakfast, including coffee and tea
+    SoftDrinks = 1,
+    Bakery = 2,
+    Dairy = 3,
+    Snacks = 4,        // crisps, nuts, crackers
+
+    Mop = 5,           // a tool rather than stock, so it never matches a shelf slot
+    Stock = 6,         // the restocking crate — same, it's carried but never shelved
+    TrashBag = 7,      // carried out to the container, never shelved
+    Flashlight = 8,    // a tool as well — carried and dropped, never shelved
+
+    Produce = 9,
+    Canned = 10,       // tins and jars
+    Noodles = 11,      // noodles, pasta and rice
+    PersonalCare = 12,
+    Household = 13,    // cleaning and paper goods
+    Frozen = 14,
+    PetFood = 15,
+    Confectionery = 16
 }
 
 [RequireComponent(typeof(Rigidbody))]
 public class Item : MonoBehaviour
 {
+    [Tooltip("Which section of the store this belongs to. Shelf slots match on this.")]
     public ItemType type;
+
+    [Tooltip("Which product this actually is, as a ProductCatalog id — \"drink_pipisi\" " +
+             "rather than just SoftDrinks. Left empty it is an unbranded box of whatever " +
+             "the section sells, which is what the placeholder item prefab is.")]
+    public string productId;
+
+    // What the player is told they are holding: the SKU when there is one, the section
+    // otherwise.
+    public string DisplayName => ProductCatalog.Label(type, productId);
 
     [Header("Impact Sound")]
     [Tooltip("Played when this lands on the floor, a shelf, or another item.")]

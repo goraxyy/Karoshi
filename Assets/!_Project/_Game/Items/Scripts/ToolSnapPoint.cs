@@ -64,6 +64,6 @@ public class ToolSnapPoint : HighlightInteractable
     public override string GetPrompt()
     {
         if (tool == null) return string.Empty;
-        return IsToolHome ? string.Empty : $"Put the {tool.type} back";
+        return IsToolHome ? string.Empty : $"Put the {ProductCatalog.SectionName(tool.type)} back";
     }
 }
