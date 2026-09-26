@@ -1,7 +1,7 @@
 # Karoshi — Research & Systems Ideas
 
 Working notes for the route we picked: **Karoshi as an agent-eval environment (1)**,
-**KAREN with ablations (2)**, and an **interpretable thought log (4)** — plus the infinite
+**Karen with ablations (2)**, and an **interpretable thought log (4)** — plus the infinite
 maze and the blink mechanic that feed into them.
 
 Companion documents: [`karen.md`](karen.md) is the antagonist design spec,
@@ -9,7 +9,7 @@ Companion documents: [`karen.md`](karen.md) is the antagonist design spec,
 aimed at a research audience.
 
 > **Status.** Everything here except the infinite maze is built: the eval environment and
-> its clients ([`tools/eval/`](tools/eval/README.md)), all six KAREN rungs and the ablation
+> its clients ([`tools/eval/`](tools/eval/README.md)), all six Karen rungs and the ablation
 > runner (results in [`KAREN_RESULTS.md`](KAREN_RESULTS.md)), the thought log with its
 > overlay and replay scrubber, and the blink pipeline from keyboard to webcam
 > ([`tools/blink/`](tools/blink/README.md)). The store itself is exported for people and
@@ -32,7 +32,7 @@ These three are not separate projects. They compose:
                         │  the same interface
                         ▼
    ┌──────────────────────────────────────────────────────┐
-   │   2. KAREN  ──► ablations ──► results table            │
+   │   2. Karen  ──► ablations ──► results table            │
    └────────────────────┬─────────────────────────────────┘
                         │  emits, every decision
                         ▼
@@ -43,7 +43,7 @@ These three are not separate projects. They compose:
         blink mechanic ─┘  asymmetric information channel
 ```
 
-The eval interface is the keystone. Build it first and KAREN gets a measurement harness
+The eval interface is the keystone. Build it first and Karen gets a measurement harness
 for free; build it last and you will retrofit everything.
 
 ---
@@ -66,7 +66,7 @@ failure naturally rather than artificially.
       position, facing, held items, visible shelves and their fill state, spills, queue
       length and wait times, bin fullness, burnout, time remaining, task list
       → `EnvWorld.Observe`: JSON plus a prose rendering; the HUD as the player sees it
-      (lies included), KAREN only when in view, her footsteps only when close
+      (lies included), Karen only when in view, her footsteps only when close
 - [x] **Action space** — a discrete verb set matching what the player can do:
       `move_to(target)`, `pick_up(item)`, `place_on(slot)`, `mop(spill)`, `serve(customer)`,
       `bag_trash(bin)`, `dispose(bag)`, `drink_coffee()`, `clock_out()`
@@ -76,9 +76,9 @@ failure naturally rather than artificially.
       → `KaroshiEnv.ResetEpisode`/`Act`, over a local socket via `EnvServer`
 - [x] **Metrics** — shift completion, tasks completed, customers lost, spills left
       standing, average customer wait, burnout at clock-out, wall-clock and step count
-      → `EpisodeMetrics`, plus KAREN's side and the failure taxonomy below
+      → `EpisodeMetrics`, plus Karen's side and the failure taxonomy below
 - [~] **Determinism** — same seed produces the same shift. Non-negotiable for ablations
-      → one seed fixes `UnityEngine.Random` and KAREN's RNG, `Time.captureDeltaTime` fixes every
+      → one seed fixes `UnityEngine.Random` and Karen's RNG, `Time.captureDeltaTime` fixes every
       frame, scene reloads are synchronous and the planner has no wall-clock cut-off in eval runs.
       Verified: the first shift after launch replays identically for the same seed. Not yet:
       later shifts in the same process drift (engine-side — NavMesh carving and crowd updates run
@@ -121,7 +121,7 @@ is a scripted floor; `tools/eval/llm_agent.py` has Claude play a shift through o
 
 ---
 
-## 2. KAREN with ablations
+## 2. Karen with ablations
 
 Full design in [`karen.md`](karen.md). The research contribution is not the antagonist —
 it is **evidence that the adaptation does something**.
@@ -151,7 +151,7 @@ Pick before running, not after:
 
 ### The trap to avoid
 
-It is very easy to spend three months building KAREN and have zero numbers. **Commit to
+It is very easy to spend three months building Karen and have zero numbers. **Commit to
 producing the table at rung C** — belief grid vs scripted — before building D and E.
 A two-rung ablation that exists beats a six-rung one that does not.
 
@@ -192,7 +192,7 @@ One structured record per decision, not prose:
 ### Why it is worth building early
 
 - It makes the ablations **legible** — you can see *why* rung D beats rung C, not just that it does
-- It is the debugging tool for KAREN; you will want it regardless
+- It is the debugging tool for Karen; you will want it regardless
 - It doubles as a player-facing feature: scrub the shift, watch what it was thinking
 - Interpretability framing lands well with the audience we are aiming at
 
@@ -238,7 +238,7 @@ existing 5 m squares = 25×25 m). Each chunk's layout is generated from
 
 **Braid the maze.** Whatever generates it, remove most dead ends by knocking through
 walls to create loops. A chase with no escape route is frustrating rather than tense, and
-KAREN's herding tactics need loops to be interesting.
+Karen's herding tactics need loops to be interesting.
 
 ### The hard parts, in order
 
@@ -259,10 +259,10 @@ KAREN's herding tactics need loops to be interesting.
 ### Conflict worth flagging
 
 `karen.md`'s herding relies on an **aisle graph with articulation points and min-cuts** —
-that needs a *bounded* graph. On an infinite map, KAREN must operate on a bounded window:
+that needs a *bounded* graph. On an infinite map, Karen must operate on a bounded window:
 the current shift's store footprint. Practical resolution: **the store is finite per
 shift; the maze is infinite across shifts.** Each shift generates a bounded store from a
-seed. That keeps KAREN's graph analysis valid, gives the eval its procedural variation,
+seed. That keeps Karen's graph analysis valid, gives the eval its procedural variation,
 and sidesteps most of the streaming work above.
 
 I would take that resolution. It gets nearly all the benefit for a fraction of the cost.
@@ -341,11 +341,11 @@ IBlinkSource ─┬─ KeyboardBlinkSource   (dev + accessibility fallback)
                       │
           ┌───────────┴────────────┐
           ▼                        ▼
-   Eyelids.Closed01        OnBlinkStart / OnEyesClosedFor(t) → KAREN
+   Eyelids.Closed01        OnBlinkStart / OnEyesClosedFor(t) → Karen
 ```
 
-Build the keyboard source first — it proves the whole chain including KAREN's reactions.
-Then replay traces, so KAREN's blink behaviour can be tested without sitting in front of a
+Build the keyboard source first — it proves the whole chain including Karen's reactions.
+Then replay traces, so Karen's blink behaviour can be tested without sitting in front of a
 camera blinking on cue. The webcam goes in last; it is the least certain part and the
 easiest to swap in once everything above it works.
 
@@ -366,7 +366,7 @@ rung F's `blink_advance` tactic moves inside what's left of the closure.
   processing and a real trust barrier
 - **Exploit the window, do not chase the latency.** Blinks are stereotyped at roughly
   300 ms, so on detecting one ~120 ms in you can *predict* the reopening and schedule
-  KAREN's move inside the remaining closure. Far more robust than trying to react faster
+  Karen's move inside the remaining closure. Far more robust than trying to react faster
 
 ---
 
@@ -374,7 +374,7 @@ rung F's `blink_advance` tactic moves inside what's left of the closure.
 
 1. ~~**Eval interface** (observation, action, metrics, determinism, headless) — unlocks everything~~ done
 2. ~~**Thought log** schema — trivial now, painful to retrofit~~ done
-3. ~~**KAREN rungs B–D** + the ablation table~~ done, A–F
+3. ~~**Karen rungs B–D** + the ablation table~~ done, A–F
 4. **Seeded finite store per shift** — procedural variation without the streaming cost
    (partly: `MazeMutation` moves bays between shifts from shift 7, validated for reachability)
 5. ~~**Blink**: keyboard → replay → webcam~~ done

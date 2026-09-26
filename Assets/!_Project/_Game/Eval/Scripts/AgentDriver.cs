@@ -174,7 +174,7 @@ namespace Karoshi.Eval
                     // Wedged on a corner or a customer: re-plan, then give up.
                     Vector3 moved = here - lastPosition;
                     moved.y = 0f;
-                    // Held still by KAREN's lecture: that's waiting, not being stuck.
+                    // Held still by Karen's lecture: that's waiting, not being stuck.
                     bool held = motor != null && motor.movementLocked;
                     if (held) progressFrom = here;
                     stuckFor = !held && moved.magnitude < 0.3f * dt ? stuckFor + dt : 0f;
@@ -185,7 +185,7 @@ namespace Karoshi.Eval
                         Collider blocker = Blocker(here, d);
                         if (verbose) Debug.Log($"[driver] stuck at {here} ({Karoshi.Store.StoreMap.Current.NameAt(here)}) heading for corner {corner}/{corners.Length - 1} at {corners[Mathf.Min(corner, corners.Length - 1)]}, blocked by {Describe(blocker)}");
 
-                        // A person (a shopper, KAREN) isn't on the NavMesh: walk round them.
+                        // A person (a shopper, Karen) isn't on the NavMesh: walk round them.
                         bool person = blocker != null && (blocker.GetComponentInParent<NavMeshAgent>() != null || blocker.GetComponentInParent<CustomerNPC>() != null);
                         if (person)
                         {

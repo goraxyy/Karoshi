@@ -121,7 +121,7 @@ namespace Karoshi.Karen
         public KarenConfig Clone() => (KarenConfig)MemberwiseClone();
     }
 
-    // Seeded randomness. Everything KAREN decides draws from here and nothing from
+    // Seeded randomness. Everything Karen decides draws from here and nothing from
     // UnityEngine.Random, so a seed plus the decision log replays a shift exactly.
     public sealed class KarenRng
     {

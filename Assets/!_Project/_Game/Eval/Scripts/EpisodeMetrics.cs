@@ -31,7 +31,7 @@ namespace Karoshi.Eval
         public float MeanWait => Waits.Count > 0 ? Waits.Average() : 0f;
         public float LongestWait { get; private set; }
 
-        // KAREN's side, copied from her stats at the end.
+        // Karen's side, copied from her stats at the end.
         public float FirstDetection = -1f;
         public int Detections, Catches, Chases, Overtimes;
         public float TacticEntropy;

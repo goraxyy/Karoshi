@@ -5,7 +5,7 @@ using UnityEngine.AI;
 
 namespace Karoshi.Karen
 {
-    // Materials and shapes for everything KAREN puts into the store. Built from primitives
+    // Materials and shapes for everything Karen puts into the store. Built from primitives
     // and URP Lit at runtime, since the repository carries no art.
     public static class KarenProps
     {
@@ -206,7 +206,7 @@ namespace Karoshi.Karen
 
     // ---- CCTV (§3.5, §8.1) --------------------------------------------------------------
 
-    // A camera KAREN watches through. Low-confidence sightings in a narrow cone. Hold E for
+    // A camera Karen watches through. Low-confidence sightings in a narrow cone. Hold E for
     // four seconds to pull its plug — which buys silence and announces that you exist:
     // a dead camera is information, and she comes to look at the blind spot.
     public sealed class CctvCamera : MonoBehaviour, IInteractable, IHoldInteractable, IHoverable
@@ -215,7 +215,7 @@ namespace Karoshi.Karen
         public static IReadOnlyList<CctvCamera> All => all;
 
         public bool Dead { get; private set; }
-        public bool BoltedOn;            // installed by KAREN over a hiding place
+        public bool BoltedOn;            // installed by Karen over a hiding place
         SightSensor eye;
         Light led;
         float nextReport;
@@ -339,7 +339,7 @@ namespace Karoshi.Karen
             Destroy(gameObject);
         }
 
-        public string GetPrompt() => IsLast ? "Drink it. You've earned it." : "Drink the coffee KAREN made you";
+        public string GetPrompt() => IsLast ? "Drink it. You've earned it." : "Drink the coffee Karen made you";
     }
 
     // ---- wet footprints (§3.3) ----------------------------------------------------------

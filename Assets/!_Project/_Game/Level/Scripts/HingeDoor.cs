@@ -16,7 +16,7 @@ public class HingeDoor : MonoBehaviour
     [Range(0f, 1f)] public float creakVolume = 0.8f;
 
     [Tooltip("A door left open this long counts as propped: its sensor stops reporting and " +
-             "it no longer tells KAREN who passes (karen.md §3.5).")]
+             "it no longer tells Karen who passes (karen.md §3.5).")]
     public float proppedAfter = 30f;
 
     private Quaternion closedRot;
@@ -49,7 +49,7 @@ public class HingeDoor : MonoBehaviour
         closedCentre = panel != null ? panel.bounds.center : transform.position;
 
         // An open door is an obstacle like any other: carve the panel out of the NavMesh
-        // while it stands open, so paths — shoppers', KAREN's, the eval agent's — go round it.
+        // while it stands open, so paths — shoppers', Karen's, the eval agent's — go round it.
         if (panel != null)
         {
             openCarve = panel.gameObject.AddComponent<NavMeshObstacle>();
@@ -79,7 +79,7 @@ public class HingeDoor : MonoBehaviour
     }
 
     // Opens or closes the door for whoever stands at `from` — the E key, the eval's agent,
-    // and KAREN all come through here. Returns false if it's locked or already swinging.
+    // and Karen all come through here. Returns false if it's locked or already swinging.
     public bool Use(Vector3 from, NoiseAuthor author)
     {
         if (isMoving) return false;
@@ -94,7 +94,7 @@ public class HingeDoor : MonoBehaviour
         Toggle(from);
 
         // The door sensor reports the employee going through a door that isn't propped.
-        // KAREN's own passage isn't news to her.
+        // Karen's own passage isn't news to her.
         NoiseBus.Emit(transform.position, 0.4f, NoiseKind.Door, author);
         if (author == NoiseAuthor.Player && !Propped) GameEvents.RaiseDoorUsed(this, isOpen);
         return true;
@@ -152,7 +152,7 @@ public class HingeDoor : MonoBehaviour
         OneShotAudio.PlayAt(isOpen ? openCreak : closeCreak, transform.position, creakVolume);
     }
 
-    // KAREN's door lock (karen.md §8.4): the door swings shut and stops opening, and the
+    // Karen's door lock (karen.md §8.4): the door swings shut and stops opening, and the
     // NavMesh is carved so shoppers route round it too.
     public void SetLocked(bool locked)
     {

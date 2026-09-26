@@ -99,7 +99,7 @@ public class SpeechBubble : MonoBehaviour
         for (int i = 0; i < options.Length; i++)
         {
             if (i == selected)
-                builder.AppendLine($"<color=#FFD400>▸ {options[i]}</color>");
+                builder.AppendLine($"<color=#FFD400>> {options[i]}</color>");   // plain ">": the bubble font has no arrow glyph
             else
                 builder.AppendLine($"<color=#9A9A9A>   {options[i]}</color>");
         }

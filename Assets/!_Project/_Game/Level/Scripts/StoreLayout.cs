@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 // Where everything is sold.
 //
@@ -80,9 +81,17 @@ public static class StoreLayout
     public static string SignAt(Vector3 position) => ZoneAt(position).Sign;
 
     // Stocking the store is the first thing that happens once the scene is up: every bay
-    // is still holding the placeholder cereal it was built with until this runs.
+    // is still holding the placeholder cereal it was built with until this runs. Scenes
+    // loaded later (the eval harness reloads the store for every episode) are stocked too.
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    static void StockOnLoad() => ApplyToScene();
+    static void StockOnLoad()
+    {
+        ApplyToScene();
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    static void OnSceneLoaded(Scene scene, LoadSceneMode mode) => ApplyToScene();
 
     // Optional hooks so the editor pass can wrap each write in an Undo record and register
     // the prefab override. At runtime both are null and this is a plain assignment.
@@ -103,7 +112,7 @@ public static class StoreLayout
     {
         int touched = 0;
 
-        var units = Object.FindObjectsByType<ShelfUnit>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        var units = Object.FindObjectsByType<ShelfUnit>(FindObjectsInactive.Include);
         foreach (ShelfUnit unit in units)
         {
             Zone zone = ZoneAt(unit.transform.position);
@@ -126,7 +135,7 @@ public static class StoreLayout
 
         // A couple of facings sit loose in the scene rather than on a bay — the spare on
         // the front counter. They get classified on their own so nothing is left as cereal.
-        var allSlots = Object.FindObjectsByType<ShelfSlot>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        var allSlots = Object.FindObjectsByType<ShelfSlot>(FindObjectsInactive.Include);
         foreach (ShelfSlot slot in allSlots)
         {
             if (slot.GetComponentInParent<ShelfUnit>() != null) continue;

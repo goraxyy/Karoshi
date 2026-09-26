@@ -10,7 +10,7 @@ namespace Karoshi.Karen
 
     public enum Falsification { None, FakeTask, ShowDoneAsUndone, ShowUndoneAsDone, RealTaskEarly }
 
-    // The layer between the task list and your HUD. Normally a pass-through; while KAREN is
+    // The layer between the task list and your HUD. Normally a pass-through; while Karen is
     // falsifying it, the checklist on screen and the truth disagree. The tell is mandatory:
     // a CRT tick first, then the list blinks out for a single frame when a line changes.
     public static class HudFeed
@@ -43,7 +43,7 @@ namespace Karoshi.Karen
             TaskManager.NotifyWorldChanged();
         }
 
-        // What the HUD shows. The real list goes in; what KAREN wants you to see comes out.
+        // What the HUD shows. The real list goes in; what Karen wants you to see comes out.
         public static IEnumerable<TaskManager.ShiftTask> Shown(IEnumerable<TaskManager.ShiftTask> real)
         {
             Falsification m = Mode;
@@ -66,7 +66,7 @@ namespace Karoshi.Karen
 
     // ---- mimicry (§8.5) -----------------------------------------------------------------
 
-    // KAREN takes a shopper over. It stops shopping and never queues; it walks at your pace
+    // Karen takes a shopper over. It stops shopping and never queues; it walks at your pace
     // one aisle over and turns to face you whenever you look at it. Everyone else in the
     // store is a real customer — that is what makes it work. The tell: a possessed shopper
     // has no place in the till queue, and a player paying attention can prove it.
@@ -134,7 +134,7 @@ namespace Karoshi.Karen
             if (Time.time > until) Release();
         }
 
-        // One aisle over: a point about five metres to the side of where KAREN believes you
+        // One aisle over: a point about five metres to the side of where Karen believes you
         // are, on the far side of whatever shelving is between.
         Vector3 Shadow()
         {
@@ -166,7 +166,7 @@ namespace Karoshi.Karen
         float retarget, nextLine;
         static readonly string[] lines =
         {
-            "I'm learning so much!", "Is this how you always do it?", "KAREN says you're very efficient.",
+            "I'm learning so much!", "Is this how you always do it?", "Karen says you're very efficient.",
             "Should I write that down?", "Sorry — right behind you!", "Oh, is this where you take your breaks?"
         };
 

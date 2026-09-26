@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Karoshi.Karen
 {
     // Where the building's own sensors report: CCTV, door sensors, the till, the breaker
-    // panel. World objects post here without holding a reference to KAREN.
+    // panel. World objects post here without holding a reference to Karen.
     public static class InfrastructureFeed
     {
         public static event System.Action<Observation> Reported;
@@ -16,7 +16,7 @@ namespace Karoshi.Karen
         public static void Report(in Observation observation) => Reported?.Invoke(observation);
     }
 
-    // What KAREN believes about your energy — not the bar itself, which is yours. She
+    // What Karen believes about your energy — not the bar itself, which is yours. She
     // knows the store's policy (how fast a shift wears people down, how much a coffee
     // gives back) and she counts what she hears: sprinting, the coffee machine. Believing
     // you're spent shrinks the area she searches (karen.md §4.2).
@@ -51,7 +51,7 @@ namespace Karoshi.Karen
     }
 
     // Fuses every channel into one stream of Observations for the belief grid, plus the
-    // "nothing here" sweep. Owned by the brain; reads the world through KAREN's eyes and
+    // "nothing here" sweep. Owned by the brain; reads the world through Karen's eyes and
     // ears, which are wherever her body is standing.
     public sealed class Sensorium
     {

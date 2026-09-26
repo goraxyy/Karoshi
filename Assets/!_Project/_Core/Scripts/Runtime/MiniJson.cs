@@ -202,6 +202,13 @@ namespace Karoshi
             return sb.ToString();
         }
 
+        // The escaped text without the surrounding quotes, for writers that add their own.
+        public static string EscapeInner(string text)
+        {
+            string quoted = Escape(text ?? string.Empty);
+            return quoted.Substring(1, quoted.Length - 2);
+        }
+
         public static string Number(double value)
         {
             if (double.IsNaN(value) || double.IsInfinity(value)) return "null";

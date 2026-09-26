@@ -27,7 +27,7 @@ namespace Karoshi.Eval
     // The ablation ladder (ideas.md §2), run end to end with simulated players.
     //
     // Paired design: for a given player profile and career, every rung sees the same seed —
-    // the same customers, the same spills — so a difference between rungs is KAREN, not luck.
+    // the same customers, the same spills — so a difference between rungs is Karen, not luck.
     // A career is several consecutive shifts in one session, which is what gives the
     // persistent Ledger (rung E) something to remember.
     public sealed class AblationRunner : MonoBehaviour
@@ -135,7 +135,7 @@ namespace Karoshi.Eval
                 Row(sb, $"{g.Key.Rung} | {g.Key.Agent}", g.ToList());
 
             sb.AppendLine();
-            sb.AppendLine("### What KAREN reached for, per profile (rungs D–F)");
+            sb.AppendLine("### What Karen reached for, per profile (rungs D–F)");
             sb.AppendLine();
             sb.AppendLine("| rung | profile | most-used tactics across the career |");
             sb.AppendLine("|---|---|---|");

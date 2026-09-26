@@ -3,7 +3,7 @@ using UnityEngine.AI;
 
 namespace Karoshi.Karen
 {
-    // KAREN's body: a NavMeshAgent with eyes, feet and hands (karen.md §2.1).
+    // Karen's body: a NavMeshAgent with eyes, feet and hands (karen.md §2.1).
     //
     // What it has is as important as what it hasn't. It has no reference to the player at
     // all — that single missing reference is the difference between a stalker and an
@@ -122,7 +122,9 @@ namespace Karoshi.Karen
             body.feet = root.AddComponent<AudioSource>();
             body.feet.spatialBlend = 1f;
             body.feet.rolloffMode = AudioRolloffMode.Linear;
-            body.feet.maxDistance = 22f;
+            body.feet.minDistance = 2f;
+            body.feet.maxDistance = 26f;
+            body.feet.dopplerLevel = 0f;
             body.feet.playOnAwake = false;
 
             body.hand = new GameObject("Hand").transform;

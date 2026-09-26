@@ -8,7 +8,7 @@ namespace Karoshi.Karen
     //
     // It measures fear by its motor consequences — the Panic Index — and runs a PI
     // controller against a *setpoint*, not a maximum: quiet is something it schedules, not
-    // something that happens when KAREN fails. Its levers are the tension budget, which
+    // something that happens when Karen fails. Its levers are the tension budget, which
     // tiers of tactic are permitted, a tightly capped hint to the belief grid, and free
     // dread that costs the body nothing: a noise with no author, a flickering light.
     //
@@ -148,7 +148,10 @@ namespace Karoshi.Karen
             }
 
             if (CurrentPhase != before)
+            {
                 c.Think("DIRECTOR", $"phase {before.ToString().ToUpperInvariant()} → {PhaseName} (panic {Panic:0.00}, setpoint {SetpointFor(CurrentPhase):0.00}, pressure {Pressure:+0.00;-0.00})");
+                KarenNarrator.Say(StoryKind.Mood, KarenNarrator.Phase(CurrentPhase));
+            }
         }
 
         float SetpointFor(Phase phase)
@@ -395,7 +398,7 @@ namespace Karoshi.Karen
 
         static bool NearSnapPoint(Vector3 at)
         {
-            foreach (ToolSnapPoint s in Object.FindObjectsByType<ToolSnapPoint>(FindObjectsSortMode.None))
+            foreach (ToolSnapPoint s in Object.FindObjectsByType<ToolSnapPoint>())
                 if (Vector3.Distance(s.transform.position, at) < 2f) return true;
             return false;
         }

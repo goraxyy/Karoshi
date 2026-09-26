@@ -28,7 +28,7 @@ namespace Karoshi.Karen
     }
 
     // Everything a goal, tactic or primitive may touch, in one place. Notice what is not
-    // here: the player. KAREN acts on what she believes.
+    // here: the player. Karen acts on what she believes.
     public sealed class KarenContext
     {
         public KarenBrain Brain;

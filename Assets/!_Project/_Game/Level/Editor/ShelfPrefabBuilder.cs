@@ -116,7 +116,7 @@ public static class ShelfPrefabBuilder
         const string ShowcaseRoot = "Models_Island";
 
         var targets = new List<Transform>();
-        foreach (var t in Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        foreach (var t in Object.FindObjectsByType<Transform>(FindObjectsInactive.Include))
         {
             if (!t.Cast<Transform>().Any(c => c.name.ToLower().Contains("polka"))) continue;
             if (PrefabUtility.GetCorrespondingObjectFromSource(t.gameObject) == null) continue;

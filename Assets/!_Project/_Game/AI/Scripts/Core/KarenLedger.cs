@@ -73,7 +73,7 @@ namespace Karoshi.Karen
         public List<CounterStat> counterplay = new List<CounterStat>();
     }
 
-    // The Ledger (karen.md §2.3, §7). It does not decide what happens; it decides what KAREN
+    // The Ledger (karen.md §2.3, §7). It does not decide what happens; it decides what Karen
     // is inclined to try, and what she expects of this particular employee.
     //
     //   Bandit    — every tactic is an arm. UCB (or Thompson) with a habituation penalty
@@ -121,7 +121,7 @@ namespace Karoshi.Karen
             }
             catch (System.Exception e)
             {
-                Debug.LogWarning("KAREN: couldn't read the ledger, starting fresh. " + e.Message);
+                Debug.LogWarning("Karen: couldn't read the ledger, starting fresh. " + e.Message);
                 Data = new LedgerData();
             }
             Index();

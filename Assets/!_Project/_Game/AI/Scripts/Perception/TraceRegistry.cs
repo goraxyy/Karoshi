@@ -8,7 +8,7 @@ namespace Karoshi.Karen
     {
         WetFootprint,       // walked through a spill — has a heading
         ShelfGap,           // the employee took something off a shelf
-        UndoneSabotage,     // a shelf KAREN stripped has been filled back up
+        UndoneSabotage,     // a shelf Karen stripped has been filled back up
         DroppedItem,        // stock left on the floor
         MopAway,            // the mop is lying somewhere that isn't its rack
         BaggedBin,          // a bin was just emptied
@@ -36,7 +36,7 @@ namespace Karoshi.Karen
     }
 
     // Physical evidence with a decay clock. The store remembers you even when nothing is
-    // watching: KAREN walks into an aisle, finds a bagged bin and wet footprints heading
+    // watching: Karen walks into an aisle, finds a bagged bin and wet footprints heading
     // north, and has a hard prior on half the building.
     public static class TraceRegistry
     {

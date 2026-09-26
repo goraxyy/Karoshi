@@ -431,6 +431,7 @@ namespace Karoshi.Karen
         public string Name;
         public GoalId Goal;
         public Tactic Tactic;
+        public string Target;       // what it's aimed at, in words (a place, a shelf, "close distance")
         public bool Interrupted { get; private set; }
 
         public PlanTree(string name, GoalId goal, Tactic tactic, List<Primitive> steps, Func<KarenContext, bool> interrupt)

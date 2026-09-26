@@ -210,11 +210,15 @@ public class Eyelids : MonoBehaviour
     }
 
 #if UNITY_EDITOR
-    // Dragging `closed` in the Inspector previews the effect live.
+    // Dragging `closed` in the Inspector previews the effect live. Deferred: Unity won't let
+    // UI objects be built or resized from inside OnValidate itself.
     void OnValidate()
     {
         if (!Application.isPlaying) return;
-        Apply(closed);
+        UnityEditor.EditorApplication.delayCall += () =>
+        {
+            if (this != null && Application.isPlaying) Apply(closed);
+        };
     }
 #endif
 }

@@ -6,7 +6,7 @@ namespace Karoshi.Karen
     public enum MotionState { Still, Crouching, Walking, Sprinting }
 
     // How lit a point on the floor is, from the ceiling lights that are actually on.
-    // Sight uses it for the player's visibility; KAREN uses it to prefer dark approaches.
+    // Sight uses it for the player's visibility; Karen uses it to prefer dark approaches.
     public static class LightProbe
     {
         const float Cell = 5f;
@@ -97,7 +97,7 @@ namespace Karoshi.Karen
 
     // Everything about the employee that can be *sensed* — and nothing else.
     //
-    // This is the one door between the player and KAREN, and only sensors may use it:
+    // This is the one door between the player and Karen, and only sensors may use it:
     // SightSensor looks at these points, CustomerMemory remembers them, the Director (which
     // is omniscient by design) reads them for the Panic Index. KarenBody, the belief grid
     // and the planner never touch it — the fairness test in _Tests checks that in source.
@@ -177,7 +177,7 @@ namespace Karoshi.Karen
 
         public bool Owns(Collider c) => c != null && (c == controller || c.transform.IsChildOf(transform));
 
-        // Walking into stock left on the floor — the noise carpet KAREN lays with a shelf
+        // Walking into stock left on the floor — the noise carpet Karen lays with a shelf
         // sweep (karen.md §8.2).
         void OnControllerColliderHit(ControllerColliderHit hit)
         {

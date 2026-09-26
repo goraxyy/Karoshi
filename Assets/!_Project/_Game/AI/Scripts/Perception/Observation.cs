@@ -6,7 +6,7 @@ namespace Karoshi.Karen
     // blink channel from the webcam.
     public enum SenseChannel { Sight, Hearing, Trace, Testimony, Infrastructure, Absence, Touch, Blink }
 
-    // One piece of evidence about where the employee is. Nothing in the game grants KAREN a
+    // One piece of evidence about where the employee is. Nothing in the game grants Karen a
     // boolean "sees player": everything arrives as one of these, with a confidence and a
     // timestamp, and goes into the belief grid.
     public readonly struct Observation
