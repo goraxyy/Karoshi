@@ -31,6 +31,7 @@ public class CarrySlot : MonoBehaviour
                 else
                     item.SetStowed(stashPoint);         // Hide in stash
 
+                GameEvents.RaisePlayerPickedUp(item);
                 return true;
             }
         }

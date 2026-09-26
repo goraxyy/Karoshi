@@ -29,9 +29,14 @@ units, 240 ceiling lights and 64 speakers. Plus the burnout meter, the mains/bla
 system, the store radio, the flashlight, and a first SFX pass.
 
 **The three biggest gaps.** There is no antagonist in the level (`EnemyAI.cs` exists but
-has zero scene instances, and `shin.md` is a design spec with no implementation). There
+has zero scene instances, and `karen.md` is a design spec with no implementation). There
 are no menus of any kind — no main menu, pause, or options. And **no build has ever been
 produced**, so nothing has been tested outside the editor.
+
+*Update — the antagonist gap is closed:* KAREN (`karen.md`, all of it; status in §15 there)
+now installs into the store when it loads and replaces `EnemyAI.cs`. She has been exercised
+headless by simulated players across every ablation rung (`KAREN_RESULTS.md`), not yet by a
+person at the keyboard.
 
 ---
 
@@ -85,7 +90,7 @@ Status: **reached**.
 
 ### Pipeline
 - [x] Code-only GitHub mirror with PR workflow (#1–#6)
-- [x] `shin.md` — 1,097-line design spec for the adaptive antagonist
+- [x] `karen.md` — 1,097-line design spec for the adaptive antagonist
 - [x] First SFX pass — door chime, till beep, door creaks, flashlight, item impacts,
       pickup, power-down
 
@@ -100,13 +105,19 @@ show publishers, put in a trailer, and cut a demo from. Nothing here is about sc
 it is about one slice being *finished*.
 
 ### Antagonist — the biggest single gap
-- [ ] Get `EnemyAI` into the scene with patrol points and a NavMesh route
-- [ ] Tune the existing FSM (Patrol / Sabotage / Search / Chase) until it reads as
+- [x] Get `EnemyAI` into the scene with patrol points and a NavMesh route
+      *superseded: KAREN installs herself from code; `EnemyAI.cs` is retired*
+- [x] Tune the existing FSM (Patrol / Sabotage / Search / Chase) until it reads as
       deliberate rather than random
-- [ ] Line-of-sight and hearing that the player can reason about
-- [ ] A losing state — what actually happens when it catches you
-- [ ] Pick the SHIN scope: full `shin.md` architecture, or a cut-down version for ship
-      *Decide this early. `shin.md` is ambitious enough to be its own project.*
+      *superseded: belief grid, utility goals and a tactic library replace the FSM*
+- [x] Line-of-sight and hearing that the player can reason about
+      *graded sight, a noise bus with per-action loudness, and a tell before every tactic*
+- [x] A losing state — what actually happens when it catches you
+      *a written warning: a 30 s lecture, overtime, and a recovery window; burnout ending*
+- [x] Pick the KAREN scope: full `karen.md` architecture, or a cut-down version for ship
+      *Decided: the full architecture, every rung switchable for the ablation*
+- [ ] Play-test and tune KAREN with people — so far she has only been measured against
+      scripted players
 
 ### Feel and readability
 - [ ] Player animation — hands, held-item poses, footsteps
@@ -326,10 +337,11 @@ Ordered by how much damage each can still do.
 2. **No build has ever been made.** Every engine has a set of problems that only appear
    outside the editor. Finding them at Milestone 7 is expensive; finding them now is not.
 3. **The antagonist is the game's hook and it is not in the level.** Everything built so
-   far is the chore loop. The chore loop is not the pitch.
-4. **`shin.md` is much larger than the rest of the project.** It is a genuinely good
+   far is the chore loop. The chore loop is not the pitch. *(Addressed: KAREN is in.)*
+4. **`karen.md` is much larger than the rest of the project.** It is a genuinely good
    design document, and implementing it fully is a bigger job than everything already
-   built. Decide deliberately how much of it ships.
+   built. Decide deliberately how much of it ships. *(Built in full; the open question is
+   now tuning, which needs human play-testers.)*
 5. **No menus and no save system** — both are invisible in a prototype and mandatory in
    a product.
 6. **The README is stale.** It documents `F` for the task list; it has been `C` since the

@@ -1,3 +1,4 @@
+using Karoshi.Karen;
 using UnityEngine;
 
 // A bagged-up sack of rubbish pulled out of a bin. Carried like any other item, and only
@@ -11,6 +12,18 @@ public class TrashBag : MonoBehaviour
     public bool IsDisposed { get; private set; }
 
     bool counted;
+    Item item;
+    float nextRustle;
+
+    void Awake() => item = GetComponent<Item>();
+
+    // A carried bag rustles as you walk — a moving noise she can follow by ear alone.
+    void Update()
+    {
+        if (IsDisposed || item == null || !item.isCarried || Time.time < nextRustle) return;
+        nextRustle = Time.time + 0.6f;
+        NoiseBus.Emit(transform.position, 0.3f, NoiseKind.TrashRustle, NoiseAuthor.Player);
+    }
 
     void OnEnable()
     {
@@ -34,6 +47,7 @@ public class TrashBag : MonoBehaviour
     {
         if (IsDisposed) return;
         IsDisposed = true;
+        GameEvents.RaiseBagDisposed(this);
 
         if (counted)
         {

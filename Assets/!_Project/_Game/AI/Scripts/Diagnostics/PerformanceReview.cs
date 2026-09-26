@@ -1,0 +1,176 @@
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using UnityEngine;
+
+namespace Karoshi.Karen
+{
+    // KAREN's performance review of you, printed at the end of every shift (karen.md §6.6).
+    // A redacted version of her own thought log: being outplayed is only fun when you can
+    // see the play. From shift five it also offers the way out.
+    public sealed class PerformanceReview
+    {
+        readonly KarenBrain brain;
+        public string Text { get; private set; } = string.Empty;
+        public bool Visible { get; set; }
+        public bool BrokeHer { get; private set; }
+        public bool CanQuit { get; private set; }
+
+        float blackoutSeconds = -1f;
+
+        public PerformanceReview(KarenBrain brain)
+        {
+            this.brain = brain;
+        }
+
+        public void NoteBlackoutResolved(float seconds) => blackoutSeconds = seconds;
+
+        public void Compose()
+        {
+            KarenStats s = brain.Stats;
+            KarenLedger l = brain.Ledger;
+            var sb = new StringBuilder();
+
+            sb.AppendLine($"<b>PERFORMANCE REVIEW</b> — {l.PlayerName}, shift {s.Shift}");
+            sb.AppendLine($"<size=80%>Knowledge-Adaptive Retail Efficiency Nexus · rung {brain.config.rung}</size>");
+            sb.AppendLine();
+
+            int m = Mathf.FloorToInt(s.ShiftSeconds / 60f), sec = Mathf.FloorToInt(s.ShiftSeconds % 60f);
+            sb.AppendLine($"Shift length: {m} min {sec:00} s.");
+            if (s.FirstDetection >= 0f)
+                sb.AppendLine($"Employee located {s.Detections} time(s); first at {s.FirstDetection:0} s.");
+            else
+                sb.AppendLine("Employee was not located at any point. <i>Noted.</i>");
+            if (blackoutSeconds > 0f)
+                sb.AppendLine($"Employee took {Mathf.FloorToInt(blackoutSeconds / 60f)} min {blackoutSeconds % 60f:0} s to restore lighting.");
+
+            string hiding = l.FavouriteHidingPlace(brain.Map);
+            if (hiding != null) sb.AppendLine($"Employee's preferred concealment: {hiding}. Noted.");
+            if (l.Data.sprintFraction > 0.25f) sb.AppendLine($"Employee runs {l.Data.sprintFraction:P0} of the time. Running on the shop floor is a hazard.");
+            if (s.Catches > 0) sb.AppendLine($"Written warnings issued this shift: {s.Catches}.");
+            if (s.Overtimes > 0) sb.AppendLine("Employee kindly agreed to extend their shift.");
+
+            var counter = l.Data.counterplay.Where(c => c.lastShift == s.Shift).ToList();
+            foreach (CounterStat c in counter)
+                sb.AppendLine($"Counter-productive behaviour logged: {c.kind.Replace('_', ' ')} ({c.count}).");
+
+            // What landed.
+            var best = s.TacticRewards
+                .Where(p => p.Value.Count > 0)
+                .Select(p => (id: p.Key, mean: p.Value.Average()))
+                .OrderByDescending(x => x.mean)
+                .FirstOrDefault();
+            if (best.id != null)
+                sb.AppendLine($"Most effective intervention: {TacticLibrary.Get(best.id)?.Title ?? best.id} (Δ {best.mean:+0.00;-0.00}).");
+
+            sb.AppendLine();
+            sb.AppendLine("<b>Excerpts from the log</b> <size=70%>(redacted)</size>");
+            foreach (string line in Excerpts(5)) sb.AppendLine("<size=80%>" + line + "</size>");
+
+            // You broke it: never found, and fighting back on several fronts.
+            BrokeHer = s.Detections == 0 && counter.Count >= 3;
+            if (BrokeHer)
+            {
+                sb.AppendLine();
+                sb.AppendLine("<color=#FF6F61>Employee is unmanageable.</color>");
+            }
+
+            CanQuit = s.Shift >= 5 || BrokeHer;
+            sb.AppendLine();
+            sb.AppendLine(CanQuit ? "<size=80%>[Enter] next shift     [Q] hand in your notice</size>"
+                                  : "<size=80%>[Enter] next shift</size>");
+
+            Text = sb.ToString();
+            Visible = true;
+        }
+
+        IEnumerable<string> Excerpts(int n)
+        {
+            var picks = brain.Log.Records
+                .Where(r => r.Kind == "GOAL" || r.Kind == "PLAN" || r.Kind == "CHECK" || r.Kind == "LEARN")
+                .ToList();
+            if (picks.Count == 0) yield break;
+
+            int step = Mathf.Max(1, picks.Count / n);
+            for (int i = 0; i < picks.Count && n > 0; i += step, n--)
+                yield return Redact(picks[i].Text);
+        }
+
+        // Black out the names of places — she is not going to tell you everything.
+        string Redact(string line)
+        {
+            var sb = new StringBuilder(line);
+            foreach (Karoshi.Store.Region r in brain.Map.Regions)
+            {
+                if (r.Name == null || r.Name.Length < 4) continue;
+                string s = sb.ToString();
+                int at = s.IndexOf(r.Name, System.StringComparison.Ordinal);
+                if (at < 0 || (at * 7 + r.Id) % 3 == 0) continue;
+                sb.Remove(at, r.Name.Length).Insert(at, new string('█', r.Name.Length));
+            }
+            return sb.ToString();
+        }
+
+        public string EndingText(string kind)
+        {
+            KarenLedger l = brain.Ledger;
+            switch (kind)
+            {
+                case "burnout":
+                    return $"{l.PlayerName} worked {l.Data.shiftsWorked} shifts. Energy at the last clock-out: 0.\n" +
+                           "The last thing that happened is that KAREN made you a coffee.\n\n" +
+                           "<i>Employee wellbeing is a tracked metric. It was optimised.</i>";
+                case "broke":
+                    return $"{l.PlayerName} was never located. Cameras unplugged, the PA silenced, the routes changed.\n" +
+                           "KAREN's confidence collapsed and did not recover.\n\n<i>Employee is unmanageable. The position has been advertised.</i>";
+                default:
+                    return $"{l.PlayerName} worked {l.Data.shiftsWorked} shifts, received {l.Data.warnings} written warning(s), " +
+                           $"and clocked out {l.Data.shiftsClockedOut} time(s).\n\n<i>Your notice has been accepted. We are sorry to see you go. We are always sorry.</i>";
+            }
+        }
+    }
+
+    // Draws the review and handles its two keys.
+    public sealed class ReviewScreen : MonoBehaviour
+    {
+        KarenBrain brain;
+        GUIStyle style;
+
+        void Awake() => brain = GetComponent<KarenBrain>();
+
+        void Update()
+        {
+            if (brain == null || brain.Review == null || !brain.Review.Visible) return;
+            if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) brain.Review.Visible = false;
+            if (brain.Review.CanQuit && Input.GetKeyDown(KeyCode.Q))
+            {
+                brain.Review.Visible = false;
+                Consequences.QuitEnding(brain, brain.Review.Text);
+            }
+        }
+
+        void OnGUI()
+        {
+            if (brain == null || brain.Review == null || !brain.Review.Visible) return;
+            if (style == null)
+            {
+                style = new GUIStyle(GUI.skin.box)
+                {
+                    richText = true,
+                    alignment = TextAnchor.UpperLeft,
+                    fontSize = 15,
+                    wordWrap = true,
+                    padding = new RectOffset(24, 24, 20, 20)
+                };
+                style.normal.textColor = new Color(0.92f, 0.92f, 0.9f);
+            }
+
+            float w = Mathf.Min(760f, Screen.width - 60f), h = Mathf.Min(600f, Screen.height - 60f);
+            var rect = new Rect((Screen.width - w) * 0.5f, (Screen.height - h) * 0.5f, w, h);
+            GUI.color = new Color(0f, 0f, 0f, 0.88f);
+            GUI.DrawTexture(rect, Texture2D.whiteTexture);
+            GUI.color = Color.white;
+            GUI.Label(rect, brain.Review.Text, style);
+        }
+    }
+}

@@ -1,11 +1,12 @@
 using System.Collections.Generic;
+using Karoshi.Karen;
 using UnityEngine;
 
 public class ShelfSlot : MonoBehaviour, IInteractable
 {
     // Live registry of every enabled slot. With thousands of slots in a level,
     // FindObjectsByType<ShelfSlot>() is far too expensive to call per shift — let alone
-    // per frame, which EnemyAI used to do while sabotaging.
+    // per frame, which the old enemy AI used to do while sabotaging.
     static readonly List<ShelfSlot> all = new List<ShelfSlot>();
     public static IReadOnlyList<ShelfSlot> All => all;
 
@@ -80,11 +81,13 @@ public class ShelfSlot : MonoBehaviour, IInteractable
                 return;
             }
 
+            Item taken = storedItem;
             storedItem.SetCarried(false, null);
             player.carrySlot.TryPickup(storedItem);
             storedItem = null;
             isFilled = false;
             if (owner != null) owner.OnSlotEmptied();
+            GameEvents.RaisePlayerTookFromShelf(this, taken);
         }
         else
         {
@@ -105,6 +108,9 @@ public class ShelfSlot : MonoBehaviour, IInteractable
             if (owner != null) owner.OnSlotFilled();
 
             OneShotAudio.PlayAt(itemDropSound, transform.position);
+            NoiseBus.Emit(transform.position, 0.45f, NoiseKind.Stocking, NoiseAuthor.Player);
+            GameEvents.RaisePlayerShelvedItem(this, heldItem);
+            if (owner != null && owner.IsFull) GameEvents.RaiseShelfRestocked(owner, 1);
         }
     }
 
@@ -143,7 +149,7 @@ public class ShelfSlot : MonoBehaviour, IInteractable
         return true;
     }
 
-    // Called by EnemyAI to knock item off shelf
+    // Called by KAREN to knock an item off the shelf (her shelf sweep)
     public void Eject()
     {
         if (!isFilled) return;
@@ -151,6 +157,7 @@ public class ShelfSlot : MonoBehaviour, IInteractable
         if (storedItem != null)
         {
             storedItem.SetCarried(false, null);
+            storedItem.lastAuthor = NoiseAuthor.Karen;
 
             Rigidbody rb = storedItem.GetComponent<Rigidbody>();
             if (rb != null)

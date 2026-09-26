@@ -1,12 +1,19 @@
 # Karoshi — Research & Systems Ideas
 
 Working notes for the route we picked: **Karoshi as an agent-eval environment (1)**,
-**SHIN with ablations (2)**, and an **interpretable thought log (4)** — plus the infinite
+**KAREN with ablations (2)**, and an **interpretable thought log (4)** — plus the infinite
 maze and the blink mechanic that feed into them.
 
-Companion documents: [`shin.md`](shin.md) is the antagonist design spec,
+Companion documents: [`karen.md`](karen.md) is the antagonist design spec,
 [`RELEASE_PLAN.md`](RELEASE_PLAN.md) is the production route. This file is the part
 aimed at a research audience.
+
+> **Status.** Everything here except the infinite maze is built: the eval environment and
+> its clients ([`tools/eval/`](tools/eval/README.md)), all six KAREN rungs and the ablation
+> runner (results in [`KAREN_RESULTS.md`](KAREN_RESULTS.md)), the thought log with its
+> overlay and replay scrubber, and the blink pipeline from keyboard to webcam
+> ([`tools/blink/`](tools/blink/README.md)). The store itself is exported for people and
+> agents in [`STORE_MAP.md`](STORE_MAP.md). Where each piece lives: `karen.md` §15.
 
 ---
 
@@ -25,7 +32,7 @@ These three are not separate projects. They compose:
                         │  the same interface
                         ▼
    ┌──────────────────────────────────────────────────────┐
-   │   2. SHIN  ──► ablations ──► results table            │
+   │   2. KAREN  ──► ablations ──► results table            │
    └────────────────────┬─────────────────────────────────┘
                         │  emits, every decision
                         ▼
@@ -36,7 +43,7 @@ These three are not separate projects. They compose:
         blink mechanic ─┘  asymmetric information channel
 ```
 
-The eval interface is the keystone. Build it first and SHIN gets a measurement harness
+The eval interface is the keystone. Build it first and KAREN gets a measurement harness
 for free; build it last and you will retrofit everything.
 
 ---
@@ -54,18 +61,30 @@ failure naturally rather than artificially.
 
 ### What has to exist
 
-- [ ] **Observation** — a serializable snapshot of world state. Start with structured
+- [x] **Observation** — a serializable snapshot of world state. Start with structured
       text (agents read it far better than pixels, and it keeps the loop fast):
       position, facing, held items, visible shelves and their fill state, spills, queue
       length and wait times, bin fullness, burnout, time remaining, task list
-- [ ] **Action space** — a discrete verb set matching what the player can do:
+      → `EnvWorld.Observe`: JSON plus a prose rendering; the HUD as the player sees it
+      (lies included), KAREN only when in view, her footsteps only when close
+- [x] **Action space** — a discrete verb set matching what the player can do:
       `move_to(target)`, `pick_up(item)`, `place_on(slot)`, `mop(spill)`, `serve(customer)`,
       `bag_trash(bin)`, `dispose(bag)`, `drink_coffee()`, `clock_out()`
-- [ ] **Step/reset** — run a shift headless, deterministically, from a seed
-- [ ] **Metrics** — shift completion, tasks completed, customers lost, spills left
+      → 17 verbs in `KaroshiEnv.Act`, each run through the real body (`AgentDriver` drives
+      `PlayerMotor` and `PlayerInteract`, so walls, doors, stamina and noise are the player's)
+- [x] **Step/reset** — run a shift headless, deterministically, from a seed
+      → `KaroshiEnv.ResetEpisode`/`Act`, over a local socket via `EnvServer`
+- [x] **Metrics** — shift completion, tasks completed, customers lost, spills left
       standing, average customer wait, burnout at clock-out, wall-clock and step count
-- [ ] **Determinism** — same seed produces the same shift. Non-negotiable for ablations
-- [ ] **Headless + time-scaled** — evaluation cannot run at 1× real time
+      → `EpisodeMetrics`, plus KAREN's side and the failure taxonomy below
+- [~] **Determinism** — same seed produces the same shift. Non-negotiable for ablations
+      → one seed fixes `UnityEngine.Random` and KAREN's RNG, `Time.captureDeltaTime` fixes every
+      frame, scene reloads are synchronous and the planner has no wall-clock cut-off in eval runs.
+      Verified: the first shift after launch replays identically for the same seed. Not yet:
+      later shifts in the same process drift (engine-side — NavMesh carving and crowd updates run
+      on worker threads), so rungs are compared on paired seeds and means over several careers
+- [x] **Headless + time-scaled** — evaluation cannot run at 1× real time
+      → `-batchmode -nographics`; a 150 s shift runs in 5–15 s of wall time
 
 ### Design notes
 
@@ -97,11 +116,14 @@ signals maturity — **a failure taxonomy**. Categories worth reporting:
 "Model X completes 6/10 shifts; failures are 70% interference blindness" is a far more
 interesting sentence than a score.
 
+→ `FailureTaxonomy` labels every episode from its action trace. `tools/eval/run_baseline.py`
+is a scripted floor; `tools/eval/llm_agent.py` has Claude play a shift through one `act` tool.
+
 ---
 
-## 2. SHIN with ablations
+## 2. KAREN with ablations
 
-Full design in [`shin.md`](shin.md). The research contribution is not the antagonist —
+Full design in [`karen.md`](karen.md). The research contribution is not the antagonist —
 it is **evidence that the adaptation does something**.
 
 ### The ablation ladder
@@ -124,20 +146,24 @@ Pick before running, not after:
 - Time-to-first-detection
 - Shift completion rate (the player's, under each config)
 - Tactic diversity (entropy over the tactic distribution — catches degenerate camping)
-- Panic Index trace (from `shin.md`) — the intended reward signal
+- Panic Index trace (from `karen.md`) — the intended reward signal
 - Player-reported tension, 1–5, if you run humans
 
 ### The trap to avoid
 
-It is very easy to spend three months building SHIN and have zero numbers. **Commit to
+It is very easy to spend three months building KAREN and have zero numbers. **Commit to
 producing the table at rung C** — belief grid vs scripted — before building D and E.
 A two-rung ablation that exists beats a six-rung one that does not.
 
 ### Scope decision, unresolved
 
-`shin.md` is more ambitious than everything shipped so far combined, and is currently
+`karen.md` is more ambitious than everything shipped so far combined, and is currently
 zero lines of code. Decide explicitly which slice ships. My suggestion: rungs B–D are a
 complete, defensible story on their own.
+
+→ **Resolved: all six rungs ship**, switched by `KarenRung` (`-karen-rung A..F`). The ladder is
+run end to end by `AblationRunner` against three simulated players (efficient, skittish,
+reckless), paired by seed so rungs see the same shifts; the table is in `KAREN_RESULTS.md`.
 
 ---
 
@@ -166,7 +192,7 @@ One structured record per decision, not prose:
 ### Why it is worth building early
 
 - It makes the ablations **legible** — you can see *why* rung D beats rung C, not just that it does
-- It is the debugging tool for SHIN; you will want it regardless
+- It is the debugging tool for KAREN; you will want it regardless
 - It doubles as a player-facing feature: scrub the shift, watch what it was thinking
 - Interpretability framing lands well with the audience we are aiming at
 
@@ -176,6 +202,10 @@ One structured record per decision, not prose:
 - Keep it structured — the temptation is to write sentences, but sentences cannot be plotted
 - `because` is the one free-text field, and it should name the *mechanism*, not narrate
 - A replay scrubber over the log is a weekend of UI and enormously worth it
+
+→ Built as specified: `ThoughtLog` (ring buffer, JSONL per shift in `karen_logs/`), F1 for the
+live overlay, F2 for the replay scrubber (with belief snapshots and where the player really
+was), and the post-shift performance review that reads from it.
 
 ---
 
@@ -208,7 +238,7 @@ existing 5 m squares = 25×25 m). Each chunk's layout is generated from
 
 **Braid the maze.** Whatever generates it, remove most dead ends by knocking through
 walls to create loops. A chase with no escape route is frustrating rather than tense, and
-SHIN's herding tactics need loops to be interesting.
+KAREN's herding tactics need loops to be interesting.
 
 ### The hard parts, in order
 
@@ -228,11 +258,11 @@ SHIN's herding tactics need loops to be interesting.
 
 ### Conflict worth flagging
 
-`shin.md`'s herding relies on an **aisle graph with articulation points and min-cuts** —
-that needs a *bounded* graph. On an infinite map, SHIN must operate on a bounded window:
+`karen.md`'s herding relies on an **aisle graph with articulation points and min-cuts** —
+that needs a *bounded* graph. On an infinite map, KAREN must operate on a bounded window:
 the current shift's store footprint. Practical resolution: **the store is finite per
 shift; the maze is infinite across shifts.** Each shift generates a bounded store from a
-seed. That keeps SHIN's graph analysis valid, gives the eval its procedural variation,
+seed. That keeps KAREN's graph analysis valid, gives the eval its procedural variation,
 and sidesteps most of the streaming work above.
 
 I would take that resolution. It gets nearly all the benefit for a fraction of the cost.
@@ -311,13 +341,21 @@ IBlinkSource ─┬─ KeyboardBlinkSource   (dev + accessibility fallback)
                       │
           ┌───────────┴────────────┐
           ▼                        ▼
-   Eyelids.Closed01        OnBlinkStart / OnEyesClosedFor(t) → SHIN
+   Eyelids.Closed01        OnBlinkStart / OnEyesClosedFor(t) → KAREN
 ```
 
-Build the keyboard source first — it proves the whole chain including SHIN's reactions.
-Then replay traces, so SHIN's blink behaviour can be tested without sitting in front of a
+Build the keyboard source first — it proves the whole chain including KAREN's reactions.
+Then replay traces, so KAREN's blink behaviour can be tested without sitting in front of a
 camera blinking on cue. The webcam goes in last; it is the least certain part and the
 easiest to swap in once everything above it works.
+
+→ Built in that order (`Blink/Scripts/`). The webcam source comes two ways: `UdpBlinkSource`
+reads the Python sidecar (`tools/blink/blink_server.py` — MediaPipe blendshapes, eye aspect
+ratio, or your own ONNX model), and `SentisBlinkSource` runs the same model in-engine once the
+inference package is added. The own-training path is `record_dataset.py` (distillation from
+MediaPipe, with consent) → `train_eye_cnn.py` (tiny CNN → ONNX). Keys: B blinks, F8 consent,
+F9 calibration. The tracker predicts the reopening from the measured pipeline latency, and
+rung F's `blink_advance` tactic moves inside what's left of the closure.
 
 ### Non-negotiables
 
@@ -328,18 +366,19 @@ easiest to swap in once everything above it works.
   processing and a real trust barrier
 - **Exploit the window, do not chase the latency.** Blinks are stereotyped at roughly
   300 ms, so on detecting one ~120 ms in you can *predict* the reopening and schedule
-  SHIN's move inside the remaining closure. Far more robust than trying to react faster
+  KAREN's move inside the remaining closure. Far more robust than trying to react faster
 
 ---
 
 ## Suggested order
 
-1. **Eval interface** (observation, action, metrics, determinism, headless) — unlocks everything
-2. **Thought log** schema — trivial now, painful to retrofit
-3. **SHIN rungs B–D** + the ablation table
+1. ~~**Eval interface** (observation, action, metrics, determinism, headless) — unlocks everything~~ done
+2. ~~**Thought log** schema — trivial now, painful to retrofit~~ done
+3. ~~**KAREN rungs B–D** + the ablation table~~ done, A–F
 4. **Seeded finite store per shift** — procedural variation without the streaming cost
-5. **Blink**: keyboard → replay → webcam
-6. Infinite streaming maze *only if* it earns its place after 4
+   (partly: `MazeMutation` moves bays between shifts from shift 7, validated for reachability)
+5. ~~**Blink**: keyboard → replay → webcam~~ done
+6. Infinite streaming maze *only if* it earns its place after 4 — not built
 
 The first three are the ones a research audience actually reads. Everything after is
 upside.

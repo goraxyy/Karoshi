@@ -1,0 +1,10 @@
+# blink_server.py --synthetic needs nothing beyond the standard library.
+# The camera paths:
+opencv-python>=4.8
+mediapipe>=0.10
+numpy>=1.24
+# --method cnn:
+onnxruntime>=1.17
+# train_eye_cnn.py only:
+torch>=2.1
+onnx>=1.15

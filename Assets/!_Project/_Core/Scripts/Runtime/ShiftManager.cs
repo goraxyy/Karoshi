@@ -26,7 +26,10 @@ public class ShiftManager : MonoBehaviour
     public TaskManager taskManager;
     public CustomerSpawner customerSpawner;
     public BurnoutSystem burnoutSystem;
-    public EnemyAI enemyAI;
+
+    // Asked when the employee tries to clock out with everything done. Returning true
+    // refuses — KAREN's overtime (karen.md §8.2). Null means nobody objects.
+    public System.Func<bool> ClockOutGuard;
 
     public bool IsShiftActive { get; private set; }
     public bool CustomersAllowed { get; private set; }
@@ -40,7 +43,6 @@ public class ShiftManager : MonoBehaviour
         if (taskManager == null) taskManager = FindAnyObjectByType<TaskManager>();
         if (customerSpawner == null) customerSpawner = FindAnyObjectByType<CustomerSpawner>();
         if (burnoutSystem == null) burnoutSystem = FindAnyObjectByType<BurnoutSystem>();
-        if (enemyAI == null) enemyAI = FindAnyObjectByType<EnemyAI>();
     }
 
     void Start()
@@ -73,9 +75,17 @@ public class ShiftManager : MonoBehaviour
         if (!CanClockOut)
         {
             Debug.Log("Can't clock out yet — finish the shift tasks first.");
+            GameEvents.RaisePunchAttempted(false);
             return;
         }
 
+        if (ClockOutGuard != null && ClockOutGuard())
+        {
+            GameEvents.RaisePunchAttempted(false);
+            return;
+        }
+
+        GameEvents.RaisePunchAttempted(true);
         EndShift();
     }
 
@@ -94,14 +104,29 @@ public class ShiftManager : MonoBehaviour
         if (burnoutSystem != null)
             burnoutSystem.ResetForNewShift(ShiftNumber - 1);
 
-        if (enemyAI != null)
-            enemyAI.ResetForNewShift();
-
 #if UNITY_EDITOR
         appliedDuration = shiftDurationSeconds;
 #endif
 
         Debug.Log($"Shift {ShiftNumber} started ({ShiftLengthLabel}).");
+        ShiftStateChanged?.Invoke();
+    }
+
+    // Places the career: the next shift started will be number `completed + 1`. For the
+    // eval harness and the ablation runner, which start careers part-way through.
+    public void SetShiftNumber(int completed)
+    {
+        if (IsShiftActive) return;
+        ShiftNumber = Mathf.Max(0, completed);
+    }
+
+    // More shift: the doors stay open longer and customers keep coming. Used by KAREN's
+    // overtime and by the lecture after being caught.
+    public void AddOvertime(float seconds)
+    {
+        if (!IsShiftActive || seconds <= 0f) return;
+        TimeRemaining += seconds;
+        if (!CustomersAllowed) SetCustomersAllowed(true);
         ShiftStateChanged?.Invoke();
     }
 

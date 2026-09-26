@@ -1,4 +1,5 @@
 using System.Collections;
+using Karoshi.Karen;
 using UnityEngine;
 
 public class AutoDoubleDoor : MonoBehaviour
@@ -18,6 +19,8 @@ public class AutoDoubleDoor : MonoBehaviour
     private bool isOpen = false;
     private int playersInside = 0;
 
+    public bool IsOpen => isOpen;
+
     void Start()
     {
         // Auto-find doors by name — no Inspector dragging needed
@@ -26,7 +29,7 @@ public class AutoDoubleDoor : MonoBehaviour
 
         if (leftDoor == null || rightDoor == null)
         {
-            Debug.LogError("LeftDoor or RightDoor not found! Check names in Hierarchy.");
+            Debug.LogError("LeftDoor or RightDoor not found! Check names in Hierarchy.", this);
             return;
         }
 
@@ -35,8 +38,6 @@ public class AutoDoubleDoor : MonoBehaviour
         rightClosed = rightDoor.position;
         leftOpen = leftClosed + transform.right * slideDistance;
         rightOpen = rightClosed + transform.right * -slideDistance;
-
-        Debug.Log("Door script initialized successfully.");
     }
 
     void Update()
@@ -52,7 +53,6 @@ public class AutoDoubleDoor : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        Debug.Log("Trigger entered by: " + other.name);
         playersInside++;
 
         // Only on the closed -> open transition: a second body walking in behind the
@@ -61,12 +61,17 @@ public class AutoDoubleDoor : MonoBehaviour
         {
             isOpen = true;
             OneShotAudio.PlayAt(openChime, transform.position, chimeVolume);
+
+            bool employee = other is CharacterController;
+            NoiseBus.Emit(transform.position, 0.55f, NoiseKind.AutoDoor, employee ? NoiseAuthor.Player : NoiseAuthor.Customer);
+
+            // The door sensor tells the store's management who came through (§3.5).
+            if (employee) GameEvents.RaiseDoorUsed(this, true);
         }
     }
 
     void OnTriggerExit(Collider other)
     {
-        Debug.Log("Trigger exited by: " + other.name);
         playersInside = Mathf.Max(0, playersInside - 1);
         if (playersInside == 0)
             StartCoroutine(CloseAfterDelay());
@@ -76,5 +81,14 @@ public class AutoDoubleDoor : MonoBehaviour
     {
         yield return new WaitForSeconds(closeDelay);
         if (playersInside == 0) isOpen = false;
+    }
+
+    // The phantom chime (karen.md §8.3): the doors cycle with nobody there.
+    public void PhantomCycle()
+    {
+        if (isOpen) return;
+        isOpen = true;
+        OneShotAudio.PlayAt(openChime, transform.position, chimeVolume);
+        StartCoroutine(CloseAfterDelay());
     }
 }
