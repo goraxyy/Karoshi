@@ -44,7 +44,7 @@ public class TaskListUI : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(toggleKey))
+        if (Input.GetKeyDown(toggleKey) && !GamePause.Paused)
         {
             visible = !visible;
             ApplyVisibility();

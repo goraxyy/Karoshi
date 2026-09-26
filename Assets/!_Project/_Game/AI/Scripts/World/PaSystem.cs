@@ -169,7 +169,7 @@ namespace Karoshi.Karen
         {
             if (Jammed || clip == null) return;
             Transform speaker = NearestSpeaker(point);
-            OneShotAudio.PlayAt(clip, speaker != null ? speaker.position : point, gain);
+            OneShotAudio.PlayAt(clip, speaker != null ? speaker.position : point, gain, SoundKind.Voice);
         }
 
         void Update()
@@ -215,7 +215,7 @@ namespace Karoshi.Karen
         {
             foreach (AudioSource v in voices)
             {
-                v.volume = volume;
+                v.volume = volume * SoundSettings.Get(SoundKind.Voice);
                 v.PlayOneShot(clip);
             }
         }

@@ -290,6 +290,11 @@ public class KarenRuleTests
                 "{\"seq\": 1, \"closed\": 0.93, \"conf\": 0.88, \"src\": \"ear\", \"capture\": 1000.0, \"sent\": 1000.016, \"fps\": 30.0}");
             udp.Send(packet, packet.Length, "127.0.0.1", port);
 
+            // Live as soon as packets arrive, before anything reads one: the tracker only
+            // switches to the webcam once it's live, so waiting for a read would wait forever.
+            for (int i = 0; i < 200 && source.Packets == 0; i++) System.Threading.Thread.Sleep(5);
+            Assert.IsTrue(source.IsLive, "the webcam doesn't count as live until something reads it");
+
             Karoshi.Blink.BlinkSample sample = default;
             bool got = false;
             for (int i = 0; i < 200 && !got; i++)

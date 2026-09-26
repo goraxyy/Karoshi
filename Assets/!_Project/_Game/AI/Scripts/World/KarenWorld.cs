@@ -73,13 +73,13 @@ namespace Karoshi.Karen
                 case TellKind.BallastWhine:
                     // A blackout is audible storewide and visible as a flicker everywhere.
                     Pa.PlayNear(at, clip, 1f);
-                    OneShotAudio.PlayAt(clip, ListenerPosition(), 0.6f, 5f, 40f, 0.3f);
+                    OneShotAudio.PlayAt(clip, ListenerPosition(), 0.6f, 5f, 40f, 0.3f, SoundKind.Karen);
                     Lights.FlickerAll(lead);
                     break;
                 case TellKind.Flicker:
                     Light near = LightProbe.NearestOn(at);
                     if (near != null) StartCoroutine(Lights.Flicker(near, lead));
-                    OneShotAudio.PlayAt(clip, near != null ? near.transform.position : at, 0.8f, TellNear, TellFar, TellSpatial);
+                    OneShotAudio.PlayAt(clip, near != null ? near.transform.position : at, 0.8f, TellNear, TellFar, TellSpatial, SoundKind.Karen);
                     break;
                 case TellKind.PaChime:
                 case TellKind.SpeakerCrackle:
@@ -88,10 +88,10 @@ namespace Karoshi.Karen
                     break;
                 case TellKind.CrtTick:
                     // The HUD tell has to reach you wherever you are.
-                    OneShotAudio.PlayAt(clip, ListenerPosition(), 0.7f, 5f, 40f, 0f);
+                    OneShotAudio.PlayAt(clip, ListenerPosition(), 0.7f, 5f, 40f, 0f, SoundKind.Karen);
                     break;
                 default:
-                    OneShotAudio.PlayAt(clip, at, 1f, TellNear, TellFar, TellSpatial);
+                    OneShotAudio.PlayAt(clip, at, 1f, TellNear, TellFar, TellSpatial, SoundKind.Karen);
                     break;
             }
             NoiseBus.Emit(at, 0.4f, NoiseKind.Tell, NoiseAuthor.Karen);

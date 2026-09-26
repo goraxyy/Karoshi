@@ -76,6 +76,7 @@ public class PlayerMotor : MonoBehaviour
 
     void Update()
     {
+        if (GamePause.Paused) return;   // the Esc menu is open
         HandleLook();
         HandleMovement();
         HandleCrouch();
@@ -215,7 +216,7 @@ public class PlayerMotor : MonoBehaviour
         }
         feet.pitch = 0.92f + 0.16f * (float)stepRandom.NextDouble();   // own RNG: leaves seeded runs alone
         feet.PlayOneShot(ProceduralAudio.PlayerStep(stepVariant = (stepVariant + 1) % 3),
-                         sprinting ? 0.45f : isCrouching ? 0.07f : 0.22f);
+                         (sprinting ? 0.45f : isCrouching ? 0.07f : 0.22f) * SoundSettings.Get(SoundKind.Effects));
     }
 
     AudioSource feet;

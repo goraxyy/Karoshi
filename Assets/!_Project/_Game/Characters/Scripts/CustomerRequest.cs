@@ -477,7 +477,7 @@ public class CustomerRequest : MonoBehaviour
         return Vector3.Distance(transform.position, player.position) <= range;
     }
 
-    static bool Pressed(KeyCode key) => Input.GetKeyDown(key);
+    static bool Pressed(KeyCode key) => !GamePause.Paused && Input.GetKeyDown(key);
 
     void OnDisable()
     {

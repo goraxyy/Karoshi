@@ -74,7 +74,7 @@ public class HingeDoor : MonoBehaviour
     {
         // Check distance & E key press
         float dist = Vector3.Distance(transform.position, player.position);
-        if (Input.GetKeyDown(KeyCode.E) && dist <= interactRange)
+        if (Input.GetKeyDown(KeyCode.E) && dist <= interactRange && !GamePause.Paused)
             Use(player.position, NoiseAuthor.Player);
     }
 

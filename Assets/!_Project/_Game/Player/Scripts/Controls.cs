@@ -1,0 +1,65 @@
+// Every key the game uses, in one place. The Esc menu's Keys tab shows this list, and
+// CONTROLS.md is the same list to read outside the game (a test keeps the two in step).
+public static class Controls
+{
+    public readonly struct Entry
+    {
+        public readonly string Keys, Action;
+        public Entry(string keys, string action) { Keys = keys; Action = action; }
+    }
+
+    public readonly struct Section
+    {
+        public readonly string Title;
+        public readonly Entry[] Entries;
+        public Section(string title, params Entry[] entries) { Title = title; Entries = entries; }
+    }
+
+    static Entry K(string keys, string action) => new Entry(keys, action);
+
+    public static readonly Section[] All =
+    {
+        new Section("Moving",
+            K("W A S D", "Walk"),
+            K("Mouse", "Look around"),
+            K("Left Shift (hold)", "Sprint. Loud: Karen hears it"),
+            K("Left Ctrl", "Crouch, or stand up again. Quiet"),
+            K("Space", "Jump")),
+        new Section("Hands and work",
+            K("E", "Use what you're looking at: pick up, stock a shelf, open a door, serve, talk, switch the radio"),
+            K("E (hold)", "Mop a spill (with the mop in hand), clear a crate wall, unplug a camera, scrub footprints"),
+            K("E (nothing in view)", "Use what's in your hand, such as switching the torch on or off"),
+            K("Q", "Put down what you're holding"),
+            K("Q (hold, then let go)", "Throw it; hold longer to throw harder"),
+            K("1 2 3 4 / mouse wheel", "Choose a hand slot"),
+            K("C", "Show or hide the task list")),
+        new Section("Customers",
+            K("Up / Down", "Choose an answer when a customer asks you something"),
+            K("E / Enter", "Give that answer")),
+        new Section("Menus and maps",
+            K("Esc", "Settings: volume, mouse, Karen's floor cone, webcam; closes any open panel"),
+            K("F1", "Live map of the store and what Karen is doing, in plain words"),
+            K("H (on the F1 map)", "Karen's guess of where you are, as a heat map"),
+            K("T (on the F1 map)", "Technical view: goal scores and her thought log"),
+            K("F2", "Replay the shift so far"),
+            K("Space (in the replay)", "Play or pause"),
+            K("1 / 2 / 3 (in the replay)", "Speed: 1x, 4x, 16x"),
+            K("Left / Right (in the replay)", "Jump back or forward 5 seconds"),
+            K("O (in the replay)", "Open the full shift report in your browser")),
+        new Section("Blinking (webcam)",
+            K("F8", "Turn webcam blink tracking on (asks first) or off"),
+            K("Y / N", "Answer the webcam question"),
+            K("F9", "Calibrate: eyes open, then closed until the beep, then 3 blinks"),
+            K("F10", "Blink test panel: is the game reading your eyes?"),
+            K("R (in the blink test)", "Restart the camera helper"),
+            K("V (in the blink test)", "Switch to the next camera"),
+            K("M (in the blink test)", "Switch between the Apple Vision and MediaPipe helpers"),
+            K("B (hold)", "Close your eyes with the keyboard; tap it to blink")),
+        new Section("After a shift",
+            K("Enter", "Continue"),
+            K("O", "Open the shift report in your browser"),
+            K("Q", "Hand in your notice (from shift 5)")),
+        new Section("For testing",
+            K("L", "Cut the power to the whole store")),
+    };
+}

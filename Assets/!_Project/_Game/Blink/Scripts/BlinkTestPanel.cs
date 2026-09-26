@@ -21,11 +21,17 @@ namespace Karoshi.Blink
 
         void Awake() => tracker = GetComponent<BlinkTracker>();
 
+        public void Show()
+        {
+            visible = true;
+            if (tracker != null) blinksAtOpen = tracker.Blinks;
+        }
+
         void OnDisable() => FullScreenPanel.Set(this, false);
 
         void Update()
         {
-            if (Input.GetKeyDown(key))
+            if (Input.GetKeyDown(key) && !GamePause.Paused)
             {
                 visible = !visible;
                 if (visible && tracker != null) blinksAtOpen = tracker.Blinks;
@@ -34,8 +40,11 @@ namespace Karoshi.Blink
             if (!visible || tracker == null) return;
             history.Add((Time.unscaledTime, tracker.Closed01, tracker.EyesClosed));
             while (history.Count > 0 && Time.unscaledTime - history[0].t > 10f) history.RemoveAt(0);
+            if (Input.GetKeyDown(KeyCode.Escape)) { visible = false; FullScreenPanel.Set(this, false); return; }
             if (Input.GetKeyDown(KeyCode.R)) { BlinkSidecar.Stop(); tracker.StartWebcam(); }
-            if (Input.GetKeyDown(KeyCode.C) && BlinkTracker.Consented) BlinkSidecar.NextCamera(tracker.udpPort);
+            if (!BlinkTracker.Consented) return;
+            if (Input.GetKeyDown(KeyCode.V)) BlinkSidecar.NextCamera(tracker.udpPort);
+            if (Input.GetKeyDown(KeyCode.M) && BlinkSidecar.VisionReady && BlinkSidecar.MediaPipeReady) BlinkSidecar.SwitchHelper(tracker.udpPort);
         }
 
         void OnGUI()
@@ -81,27 +90,42 @@ namespace Karoshi.Blink
             Step(signal, "3. Signal", signalText);
 
             bool calibrated = tracker.Calibrated;
-            string calText = tracker.IsCalibrating ? $"Calibrating… {tracker.CalibrationLeft:0} s. Look at the screen and blink normally."
-                : calibrated ? $"Done. Your open eyes read {tracker.OpenLevel:0.00}, closed {tracker.ClosedLevel:0.00}. Press <b>F9</b> to redo."
-                : signal ? "Press <b>F9</b>, look at the screen and blink a few times for 10 seconds." : "—";
+            string calText = tracker.IsCalibrating ? "Follow the instructions on the right."
+                : !string.IsNullOrEmpty(tracker.CalibrationResult) ? tracker.CalibrationResult + (calibrated ? "  <b>F9</b> redoes it." : "")
+                : calibrated ? $"Done (open {tracker.OpenLevel:0.00}, closed {tracker.ClosedLevel:0.00}). Press <b>F9</b> to redo it."
+                : signal ? "Press <b>F9</b>. It takes 12 seconds: eyes open for 3, closed until a beep, then 3 blinks." : "—";
             Step(calibrated, "4. Calibrate", calText);
 
             GUILayout.Space(size * 0.8f);
             GUILayout.Label("No webcam? Hold <b>B</b> to close your eyes with the keyboard — Karen reacts the same way.", small);
             GUILayout.Label($"Reading from: <b>{tracker.SourceName}</b>", small);
             if (BlinkSidecar.Cameras.Count > 1)
-                GUILayout.Label($"Camera: <b>{BlinkSidecar.CameraName}</b>  ({BlinkSidecar.Cameras.Count} found, <b>C</b> switches)", small);
+                GUILayout.Label($"Camera: <b>{BlinkSidecar.CameraName}</b>  ({BlinkSidecar.Cameras.Count} found, <b>V</b> switches)", small);
+            if (BlinkSidecar.VisionReady && BlinkSidecar.MediaPipeReady)
+                GUILayout.Label($"Helper: <b>{(BlinkSidecar.PreferMediaPipe ? "MediaPipe" : "Apple Vision")}</b>  (<b>M</b> switches)", small);
+            else if (BlinkSidecar.VisionReady && tracker.WebcamLive)
+                GUILayout.Label("Not accurate enough? tools/blink/setup_mediapipe.sh adds the more accurate MediaPipe helper.", small);
 
             GUILayout.Space(size * 0.8f);
             GUILayout.Label("<b>Camera helper output</b>", small);
             IReadOnlyList<string> output = BlinkSidecar.Output;
             for (int i = Mathf.Max(0, output.Count - 8); i < output.Count; i++) GUILayout.Label(output[i], small);
             GUILayout.FlexibleSpace();
-            GUILayout.Label("F10 close · F8 webcam on/off · F9 calibrate · R restart the helper · C next camera · B keyboard blink", small);
+            GUILayout.Label("F10 / Esc close · F8 webcam on/off · F9 calibrate · R restart the helper · V next camera · M switch helper · B keyboard blink", small);
             GUILayout.EndArea();
 
-            // The live reading.
+            // The live reading. While calibrating, the instruction comes first and big.
             var right = new Rect(Screen.width * 0.5f, m, Screen.width * 0.5f - m, Screen.height - m * 2f);
+            if (tracker.IsCalibrating)
+            {
+                var big = new GUIStyle(heading) { fontSize = Mathf.RoundToInt(size * 1.8f), wordWrap = true };
+                float h = big.CalcHeight(new GUIContent(tracker.CalibrationText), right.width) + size * 2.2f;
+                Fill(new Rect(right.x - size * 0.5f, right.y - size * 0.3f, right.width + size, h), new Color(0.16f, 0.13f, 0.03f));
+                GUI.Label(new Rect(right.x, right.y, right.width, h), $"<color=#FFD640>{tracker.CalibrationText}</color>", big);
+                GUI.Label(new Rect(right.x, right.y + h - size * 1.9f, right.width, size * 1.6f),
+                    $"Step {(int)tracker.Calibrating} of 3 · {Mathf.CeilToInt(tracker.CalibrationLeft)} s", body);
+                right.yMin += h + size * 0.6f;
+            }
             bool shut = tracker.EyesClosed;
             GUI.Label(new Rect(right.x, right.y, right.width, size * 3f),
                 shut ? "<color=#FF5454><b>EYES CLOSED</b></color>" : "<color=#40C86E><b>EYES OPEN</b></color>",
@@ -112,8 +136,10 @@ namespace Karoshi.Blink
             Fill(new Rect(meter.x, meter.y, meter.width * Mathf.Clamp01(tracker.Closed01), meter.height), shut ? new Color(1f, 0.33f, 0.33f) : new Color(0.3f, 0.82f, 1f));
             Fill(new Rect(meter.x + meter.width * tracker.closeThreshold - 1f, meter.y - 4f, 3f, meter.height + 8f), new Color(1f, 0.85f, 0.25f));
             Fill(new Rect(meter.x + meter.width * tracker.openThreshold - 1f, meter.y - 4f, 3f, meter.height + 8f), new Color(0.6f, 0.6f, 0.65f));
+            string eye = tracker.UsingWebcam && tracker.UsualEyeRatio > 0f
+                ? $"   ·   eye height {tracker.EyeRatio:0.000} (usually {tracker.UsualEyeRatio:0.000})" : "";
             GUI.Label(new Rect(meter.x, meter.yMax + 4f, meter.width, size * 1.4f),
-                $"how closed: {tracker.Closed01:0.00}   (closes above the yellow line, opens below the grey one)", small);
+                $"how closed: {tracker.Closed01:0.00}   (closes above the yellow line, opens below the grey one){eye}", small);
 
             int since = tracker.Blinks - blinksAtOpen;
             GUI.Label(new Rect(right.x, meter.yMax + size * 2f, right.width, size * 4f),

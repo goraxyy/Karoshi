@@ -99,6 +99,7 @@ public class PlayerInteract : MonoBehaviour
 
     void Update()
     {
+        if (GamePause.Paused) return;   // the Esc menu is open
         HandleSlotSwitching();
 
         // A target can be destroyed while we're looking at it (e.g. a customer despawning).
