@@ -27,7 +27,7 @@ namespace Karoshi.Karen
         Environmental
     }
 
-    // Who made it. KAREN ignores her own noises and the Director's, the way a person
+    // Who made it. Karen ignores her own noises and the Director's, the way a person
     // doesn't startle at their own footsteps — but the player hears all of them.
     public enum NoiseAuthor { Player, Customer, Karen, Director, World }
 
@@ -58,7 +58,7 @@ namespace Karoshi.Karen
         static readonly NoiseEvent[] ring = new NoiseEvent[Capacity];
         static long next;
 
-        // Raised as each noise is made — for anything that must react *now* (KAREN
+        // Raised as each noise is made — for anything that must react *now* (Karen
         // re-deciding on a crash) rather than on its next scheduled tick.
         public static event System.Action<NoiseEvent> Emitted;
 

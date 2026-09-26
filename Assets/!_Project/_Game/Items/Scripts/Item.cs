@@ -63,7 +63,7 @@ public class Item : MonoBehaviour
     public Vector3 holdPositionOffset = Vector3.zero;
     public Vector3 holdRotationOffset = Vector3.zero;
 
-    // Whoever last let go of it — a thing KAREN knocked off a shelf is her noise, a thing
+    // Whoever last let go of it — a thing Karen knocked off a shelf is her noise, a thing
     // the employee threw is theirs.
     [System.NonSerialized] public NoiseAuthor lastAuthor = NoiseAuthor.World;
 

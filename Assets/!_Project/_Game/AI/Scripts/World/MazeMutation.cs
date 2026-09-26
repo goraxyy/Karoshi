@@ -7,7 +7,7 @@ using UnityEngine.AI;
 
 namespace Karoshi.Karen
 {
-    // The shelving is on castors (karen.md §5.5). Between shifts KAREN rolls a few bays to a
+    // The shelving is on castors (karen.md §5.5). Between shifts Karen rolls a few bays to a
     // new spot on the 5 m lattice, so the store you walk into is *wrong* and the route you
     // learned is no longer the route.
     //
@@ -112,7 +112,7 @@ namespace Karoshi.Karen
         static List<(MeshCollider, BoxCollider)> BoxStandIns()
         {
             var list = new List<(MeshCollider, BoxCollider)>();
-            foreach (MeshCollider mc in Object.FindObjectsByType<MeshCollider>(FindObjectsSortMode.None))
+            foreach (MeshCollider mc in Object.FindObjectsByType<MeshCollider>())
             {
                 if (!mc.enabled || mc.isTrigger || mc.sharedMesh == null || mc.sharedMesh.isReadable) continue;
                 var box = mc.gameObject.AddComponent<BoxCollider>();
@@ -130,8 +130,8 @@ namespace Karoshi.Karen
         {
             var added = new List<NavMeshModifier>();
             var bodies = new List<Component>();
-            bodies.AddRange(Object.FindObjectsByType<CharacterController>(FindObjectsSortMode.None));
-            bodies.AddRange(Object.FindObjectsByType<NavMeshAgent>(FindObjectsSortMode.None));
+            bodies.AddRange(Object.FindObjectsByType<CharacterController>());
+            bodies.AddRange(Object.FindObjectsByType<NavMeshAgent>());
             foreach (Component body in bodies)
             {
                 if (body.GetComponent<NavMeshModifier>() != null) continue;

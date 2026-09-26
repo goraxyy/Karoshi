@@ -60,7 +60,7 @@ namespace Karoshi.Karen
             if (ViolationLog.Count < 500) ViolationLog.Add($"[{Time.time:0.0}] {what}");
             // Loud, but not a flood: the first few, then one in fifty.
             if (Violations <= 10 || Violations % 50 == 0)
-                Debug.LogWarning($"KAREN fairness violation #{Violations}: {what}");
+                Debug.LogWarning($"Karen fairness violation #{Violations}: {what}");
             return false;
         }
 

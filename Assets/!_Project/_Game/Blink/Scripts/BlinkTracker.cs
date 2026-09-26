@@ -8,7 +8,7 @@ namespace Karoshi.Blink
     //
     //   IBlinkSource → BlinkTracker (calibration, smoothing, confidence)
     //                       ├─→ Eyelids.Closed01            the player's own eyes, mirrored
-    //                       └─→ OnBlinkStart / OnEyesClosedFor(t) → KAREN
+    //                       └─→ OnBlinkStart / OnEyesClosedFor(t) → Karen
     //
     // Non-negotiables, all enforced here:
     //   • Blink is a modifier, never a requirement — with no camera the keyboard stands in,
@@ -16,7 +16,7 @@ namespace Karoshi.Blink
     //   • Opt-in, local-only, never recorded, and said plainly on screen before the camera
     //     path is ever touched.
     //   • Exploit the window, don't chase the latency: a blink lasts ~300 ms and is learnt of
-    //     ~100 ms in, so the tracker predicts when the eyes will reopen and KAREN acts inside
+    //     ~100 ms in, so the tracker predicts when the eyes will reopen and Karen acts inside
     //     what is left.
     public sealed class BlinkTracker : MonoBehaviour
     {
@@ -47,6 +47,28 @@ namespace Karoshi.Blink
         public float LatencyMs => source != null ? source.MeasuredLatencyMs : 0f;
         public float ExpectedBlinkSeconds { get; private set; } = 0.3f;
         public int Blinks { get; private set; }
+
+        // For the F10 test panel.
+        public bool WebcamListening => webcam != null;
+        public bool WebcamLive => webcam != null && webcam.IsLive;
+        public int Packets => webcam != null ? webcam.Packets : 0;
+        public float SidecarFps => webcam != null ? webcam.SidecarFps : 0f;
+        public float RawClosed { get; private set; }
+        public bool Calibrated { get; private set; }
+        public bool IsCalibrating => calibrating;
+        public float CalibrationLeft => calibrating ? Mathf.Max(0f, calibrationEnds - Time.unscaledTime) : 0f;
+        public float OpenLevel => openLevel;
+        public float ClosedLevel => closedLevel;
+        public float LastBlinkSeconds { get; private set; }
+        public float BlinksPerMinute
+        {
+            get
+            {
+                while (recentBlinks.Count > 0 && Time.unscaledTime - recentBlinks.Peek() > 60f) recentBlinks.Dequeue();
+                return recentBlinks.Count;
+            }
+        }
+        readonly Queue<float> recentBlinks = new Queue<float>();
 
         // Seconds until the eyes are expected to open again, from the shape of a blink and
         // how long ago this one really began (detection time minus measured latency).
@@ -89,6 +111,7 @@ namespace Karoshi.Blink
         void OnDestroy()
         {
             webcam?.Dispose();
+            BlinkSidecar.Stop();
             if (Instance == this) Instance = null;
         }
 
@@ -100,11 +123,23 @@ namespace Karoshi.Blink
 
         public void UseSynthetic(int seed) => UseSource(ReplayBlinkSource.Synthetic(syntheticRate, seed));
 
-        void StartWebcam()
+        // Listen for the camera helper, and start it (it only ever sends to this computer).
+        public void StartWebcam()
         {
-            if (webcam != null) return;
-            try { webcam = new UdpBlinkSource(udpPort); }
-            catch (System.Exception e) { Debug.LogWarning($"Blink: couldn't listen on udp {udpPort}: {e.Message}"); }
+            if (webcam == null)
+            {
+                try { webcam = new UdpBlinkSource(udpPort); }
+                catch (System.Exception e) { Debug.LogWarning($"Blink: couldn't listen on udp {udpPort}: {e.Message}"); }
+            }
+            BlinkSidecar.Start(udpPort);
+        }
+
+        public void StopWebcam()
+        {
+            BlinkSidecar.Stop();
+            webcam?.Dispose();
+            webcam = null;
+            source = keyboard;
         }
 
         void Update()
@@ -118,6 +153,7 @@ namespace Karoshi.Blink
 
             if (source.TryRead(out BlinkSample s))
             {
+                RawClosed = s.Closed;
                 float normalised = Mathf.InverseLerp(openLevel, closedLevel, s.Closed);
                 if (calibrating) calibrationSamples.Add(s.Closed);
 
@@ -145,6 +181,7 @@ namespace Karoshi.Blink
                 blinkStartedAt = s.Captured;
                 nextMark = 0;
                 Blinks++;
+                recentBlinks.Enqueue(Time.unscaledTime);
                 OnBlinkStart?.Invoke(blinkStartedAt);
                 KarenBrain.Instance?.OnBlinkStarted();
             }
@@ -152,6 +189,7 @@ namespace Karoshi.Blink
             {
                 EyesClosed = false;
                 float length = (float)(s.Captured - blinkStartedAt);
+                LastBlinkSeconds = length;
                 // Learn this player's blink length, for predicting the next reopening.
                 if (length > 0.08f && length < 0.8f) ExpectedBlinkSeconds = Mathf.Lerp(ExpectedBlinkSeconds, length, 0.1f);
                 OnBlinkEnd?.Invoke(length);
@@ -189,10 +227,8 @@ namespace Karoshi.Blink
                 if (Consented)
                 {
                     PlayerPrefs.SetInt(ConsentKey, 0);
-                    webcam?.Dispose();
-                    webcam = null;
-                    source = keyboard;
-                    KarenScreen.Ensure().Subtitle("Webcam blink tracking off.", 3f);
+                    StopWebcam();
+                    KarenScreen.Ensure().Subtitle("Webcam blink tracking off. The camera helper has been stopped.", 3f);
                 }
                 else askingConsent = true;
             }
@@ -204,7 +240,9 @@ namespace Karoshi.Blink
                     askingConsent = false;
                     PlayerPrefs.SetInt(ConsentKey, 1);
                     StartWebcam();
-                    KarenScreen.Ensure().Subtitle("Webcam blink tracking on. Start tools/blink/blink_server.py, then press F9 to calibrate.", 6f);
+                    KarenScreen.Ensure().Subtitle(BlinkSidecar.Running
+                        ? "Webcam blink tracking on. Press F10 to watch it read your eyes, and F9 to calibrate."
+                        : "Webcam blink tracking on, but the camera helper couldn't start — press F10 for what to do.", 6f);
                 }
                 else if (Input.GetKeyDown(KeyCode.N) || Input.GetKeyDown(KeyCode.Escape))
                 {
@@ -238,25 +276,28 @@ namespace Karoshi.Blink
             openLevel = calibrationSamples[calibrationSamples.Count / 2];
             closedLevel = calibrationSamples[Mathf.Min(calibrationSamples.Count - 1, (int)(calibrationSamples.Count * 0.98f))];
             if (closedLevel - openLevel < 0.15f) closedLevel = Mathf.Min(1f, openLevel + 0.3f);
+            Calibrated = true;
             KarenScreen.Ensure().Subtitle($"Calibrated: open {openLevel:0.00}, closed {closedLevel:0.00}.", 4f);
         }
 
         void OnGUI()
         {
             if (!askingConsent) return;
-            var style = new GUIStyle(GUI.skin.box) { richText = true, wordWrap = true, fontSize = 15, alignment = TextAnchor.UpperLeft, padding = new RectOffset(20, 20, 16, 16) };
-            float w = Mathf.Min(620f, Screen.width - 40f);
-            var rect = new Rect((Screen.width - w) * 0.5f, Screen.height * 0.25f, w, 260f);
+            int size = Mathf.RoundToInt(Mathf.Clamp(Screen.height / 46f, 15f, 32f));
+            var style = new GUIStyle(GUI.skin.box) { richText = true, wordWrap = true, fontSize = size, alignment = TextAnchor.UpperLeft, padding = new RectOffset(20, 20, 16, 16) };
+            float w = Mathf.Min(size * 42f, Screen.width - 40f);
+            var rect = new Rect((Screen.width - w) * 0.5f, Screen.height * 0.2f, w, size * 19f);
             GUI.color = new Color(0f, 0f, 0f, 0.92f);
             GUI.DrawTexture(rect, Texture2D.whiteTexture);
             GUI.color = Color.white;
             GUI.Label(rect,
                 "<b>Use your webcam to track blinks?</b>\n\n" +
-                "KAREN can react when your real eyes close. The camera is read by a small program on this " +
-                "computer (tools/blink/blink_server.py) that sends only one number — how closed your eyes are — to the game.\n\n" +
+                "Karen can react when your real eyes close. The camera is read by a small helper program on this " +
+                "computer, which the game starts for you. It sends the game only one number — how closed your eyes are.\n\n" +
                 "• <b>Local only.</b> Nothing leaves this machine.\n" +
                 "• <b>Never recorded.</b> No frames are saved or stored.\n" +
-                "• <b>Optional.</b> Everything works without it; you can switch it off with F8.\n\n" +
+                "• <b>Optional.</b> Everything works without it; you can switch it off with F8.\n" +
+                "• macOS will ask once whether Unity may use the camera.\n\n" +
                 "[Y] enable      [N] not now", style);
         }
     }

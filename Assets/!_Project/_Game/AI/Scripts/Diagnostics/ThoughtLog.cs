@@ -42,7 +42,7 @@ namespace Karoshi.Karen
         // in memory only; the JSONL file stays small.
         public float[] BeliefSnapshot;
         public Vector3 BodyPosition;
-        public Vector3 PlayerPosition;   // debug only — the Director's truth, never KAREN's
+        public Vector3 PlayerPosition;   // debug only — the Director's truth, never Karen's
 
         public void WriteJson(JsonWriter w)
         {
@@ -78,7 +78,7 @@ namespace Karoshi.Karen
         }
     }
 
-    // KAREN's running account of her own reasoning (karen.md §6.6). A ring buffer in memory,
+    // Karen's running account of her own reasoning (karen.md §6.6). A ring buffer in memory,
     // flushed to JSONL at the end of each shift; the debug overlay tails it, the replay
     // scrubber scrubs it, and the post-shift performance review quotes it back at you.
     public sealed class ThoughtLog
@@ -107,7 +107,7 @@ namespace Karoshi.Karen
             ring[head] = record;
             head = (head + 1) % Capacity;
             count = Mathf.Min(count + 1, Capacity);
-            if (EchoToConsole) Debug.Log("[KAREN] " + record.Text);
+            if (EchoToConsole) Debug.Log("[Karen] " + record.Text);
             Written?.Invoke(record);
             return record;
         }

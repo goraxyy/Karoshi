@@ -34,7 +34,7 @@ namespace Karoshi.Karen
             foreach (string line in LectureLines)
             {
                 if (brain.World != null && !brain.World.Pa.Jammed) brain.World.Pa.Announce(line);
-                else screen.Subtitle("<color=#FF6F61>KAREN</color>\n" + line, per);
+                else screen.Subtitle("<color=#FF6F61>Karen</color>\n" + line, per);
                 yield return new WaitForSeconds(per);
             }
 

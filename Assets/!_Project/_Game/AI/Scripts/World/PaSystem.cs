@@ -8,13 +8,13 @@ namespace Karoshi.Karen
     public sealed class PaAnnouncement
     {
         public string Text;
-        public AudioClip Clip;          // null = KAREN's voice
+        public AudioClip Clip;          // null = Karen's voice
         public bool Done;
         public bool Jammed;
         public float Started = -1f;
     }
 
-    // Everything KAREN puts on your screen that isn't the world: PA subtitles, written
+    // Everything Karen puts on your screen that isn't the world: PA subtitles, written
     // warnings, the endings. One overlay canvas built in code, under the eyelids.
     public sealed class KarenScreen : MonoBehaviour
     {
@@ -105,7 +105,7 @@ namespace Karoshi.Karen
         }
     }
 
-    // The tannoy (karen.md §8.3). KAREN owns it and is not obliged to be truthful. Plays
+    // The tannoy (karen.md §8.3). Karen owns it and is not obliged to be truthful. Plays
     // through the store's own ceiling speakers — the ones nearest you — with a chime first,
     // ducks the radio underneath, and puts the words on screen. Jam it at the breaker box
     // and she has no voice.
@@ -188,7 +188,7 @@ namespace Karoshi.Karen
                 phase = 1;
                 phaseEnds = Time.time + ChimeSeconds;
                 ChimeStarted?.Invoke(current);
-                KarenScreen.Ensure().Subtitle("<color=#FF6F61>KAREN</color> <size=70%>(store PA)</size>\n" + current.Text,
+                KarenScreen.Ensure().Subtitle("<color=#FF6F61>Karen</color> <size=70%>(store PA)</size>\n" + current.Text,
                                               1.3f + current.Text.Length * 0.06f + 1.5f);
                 return;
             }

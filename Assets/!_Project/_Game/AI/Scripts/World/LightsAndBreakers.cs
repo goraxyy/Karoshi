@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Karoshi.Karen
 {
-    // The store's lights, split into the circuits KAREN can trip (karen.md §8.1).
+    // The store's lights, split into the circuits Karen can trip (karen.md §8.1).
     public enum LightCircuit { East, West, Back }
 
     public sealed class LightControl : MonoBehaviour
@@ -113,7 +113,7 @@ namespace Karoshi.Karen
     // Get it wrong and everything you'd already thrown trips again.
     //
     // A fourth switch jams the PA. The panel can only carry two of the three light
-    // circuits while the jammer is drawing power, so silencing KAREN costs you a wing of
+    // circuits while the jammer is drawing power, so silencing Karen costs you a wing of
     // the store.
     public sealed class BreakerPanel : MonoBehaviour
     {
@@ -185,7 +185,7 @@ namespace Karoshi.Karen
             RefreshVisuals();
         }
 
-        // ---- KAREN's side ------------------------------------------------------
+        // ---- Karen's side ------------------------------------------------------
 
         public void TripAll(KarenRng rng)
         {

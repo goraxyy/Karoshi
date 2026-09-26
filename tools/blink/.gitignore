@@ -5,3 +5,5 @@
 *.task
 eye_dataset/
 __pycache__/
+mac/build/
+.venv/

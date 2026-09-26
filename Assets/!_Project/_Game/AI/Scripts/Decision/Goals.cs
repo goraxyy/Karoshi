@@ -288,7 +288,7 @@ namespace Karoshi.Karen
                 chosen = entry.t;
                 because = entry.why + (builder.Target != null ? $" → {builder.Target}" : string.Empty)
                                     + (builder.Truncated ? " (partial: budget)" : string.Empty);
-                return new PlanTree($"{goal}({entry.t.Id})", goal, entry.t, builder.Steps, interrupt);
+                return new PlanTree($"{goal}({entry.t.Id})", goal, entry.t, builder.Steps, interrupt) { Target = builder.Target };
             }
 
             because = "every candidate decomposed to nothing";

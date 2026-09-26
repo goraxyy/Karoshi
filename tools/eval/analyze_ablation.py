@@ -82,7 +82,7 @@ def main(path):
       f"{careers} careers of shifts {shifts[0]}–{shifts[-1]}. Mean ± standard error.\n")
 
     w("### Headline, by rung (all profiles)\n")
-    w("| rung | shifts | player clocked out | KAREN detected them | first detection (s) | catches / shift | "
+    w("| rung | shifts | player clocked out | Karen detected them | first detection (s) | catches / shift | "
       "tactics / shift | tactic entropy (bits) | mean Panic Index | setpoint RMSE | customers lost / shift | fairness violations |")
     w("|---|---|---|---|---|---|---|---|---|---|---|---|")
     for g in rungs:
@@ -98,7 +98,7 @@ def main(path):
     if "C" in by_rung:
         base = {(r["agent"], r["seed"], r["shift"]): r for r in by_rung["C"]}
         w("\n### Each rung against rung C, paired by seed and shift\n")
-        w("Positive = more than C. Pairs share the same customers and spills; KAREN is the only difference.\n")
+        w("Positive = more than C. Pairs share the same customers and spills; Karen is the only difference.\n")
         w("| rung | pairs | Δ detections | Δ catches | Δ mean panic | Δ setpoint RMSE | Δ jobs done | Δ clocked out |")
         w("|---|---|---|---|---|---|---|---|")
         for g in rungs:

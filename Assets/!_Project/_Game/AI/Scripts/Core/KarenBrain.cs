@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Karoshi.Karen
 {
-    // K.A.R.E.N. — the orchestrator (karen.md §2, §6.1).
+    // Karen — the orchestrator (karen.md §2, §6.1).
     //
     // Owns the three minds and runs them at their own rates:
     //
@@ -16,7 +16,7 @@ namespace Karoshi.Karen
     //   Decide     2 Hz or event   goal by utility → tactic → plan (HTN, anytime)
     //
     // The rung (ideas.md §2) decides how much of this is switched on. A and B are the old
-    // patrol-and-chase guard, kept as the ablation floor; C and up are KAREN.
+    // patrol-and-chase guard, kept as the ablation floor; C and up are Karen.
     [DefaultExecutionOrder(100)]
     public sealed class KarenBrain : MonoBehaviour
     {
@@ -120,7 +120,7 @@ namespace Karoshi.Karen
                 if (Shift.IsShiftActive) BeginShift();
             }
 
-            Note("SYSTEM", $"K.A.R.E.N. online — rung {config.rung} ({config.Features}), seed {Rng.Seed}. Map: {Map.Summary()}");
+            Note("SYSTEM", $"Karen online — rung {config.rung} ({config.Features}), seed {Rng.Seed}. Map: {Map.Summary()}");
         }
 
         // Routes end at a job: the Ledger learns the paths taken between them.
@@ -131,7 +131,7 @@ namespace Karoshi.Karen
         void OnClockRoute(bool accepted) => Ledger.CompleteRoute("time clock");
 
         // The events are static and outlive the scene; an eval reset reloads it, so every
-        // subscription is undone here or the old KAREN would go on listening.
+        // subscription is undone here or the old Karen would go on listening.
         void OnDestroy()
         {
             NoiseBus.Emitted -= OnNoise;
@@ -320,6 +320,7 @@ namespace Karoshi.Karen
         // ---- believe ----------------------------------------------------------------------
 
         bool wasSeeing;
+        float lostSightAt = -1f;
 
         void Believe(float dt)
         {
@@ -338,8 +339,17 @@ namespace Karoshi.Karen
             {
                 Stats.Detected(Time.time - shiftStartedAt);
                 Note("SENSE", $"sight {Body.Sight.Band} ({Body.Sight.Awareness:0.00}) at {Map.Describe(Body.Sight.LastSeenPosition)}");
+                if (ShiftActive) KarenNarrator.Say(StoryKind.Seen, $"Karen spotted you in {KarenNarrator.Place(Body.Sight.LastSeenPosition)}!", Body.Sight.LastSeenPosition);
+                lostSightAt = -1f;
+            }
+            else if (!seeing && wasSeeing) lostSightAt = Time.time;
+            if (lostSightAt > 0f && Time.time - lostSightAt > 3f)
+            {
+                lostSightAt = -1f;
+                if (ShiftActive) KarenNarrator.Say(StoryKind.Seen, "Karen lost sight of you.", Body.Sight.LastSeenPosition);
             }
             wasSeeing = seeing;
+            NarrateGuess();
 
             if (Sensorium.SweptCells.Count > 0 && Belief.ApplySweep(Sensorium.SweptCells, Sensorium.SweptProbability))
                 Note("SENSE", "NEGATIVE sweep ruled out everything — back to the prior");
@@ -365,6 +375,24 @@ namespace Karoshi.Karen
             if (o.Channel == SenseChannel.Hearing && Time.time - lastSenseNote < 3f) return;
             lastSenseNote = Time.time;
             Note("SENSE", $"{o.Channel} {o.Label} at {Map.Describe(o.Position)} (conf {o.Confidence:0.00})");
+            if (!ShiftActive) return;
+            switch (o.Channel)
+            {
+                case SenseChannel.Hearing:
+                    KarenNarrator.Say(StoryKind.Heard, $"Karen heard {KarenNarrator.Evidence(o.Label)} near {KarenNarrator.Place(o.Position)}.", o.Position); break;
+                case SenseChannel.Testimony:
+                    KarenNarrator.Say(StoryKind.Heard, $"A customer told Karen they saw you near {KarenNarrator.Place(o.Position)}.", o.Position); break;
+                case SenseChannel.Trace:
+                    KarenNarrator.Say(StoryKind.Heard, $"Karen found a trace of you — {KarenNarrator.Evidence(o.Label)} — near {KarenNarrator.Place(o.Position)}.", o.Position); break;
+                case SenseChannel.Infrastructure:
+                {
+                    string what = KarenNarrator.Evidence(o.Label), where = KarenNarrator.Place(o.Position);
+                    KarenNarrator.Say(StoryKind.Heard, what.Contains("door") && where.Contains("door")
+                        ? $"Karen's door sensors saw someone use {where}."
+                        : $"Karen's sensors picked up {what} {KarenNarrator.In(o.Position)}.", o.Position);
+                    break;
+                }
+            }
         }
 
         void OnNoise(NoiseEvent e)
@@ -393,7 +421,7 @@ namespace Karoshi.Karen
         }
 
         // The same list the fairness guard checks — every open job and the time clock. It
-        // names objects in the store, not the employee, so KAREN may use it: she wrote it.
+        // names objects in the store, not the employee, so Karen may use it: she wrote it.
         static IEnumerable<KeyValuePair<string, Vector3>> FairnessGuardTargets() => FairnessGuard.RequiredTargets(StoreMap.Current);
 
         public int LikelyNextJobRegion
@@ -532,6 +560,7 @@ namespace Karoshi.Karen
             CurrentPlan = plan;
             planStartedAt = Time.time;
             Log.Write(Record("PLAN", $"PLAN     {tactic.Id} → {why}", options, tactic.Id, why));
+            NarratePlan(plan);
         }
 
         void WriteBelief()
@@ -601,6 +630,10 @@ namespace Karoshi.Karen
                 {
                     Ledger.Reward(tactic.Id, delta);
                     Note("LEARN", $"LEARN    {tactic.Id} Δpanic {delta:+0.00;-0.00} → Q̂ {Ledger.ExpectedPanicDelta(tactic, Ctx):+0.00;-0.00}");
+                    if (Mathf.Abs(delta) >= 0.08f)
+                        KarenNarrator.Say(StoryKind.Learned, delta > 0f
+                            ? $"Karen noticed that {KarenNarrator.Tactic(tactic.Id).TrimEnd('!')} rattled you. She'll remember."
+                            : $"Karen noticed that {KarenNarrator.Tactic(tactic.Id).TrimEnd('!')} didn't bother you.");
                 }
                 Stats.Rewarded(tactic, delta);
             }
@@ -619,6 +652,8 @@ namespace Karoshi.Karen
         {
             FairnessGuard.NoteTell(kind, lead);
             if (ofPlan) planTellAt = Time.time;
+            if (ShiftActive && kind != TellKind.PaChime && kind != TellKind.Footsteps)
+                KarenNarrator.Say(StoryKind.Warning, $"Warning: {KarenNarrator.Tell(kind)} near {KarenNarrator.Place(at)} — something's about to happen.", at);
             Note("TELL", $"TELL     {kind} at {Map.Describe(at)} ({lead:0.0}s lead)");
         }
 
@@ -639,7 +674,11 @@ namespace Karoshi.Karen
         }
 
         void OnPaChime(PaAnnouncement a) => RecordTell(TellKind.PaChime, Body.Position, PaSystem.ChimeSeconds);   // storewide; logged where she is
-        void OnPaSpeech(PaAnnouncement a) => RecordToldEffect("PA: " + a.Text, "chime", a.Started);
+        void OnPaSpeech(PaAnnouncement a)
+        {
+            RecordToldEffect("PA: " + a.Text, "chime", a.Started);
+            KarenNarrator.Say(StoryKind.Store, $"Karen over the speakers: \"{a.Text}\"");
+        }
 
         // ---- the simple guard (rungs A and B) ---------------------------------------------
 
@@ -746,6 +785,7 @@ namespace Karoshi.Karen
             Log.Write(Record("CAUGHT", $"CAUGHT   written warning #{Ledger.Data.warnings} at {Map.Describe(Body.Position)}", null, null,
                                 "caught during a chase — lecture, overtime, then a guaranteed recovery window"));
             StartCoroutine(Consequences.Lecture(this, Ledger.Data.warnings, config.lectureSeconds, config.overtimePerCatch));
+            KarenNarrator.Say(StoryKind.Chase, $"Karen caught you! Written warning #{Ledger.Data.warnings}: a {config.lectureSeconds:0}-second lecture and {config.overtimePerCatch:0} seconds of overtime. After it, she has to leave you alone for a while.", Body.Position);
             releasedUntil = Time.time + config.lectureSeconds + 15f;   // no second catch until you've had a chance to walk away
             if (config.Features.Goals) Director.StartRecovery(Mathf.Max(config.recoverySeconds, config.lectureSeconds + 15f), Ctx, "caught");
             CustomerMemory.MakeNearbyJumpy(Body.Position, 20f, 90f);
@@ -756,6 +796,7 @@ namespace Karoshi.Karen
             if (chasing == on) return;
             chasing = on;
             Burnout?.SetChaseState(on);
+            if (ShiftActive) KarenNarrator.Say(StoryKind.Chase, on ? "Karen is chasing you — run!" : "Karen gave up the chase.", Body.Position);
             Body.SetMood(on ? KarenBody.Mood.Hunt : KarenBody.Mood.Calm);
             if (on) Stats.Chased();
             else if (config.Features.Goals && ShiftActive) Director.StartRecovery(config.recoverySeconds, Ctx, "after a chase");
@@ -883,6 +924,69 @@ namespace Karoshi.Karen
             Director?.Index.NoteBlink();
             if (!config.Features.Blink || !ShiftActive) return;
             Stats.BlinkSeen();
+            if (CurrentPlan != null && CurrentPlan.Tactic != null && CurrentPlan.Tactic.Id == "blink_advance")
+                KarenNarrator.Say(StoryKind.Blink, "You blinked — and Karen moved.", Body.Position);
+        }
+
+        // ---- telling the player what she's doing ---------------------------------------------
+
+        // What she's doing right now, in a sentence, for the F1 map.
+        public string StatusLine
+        {
+            get
+            {
+                if (!ShiftActive) return "Karen is off duty until you clock in.";
+                if (Consequences.LectureRunning) return "Karen is lecturing you.";
+                if (chasing) return "Karen is chasing you!";
+                if (CurrentPlan == null) return "Karen is thinking.";
+                string doing = CurrentPlan.Tactic != null ? KarenNarrator.Tactic(CurrentPlan.Tactic.Id) : KarenNarrator.Goal(CurrentPlan.Goal);
+                return "Karen is " + doing.TrimEnd('!') + ".";
+            }
+        }
+
+        public bool IsChasing => chasing;
+
+        void NarratePlan(PlanTree plan)
+        {
+            if (!ShiftActive || plan.Tactic == null) return;
+            string id = plan.Tactic.Id;
+            // Her rounds and small follow-ups would flood the story; say them only when they change.
+            if (id == lastNarratedTactic && Time.time - lastPlanNarration < 20f) return;
+            lastNarratedTactic = id;
+            lastPlanNarration = Time.time;
+            string where = PlainTarget(plan.Target);
+            KarenNarrator.Say(StoryKind.Plan, $"Karen is {KarenNarrator.Tactic(id).TrimEnd('!')}{(where != null ? " — " + where : "")}.");
+        }
+
+        string lastNarratedTactic;
+        float lastPlanNarration = -99f;
+
+        static string PlainTarget(string target)
+        {
+            if (string.IsNullOrEmpty(target) || target == "close distance") return null;
+            if (target.Contains("/") || target.StartsWith("Door")) return KarenNarrator.Place(target.Split(' ')[0].Contains("/") ? target.Split(' ')[0] : target);
+            return target.Length <= 40 ? target : null;
+        }
+
+        int lastGuessRegion = -1;
+        float lastGuessAt = -99f;
+
+        // Every so often, and whenever her best guess moves somewhere new, say where she
+        // thinks you are.
+        void NarrateGuess()
+        {
+            if (!ShiftActive || Belief == null) return;
+            int region = Belief.PeakRegion;
+            float conf = Belief.Confidence;
+            bool moved = region != lastGuessRegion && conf >= 0.3f;
+            if (!moved && Time.time - lastGuessAt < 20f) return;
+            if (region == lastGuessRegion && Time.time - lastGuessAt < 45f) return;   // nothing new to say
+            lastGuessRegion = region;
+            lastGuessAt = Time.time;
+            if (conf < 0.12f)
+                KarenNarrator.Say(StoryKind.Guess, "Karen has no idea where you are.");
+            else
+                KarenNarrator.Say(StoryKind.Guess, $"Karen thinks you're {KarenNarrator.In(Map.RegionName(region))} ({KarenNarrator.Sureness(conf)}).", Belief.PeakPosition);
         }
 
         // ---- the thought log --------------------------------------------------------------

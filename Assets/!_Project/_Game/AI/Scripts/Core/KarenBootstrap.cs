@@ -3,7 +3,7 @@ using UnityEngine.SceneManagement;
 
 namespace Karoshi.Karen
 {
-    // Puts KAREN into the store when the scene loads. Entirely from code — the scene file
+    // Puts Karen into the store when the scene loads. Entirely from code — the scene file
     // isn't in version control, so nothing about her may depend on it.
     //
     // Command line (for builds and the eval harness):
@@ -12,11 +12,11 @@ namespace Karoshi.Karen
     //   -karen-seed <n>       seed every decision (0 = clock)
     public static class KarenBootstrap
     {
-        // Set by the eval harness before a scene load to configure the next KAREN.
+        // Set by the eval harness before a scene load to configure the next Karen.
         public static KarenConfig Override;
         public static bool Disabled;
 
-        // Every later load of the store gets a KAREN too — the eval harness reloads the scene
+        // Every later load of the store gets a Karen too — the eval harness reloads the scene
         // on each reset, and RuntimeInitializeOnLoadMethod only fires for the first one.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void Hook()
@@ -45,16 +45,18 @@ namespace Karoshi.Karen
                 if (player.GetComponent<FootprintTrail>() == null) player.AddComponent<FootprintTrail>();
             }
 
-            foreach (CustomerNPC npc in Object.FindObjectsByType<CustomerNPC>(FindObjectsSortMode.None))
+            foreach (CustomerNPC npc in Object.FindObjectsByType<CustomerNPC>())
                 if (npc.GetComponent<CustomerMemory>() == null) npc.gameObject.AddComponent<CustomerMemory>();
 
-            var root = new GameObject("KAREN");
+            var root = new GameObject("Karen");
             var brain = root.AddComponent<KarenBrain>();
             if (Override != null) brain.config = Override.Clone();
             ApplyCommandLine(brain.config);
+            root.AddComponent<ShiftRecorder>();
             root.AddComponent<KarenDebugOverlay>();
             root.AddComponent<ReviewScreen>();
             root.AddComponent<Karoshi.Blink.BlinkTracker>();
+            root.AddComponent<Karoshi.Blink.BlinkTestPanel>();
         }
 
         static string rungArg, seedArg;

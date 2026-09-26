@@ -31,13 +31,14 @@ namespace Karoshi.Karen
         Footsteps         // her own steps, from somewhere else
     }
 
-    // All of KAREN's sounds, synthesised at load. The project keeps audio clips out of the
+    // All of Karen's sounds, synthesised at load. The project keeps audio clips out of the
     // repository, and every one of these is short and simple enough to build from sines
     // and noise — which also makes them unmistakably *hers*: nothing else in the store
     // sounds like this.
     public static class ProceduralAudio
     {
         const int Rate = 44100;
+        const float Loudness = 0.85f;   // peak level of every generated clip
         static readonly Dictionary<string, AudioClip> cache = new Dictionary<string, AudioClip>();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -49,9 +50,23 @@ namespace Karoshi.Karen
 
             int n = Mathf.Max(1, Mathf.CeilToInt(seconds * Rate));
             var data = new float[n];
-            for (int i = 0; i < n; i++) data[i] = Mathf.Clamp(sample((float)i / Rate), -1f, 1f);
+            float peak = 0f;
+            for (int i = 0; i < n; i++)
+            {
+                data[i] = Mathf.Clamp(sample((float)i / Rate), -1f, 1f);
+                peak = Mathf.Max(peak, Mathf.Abs(data[i]));
+            }
 
-            clip = AudioClip.Create("KAREN_" + name, n, 1, Rate, false);
+            // Every clip leaves here at the same peak level, so how loud a sound is in the
+            // game is decided by where it's played and at what volume — not by whichever
+            // constant happened to be in its formula. (Several peaked at 0.2 and were lost.)
+            if (peak > 1e-4f)
+            {
+                float gain = Loudness / peak;
+                for (int i = 0; i < n; i++) data[i] *= gain;
+            }
+
+            clip = AudioClip.Create("Karen_" + name, n, 1, Rate, false);
             clip.SetData(data, 0);
             cache[name] = clip;
             return clip;
@@ -129,6 +144,10 @@ namespace Karoshi.Karen
         static float Footstep(float t) => Mathf.Exp(-t * 35f) * (Sine(80f, t) * 0.7f + White(t) * 0.5f);
 
         public static AudioClip KarenStep() => Make("step", 0.25f, t => 0.8f * Footstep(t));
+
+        // The employee's own steps: softer and higher than hers, so the two never get confused.
+        public static AudioClip PlayerStep(int variant) => Make("pstep" + variant, 0.18f, t =>
+            Mathf.Exp(-t * 45f) * (Sine(140f + variant * 17f, t) * 0.5f + Hash((int)(t * Rate) + variant * 9973) * 0.6f));
         public static AudioClip Hum(int pitch) => Make("hum" + pitch, 1.2f, t => 0.35f * Env(t, 0.1f, 0.2f, 1.2f) * (Sine(90f + pitch * 45f, t) + Sine((90f + pitch * 45f) * 2f, t) * 0.3f));
         public static AudioClip BreakerThrow() => Make("breaker", 0.4f, t => 0.8f * Mathf.Exp(-t * 25f) * (White(t) * 0.6f + Sine(140f, t)));
         public static AudioClip ErrorBuzz() => Make("error", 0.6f, t => 0.35f * Env(t, 0.01f, 0.05f, 0.6f) * Mathf.Sign(Sine(95f, t)));
@@ -144,7 +163,7 @@ namespace Karoshi.Karen
             return 0.18f * Mathf.Exp(-local * 4f) * (Sine(notes[i], t) + Sine(notes[i] * 0.5f, t) * 0.5f);
         });
 
-        // KAREN's PA "voice": no text-to-speech, but a clipped, syllabic murmur the length of
+        // Karen's PA "voice": no text-to-speech, but a clipped, syllabic murmur the length of
         // the line — a tannoy you can't quite make out, with the words in the subtitle.
         public static AudioClip Voice(string text)
         {

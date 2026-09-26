@@ -118,7 +118,7 @@ namespace Karoshi.Karen
         {
             door = null;
             float best = float.MaxValue;
-            foreach (HingeDoor d in Object.FindObjectsByType<HingeDoor>(FindObjectsSortMode.None))
+            foreach (HingeDoor d in Object.FindObjectsByType<HingeDoor>())
             {
                 if (c.World.IsLocked(d)) continue;
                 int region = c.Map.RegionAt(d.transform.position);

@@ -5,7 +5,7 @@ using UnityEngine.AI;
 
 namespace Karoshi.Store
 {
-    // What a named place in the building is for. KAREN plans against these, the eval
+    // What a named place in the building is for. Karen plans against these, the eval
     // harness names them in its observations, and STORE_MAP.md lists them.
     public enum LandmarkKind
     {
@@ -24,7 +24,7 @@ namespace Karoshi.Store
     }
 
     // Put on anything placed in the store at runtime that should not become part of the
-    // map's walls — KAREN's crate stacks, for instance, are blockages, not architecture.
+    // map's walls — Karen's crate stacks, for instance, are blockages, not architecture.
     public interface IMapTransient { }
 
     public struct Landmark
@@ -130,7 +130,7 @@ namespace Karoshi.Store
             }
         }
 
-        // Rebuild after the maze has been changed (see KAREN's shelf relocation).
+        // Rebuild after the maze has been changed (see Karen's shelf relocation).
         public static StoreMap Rebuild()
         {
             current = Build();
@@ -770,7 +770,7 @@ namespace Karoshi.Store
         }
 
         // Articulation points of the region graph (iterative Tarjan): regions whose loss
-        // splits the store in two. Where KAREN stands to cut you off.
+        // splits the store in two. Where Karen stands to cut you off.
         void FindChokepoints()
         {
             int n = Regions.Count;
@@ -832,12 +832,12 @@ namespace Karoshi.Store
             doorAxis.Clear();
             doorHalfWidth.Clear();
 
-            foreach (AutoDoubleDoor door in Object.FindObjectsByType<AutoDoubleDoor>(FindObjectsSortMode.None))
+            foreach (AutoDoubleDoor door in Object.FindObjectsByType<AutoDoubleDoor>())
             {
                 AddDoorway(door, true);
             }
 
-            foreach (HingeDoor door in Object.FindObjectsByType<HingeDoor>(FindObjectsSortMode.None))
+            foreach (HingeDoor door in Object.FindObjectsByType<HingeDoor>())
             {
                 AddDoorway(door, false);
             }
@@ -853,22 +853,22 @@ namespace Karoshi.Store
             GameObject spawn = GameObject.Find("CustomerSpawner");
             if (spawn != null) AddLandmark(LandmarkKind.CustomerSpawn, "Customer spawn", spawn.transform.position, spawn);
 
-            foreach (CoffeeMachine m in Object.FindObjectsByType<CoffeeMachine>(FindObjectsSortMode.None))
+            foreach (CoffeeMachine m in Object.FindObjectsByType<CoffeeMachine>())
                 AddLandmark(LandmarkKind.CoffeeMachine, "Coffee machine", m.transform.position, m);
-            foreach (Puncher p in Object.FindObjectsByType<Puncher>(FindObjectsSortMode.None))
+            foreach (Puncher p in Object.FindObjectsByType<Puncher>())
                 AddLandmark(LandmarkKind.TimeClock, "Time clock", p.transform.position, p);
-            foreach (ElectricBox e in Object.FindObjectsByType<ElectricBox>(FindObjectsSortMode.None))
+            foreach (ElectricBox e in Object.FindObjectsByType<ElectricBox>())
                 AddLandmark(LandmarkKind.BreakerBox, "Breaker box", e.transform.position, e);
-            foreach (MusicBox m in Object.FindObjectsByType<MusicBox>(FindObjectsSortMode.None))
+            foreach (MusicBox m in Object.FindObjectsByType<MusicBox>())
                 AddLandmark(LandmarkKind.Radio, "Store radio", m.transform.position, m);
-            foreach (TrashContainer t in Object.FindObjectsByType<TrashContainer>(FindObjectsSortMode.None))
+            foreach (TrashContainer t in Object.FindObjectsByType<TrashContainer>())
                 AddLandmark(LandmarkKind.TrashSkip, "Skip", t.transform.position, t);
 
             int bin = 1;
-            foreach (Trashcan can in Object.FindObjectsByType<Trashcan>(FindObjectsSortMode.None))
+            foreach (Trashcan can in Object.FindObjectsByType<Trashcan>())
                 AddLandmark(LandmarkKind.Bin, "Bin " + bin++, can.transform.position, can);
 
-            foreach (ToolSnapPoint snap in Object.FindObjectsByType<ToolSnapPoint>(FindObjectsSortMode.None))
+            foreach (ToolSnapPoint snap in Object.FindObjectsByType<ToolSnapPoint>())
             {
                 bool isMop = snap.tool != null && snap.tool.type == ItemType.Mop;
                 AddLandmark(isMop ? LandmarkKind.MopHome : LandmarkKind.StockCrateHome,
@@ -922,7 +922,7 @@ namespace Karoshi.Store
         void CollectBays()
         {
             Bays.Clear();
-            foreach (ShelfUnit unit in Object.FindObjectsByType<ShelfUnit>(FindObjectsSortMode.None))
+            foreach (ShelfUnit unit in Object.FindObjectsByType<ShelfUnit>())
             {
                 Vector3 p = unit.transform.position;
                 int cell = NearestCell(p, 4f, skipDoors: true);
@@ -1139,7 +1139,7 @@ namespace Karoshi.Store
 
         // Minimum cut on the region graph between a source region and a set of sinks, with
         // link widths as capacities (Edmonds-Karp). Returns the links to close to separate
-        // them, cheapest total width first — KAREN's shopping list for a funnel.
+        // them, cheapest total width first — Karen's shopping list for a funnel.
         public List<(int from, int to, Vector3 at)> MinCut(int source, ICollection<int> sinks, ICollection<int> closed = null)
         {
             var result = new List<(int, int, Vector3)>();

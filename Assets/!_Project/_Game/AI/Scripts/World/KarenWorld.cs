@@ -7,7 +7,7 @@ using UnityEngine.AI;
 
 namespace Karoshi.Karen
 {
-    // Everything KAREN can do to the building, in one place. Tactics ask for effects here
+    // Everything Karen can do to the building, in one place. Tactics ask for effects here
     // rather than reaching into gameplay scripts, so the list of what she *can* touch is
     // the list of methods on this class.
     public sealed class KarenWorld : MonoBehaviour
@@ -64,19 +64,22 @@ namespace Karoshi.Karen
 
         public void PlayTell(TellKind kind, Vector3 at, float lead)
         {
+            // A warning only counts if it can be heard (fairness rule 3), so tells carry much
+            // further than ordinary sounds and are only partly positional: you can tell which
+            // way it came from without having to be in the same aisle.
             AudioClip clip = ProceduralAudio.Tell(kind);
             switch (kind)
             {
                 case TellKind.BallastWhine:
                     // A blackout is audible storewide and visible as a flicker everywhere.
                     Pa.PlayNear(at, clip, 1f);
-                    OneShotAudio.PlayAt(clip, ListenerPosition(), 0.6f);
+                    OneShotAudio.PlayAt(clip, ListenerPosition(), 0.6f, 5f, 40f, 0.3f);
                     Lights.FlickerAll(lead);
                     break;
                 case TellKind.Flicker:
                     Light near = LightProbe.NearestOn(at);
                     if (near != null) StartCoroutine(Lights.Flicker(near, lead));
-                    OneShotAudio.PlayAt(clip, near != null ? near.transform.position : at, 0.8f);
+                    OneShotAudio.PlayAt(clip, near != null ? near.transform.position : at, 0.8f, TellNear, TellFar, TellSpatial);
                     break;
                 case TellKind.PaChime:
                 case TellKind.SpeakerCrackle:
@@ -85,14 +88,16 @@ namespace Karoshi.Karen
                     break;
                 case TellKind.CrtTick:
                     // The HUD tell has to reach you wherever you are.
-                    OneShotAudio.PlayAt(clip, ListenerPosition(), 0.7f);
+                    OneShotAudio.PlayAt(clip, ListenerPosition(), 0.7f, 5f, 40f, 0f);
                     break;
                 default:
-                    OneShotAudio.PlayAt(clip, at, 1f);
+                    OneShotAudio.PlayAt(clip, at, 1f, TellNear, TellFar, TellSpatial);
                     break;
             }
             NoiseBus.Emit(at, 0.4f, NoiseKind.Tell, NoiseAuthor.Karen);
         }
+
+        const float TellNear = 6f, TellFar = 60f, TellSpatial = 0.8f;
 
         public static Vector3 ListenerPosition()
         {
@@ -136,7 +141,7 @@ namespace Karoshi.Karen
             if (DirtPrefab == null) return null;
             Vector3 p = NavMesh.SamplePosition(at, out NavMeshHit hit, 2f, NavMesh.AllAreas) ? hit.position : at;
             GameObject go = Instantiate(DirtPrefab, p + Vector3.up * 0.02f, Quaternion.Euler(90f, Random.Range(0f, 360f), 0f));
-            go.name = "Spill (KAREN)";
+            go.name = "Spill (Karen)";
             return go.GetComponent<Dirt>();
         }
 
@@ -250,7 +255,7 @@ namespace Karoshi.Karen
         // The surface whose volume covers the store floor — rebaked after the maze moves.
         public static NavMeshSurface StoreSurface()
         {
-            foreach (NavMeshSurface s in FindObjectsByType<NavMeshSurface>(FindObjectsSortMode.None))
+            foreach (NavMeshSurface s in FindObjectsByType<NavMeshSurface>())
                 if (s.navMeshData != null && s.navMeshData.sourceBounds.size.x > 30f) return s;
             return FindAnyObjectByType<NavMeshSurface>();
         }

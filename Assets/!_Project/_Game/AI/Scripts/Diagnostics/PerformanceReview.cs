@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Karoshi.Karen
 {
-    // KAREN's performance review of you, printed at the end of every shift (karen.md §6.6).
+    // Karen's performance review of you, printed at the end of every shift (karen.md §6.6).
     // A redacted version of her own thought log: being outplayed is only fun when you can
     // see the play. From shift five it also offers the way out.
     public sealed class PerformanceReview
@@ -32,7 +32,6 @@ namespace Karoshi.Karen
             var sb = new StringBuilder();
 
             sb.AppendLine($"<b>PERFORMANCE REVIEW</b> — {l.PlayerName}, shift {s.Shift}");
-            sb.AppendLine($"<size=80%>Knowledge-Adaptive Retail Efficiency Nexus · rung {brain.config.rung}</size>");
             sb.AppendLine();
 
             int m = Mathf.FloorToInt(s.ShiftSeconds / 60f), sec = Mathf.FloorToInt(s.ShiftSeconds % 60f);
@@ -118,11 +117,11 @@ namespace Karoshi.Karen
             {
                 case "burnout":
                     return $"{l.PlayerName} worked {l.Data.shiftsWorked} shifts. Energy at the last clock-out: 0.\n" +
-                           "The last thing that happened is that KAREN made you a coffee.\n\n" +
+                           "The last thing that happened is that Karen made you a coffee.\n\n" +
                            "<i>Employee wellbeing is a tracked metric. It was optimised.</i>";
                 case "broke":
                     return $"{l.PlayerName} was never located. Cameras unplugged, the PA silenced, the routes changed.\n" +
-                           "KAREN's confidence collapsed and did not recover.\n\n<i>Employee is unmanageable. The position has been advertised.</i>";
+                           "Karen's confidence collapsed and did not recover.\n\n<i>Employee is unmanageable. The position has been advertised.</i>";
                 default:
                     return $"{l.PlayerName} worked {l.Data.shiftsWorked} shifts, received {l.Data.warnings} written warning(s), " +
                            $"and clocked out {l.Data.shiftsClockedOut} time(s).\n\n<i>Your notice has been accepted. We are sorry to see you go. We are always sorry.</i>";
@@ -140,8 +139,10 @@ namespace Karoshi.Karen
 
         void Update()
         {
+            FullScreenPanel.Set(this, brain != null && brain.Review != null && brain.Review.Visible);
             if (brain == null || brain.Review == null || !brain.Review.Visible) return;
             if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) brain.Review.Visible = false;
+            if (Input.GetKeyDown(KeyCode.O)) ShiftRecorder.Instance?.OpenReport();
             if (brain.Review.CanQuit && Input.GetKeyDown(KeyCode.Q))
             {
                 brain.Review.Visible = false;
@@ -165,12 +166,25 @@ namespace Karoshi.Karen
                 style.normal.textColor = new Color(0.92f, 0.92f, 0.9f);
             }
 
-            float w = Mathf.Min(760f, Screen.width - 60f), h = Mathf.Min(600f, Screen.height - 60f);
+            style.fontSize = Mathf.RoundToInt(Mathf.Clamp(Screen.height / 48f, 15f, 34f));
+            float w = Mathf.Min(Screen.height * 1.1f, Screen.width - 60f), h = Screen.height - 60f;
             var rect = new Rect((Screen.width - w) * 0.5f, (Screen.height - h) * 0.5f, w, h);
-            GUI.color = new Color(0f, 0f, 0f, 0.88f);
+            GUI.color = new Color(0f, 0f, 0f, 0.9f);
             GUI.DrawTexture(rect, Texture2D.whiteTexture);
             GUI.color = Color.white;
-            GUI.Label(rect, brain.Review.Text, style);
+
+            // Karen's review, then what the recording says happened.
+            var text = new System.Text.StringBuilder(brain.Review.Text);
+            ShiftAnalysis analysis = ShiftRecorder.Instance != null ? ShiftRecorder.Instance.LastAnalysis : null;
+            if (analysis != null && analysis.Findings.Count > 0)
+            {
+                text.AppendLine();
+                text.AppendLine("<b>How the shift went</b>");
+                foreach (string line in analysis.Findings.Take(8)) text.AppendLine("• " + line);
+                text.AppendLine();
+                text.AppendLine("<color=#4DD2FF>[O] open the full report in your browser — map replay, timeline and analysis</color>");
+            }
+            GUI.Label(rect, text.ToString(), style);
         }
     }
 }

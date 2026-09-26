@@ -2,7 +2,7 @@ using Karoshi.Karen;
 using UnityEngine;
 
 // Anything other than the keyboard and mouse that wants to walk the player around: the
-// simulated players KAREN is tested against, and the eval harness's agent driver. They
+// simulated players Karen is tested against, and the eval harness's agent driver. They
 // steer the same CharacterController a person does, so collisions, sprint rules and
 // footstep noise are identical whoever is playing.
 public interface IMotorInput
@@ -40,7 +40,7 @@ public class PlayerMotor : MonoBehaviour
     public BurnoutSystem burnout;
 
     [Header("Footsteps")]
-    [Tooltip("Seconds between steps at each pace. Every step is a noise KAREN can hear.")]
+    [Tooltip("Seconds between steps at each pace. Every step is a noise Karen can hear.")]
     public float walkStepInterval = 0.5f;
     public float sprintStepInterval = 0.33f;
     public float crouchStepInterval = 0.65f;
@@ -48,7 +48,7 @@ public class PlayerMotor : MonoBehaviour
     // Set by a bot or the eval harness to drive the player instead of the keyboard.
     [System.NonSerialized] public IMotorInput externalInput;
 
-    // Frozen in place — KAREN's lecture after a catch. Looking around still works.
+    // Frozen in place — Karen's lecture after a catch. Looking around still works.
     [System.NonSerialized] public bool movementLocked;
 
     CharacterController controller;
@@ -205,7 +205,22 @@ public class PlayerMotor : MonoBehaviour
         if (sprinting) NoiseBus.Emit(transform.position, 0.9f, NoiseKind.Sprint, NoiseAuthor.Player);
         else if (isCrouching) NoiseBus.Emit(transform.position, 0.1f, NoiseKind.CrouchStep, NoiseAuthor.Player);
         else NoiseBus.Emit(transform.position, 0.35f, NoiseKind.Footstep, NoiseAuthor.Player);
+
+        // What you hear is what she hears: loud when sprinting, barely there when crouched.
+        if (feet == null)
+        {
+            feet = gameObject.AddComponent<AudioSource>();
+            feet.playOnAwake = false;
+            feet.spatialBlend = 0f;
+        }
+        feet.pitch = 0.92f + 0.16f * (float)stepRandom.NextDouble();   // own RNG: leaves seeded runs alone
+        feet.PlayOneShot(ProceduralAudio.PlayerStep(stepVariant = (stepVariant + 1) % 3),
+                         sprinting ? 0.45f : isCrouching ? 0.07f : 0.22f);
     }
+
+    AudioSource feet;
+    int stepVariant;
+    readonly System.Random stepRandom = new System.Random(7);
 
     void SetCrouch(bool crouch)
     {

@@ -6,7 +6,7 @@ using UnityEngine.AI;
 
 public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
 {
-    // Every shopper in the store — KAREN picks witnesses and puppets from this.
+    // Every shopper in the store — Karen picks witnesses and puppets from this.
     static readonly List<CustomerNPC> all = new List<CustomerNPC>();
     public static IReadOnlyList<CustomerNPC> All => all;
 
@@ -58,6 +58,13 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
             TaskManager.NotifyWorldChanged();
         }
     }
+
+    // What the shopper is up to, for the map and the shift recording.
+    public enum Activity { Shopping, UsingBin, HeadingToTill, Queueing, Leaving, LookingAround }
+    public Activity CurrentActivity { get; private set; } = Activity.Shopping;
+
+    // When they started waiting at the till (Time.time), or -1.
+    public float QueueingSince { get; private set; } = -1f;
 
     // The player, found once at spawn. Read by CustomerRequest while talking and escorting.
     public Transform PlayerTransform => player;
@@ -179,12 +186,19 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
             yield return Wait(browseTime * 0.5f);
 
             if (i == binAfterShelf)
+            {
+                CurrentActivity = Activity.UsingBin;
                 yield return VisitTrashcan();
+                CurrentActivity = Activity.Shopping;
+            }
         }
 
+        CurrentActivity = Activity.HeadingToTill;
         yield return MoveTo(cashierPoint.position);
+        CurrentActivity = Activity.Queueing;
         yield return WaitAtCashier();
 
+        CurrentActivity = Activity.Leaving;
         yield return MoveTo(exitPoint.position);
 
         Despawn();
@@ -200,6 +214,7 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
 
         served = false;
         IsWaitingToBeServed = true;
+        QueueingSince = Time.time;
 
         // Stand still and look toward the player while queueing to be served.
         while (!served)
@@ -209,6 +224,7 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
         }
 
         IsWaitingToBeServed = false;
+        QueueingSince = -1f;
     }
 
     void FacePlayer()
@@ -480,7 +496,7 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
             outline.SetHighlighted(hovered || forcedHighlight);
     }
 
-    // ---- KAREN's hooks (karen.md §8.5) ------------------------------------------------
+    // ---- Karen's hooks (karen.md §8.5) ------------------------------------------------
 
     // A possessed shopper never queues; take it out of the till count if it was in it.
     public void ReleaseQueueSpot() => IsWaitingToBeServed = false;
@@ -495,6 +511,8 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
 
     IEnumerator Leave()
     {
+        CurrentActivity = Activity.Leaving;
+        QueueingSince = -1f;
         if (exitPoint != null) yield return MoveTo(exitPoint.position);
         Despawn();
     }
@@ -519,6 +537,8 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
 
     IEnumerator Look(Vector3 point, float seconds)
     {
+        CurrentActivity = Activity.LookingAround;
+        QueueingSince = -1f;
         yield return MoveTo(point);
         float end = Time.time + seconds;
         while (Time.time < end)

@@ -9,7 +9,7 @@ namespace Karoshi.Eval
     // karen.md §13: three scripted player profiles. The Ledger should converge to visibly
     // different tactic distributions for each; if it doesn't, the bandit isn't learning and
     // the reward signal is broken. They play through exactly the same actions an external
-    // agent would, with the same senses: KAREN only when she's in view, her footsteps only
+    // agent would, with the same senses: Karen only when she's in view, her footsteps only
     // when they're close.
     public enum PlayerProfile
     {
@@ -174,7 +174,7 @@ namespace Karoshi.Eval
             }
 
             // Nothing left that can be seen and the doors are shut: try the time clock. The HUD
-            // is only a hint — KAREN can make it lie either way — and a refusal is backed off.
+            // is only a hint — Karen can make it lie either way — and a refusal is backed off.
             if (!storeOpen)
                 return Unless(new EnvAction { verb = "clock_out", sprint = sprint }, Idle());
 

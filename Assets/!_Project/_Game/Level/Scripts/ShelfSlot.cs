@@ -149,7 +149,7 @@ public class ShelfSlot : MonoBehaviour, IInteractable
         return true;
     }
 
-    // Called by KAREN to knock an item off the shelf (her shelf sweep)
+    // Called by Karen to knock an item off the shelf (her shelf sweep)
     public void Eject()
     {
         if (!isFilled) return;

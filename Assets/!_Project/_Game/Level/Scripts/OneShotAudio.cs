@@ -6,12 +6,19 @@ using UnityEngine;
 // only ever plays on interaction. A handful of reusable voices covers it.
 public static class OneShotAudio
 {
-    const int PoolSize = 8;
+    const int PoolSize = 16;
 
     static AudioSource[] pool;
     static int next;
 
-    public static void PlayAt(AudioClip clip, Vector3 position, float volume = 1f)
+    // An ordinary sound in the world: full volume within a couple of metres, fading
+    // linearly to nothing at 30. (Unity's default — logarithmic from 1 m — made anything
+    // more than a few metres away all but silent.)
+    public static void PlayAt(AudioClip clip, Vector3 position, float volume = 1f) =>
+        PlayAt(clip, position, volume, 2f, 30f, 1f);
+
+    // Full control: `near`/`far` in metres, `spatial` 0 = everywhere at once, 1 = fully 3D.
+    public static void PlayAt(AudioClip clip, Vector3 position, float volume, float near, float far, float spatial)
     {
         if (clip == null) return;
 
@@ -21,6 +28,9 @@ public static class OneShotAudio
         next = (next + 1) % pool.Length;
 
         source.transform.position = position;
+        source.minDistance = near;
+        source.maxDistance = Mathf.Max(near + 0.1f, far);
+        source.spatialBlend = Mathf.Clamp01(spatial);
         source.PlayOneShot(clip, volume);
     }
 
@@ -41,6 +51,8 @@ public static class OneShotAudio
             AudioSource source = voice.AddComponent<AudioSource>();
             source.playOnAwake = false;
             source.spatialBlend = 1f;
+            source.rolloffMode = AudioRolloffMode.Linear;
+            source.dopplerLevel = 0f;
             pool[i] = source;
         }
     }

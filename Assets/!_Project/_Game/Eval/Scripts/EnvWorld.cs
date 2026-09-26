@@ -15,8 +15,8 @@ namespace Karoshi.Eval
     // episode — spill_3, bay_41, cust_7, bin_2, mop — and every place is named by the store
     // map, so an agent reasons over "Aisle 2/B", not coordinates.
     //
-    // Fair by construction: the agent sees the HUD's task list (which KAREN can falsify),
-    // KAREN only when she is in its view cone with a clear line of sight, and her footsteps
+    // Fair by construction: the agent sees the HUD's task list (which Karen can falsify),
+    // Karen only when she is in its view cone with a clear line of sight, and her footsteps
     // only when they're close enough to hear. It is told nothing a player couldn't know.
     public sealed class EnvWorld
     {
@@ -106,9 +106,9 @@ namespace Karoshi.Eval
 
         public static Item Tool(ItemType type)
         {
-            foreach (ToolSnapPoint s in Object.FindObjectsByType<ToolSnapPoint>(FindObjectsSortMode.None))
+            foreach (ToolSnapPoint s in Object.FindObjectsByType<ToolSnapPoint>())
                 if (s.tool != null && s.tool.type == type) return s.tool;
-            foreach (Item i in Object.FindObjectsByType<Item>(FindObjectsSortMode.None))
+            foreach (Item i in Object.FindObjectsByType<Item>())
                 if (i.type == type) return i;
             return null;
         }
@@ -181,7 +181,7 @@ namespace Karoshi.Eval
                 ["id"] = BinId(i), ["fill"] = t.UsageCount, ["capacity"] = t.capacity, ["region"] = Map.NameAt(t.transform.position), ["walk_m"] = Walk(t.transform.position)
             }).ToList();
 
-            o["bags"] = Object.FindObjectsByType<TrashBag>(FindObjectsSortMode.None).Where(b => !b.IsDisposed).Select(b => (object)new Dictionary<string, object>
+            o["bags"] = Object.FindObjectsByType<TrashBag>().Where(b => !b.IsDisposed).Select(b => (object)new Dictionary<string, object>
             {
                 ["id"] = BagId(b), ["carried"] = b.GetComponent<Item>() != null && b.GetComponent<Item>().isCarried, ["region"] = Map.NameAt(b.transform.position)
             }).ToList();
@@ -295,8 +295,8 @@ namespace Karoshi.Eval
             List(sb, "Customers asking", o["customers_asking"], x => $"{x["id"]} wants {x["wants"]} ({x["stage"]}) in {x["region"]}");
 
             var karen = (Dictionary<string, object>)o["karen"];
-            if ((bool)karen["visible"]) sb.AppendLine($"KAREN is visible in {karen["region"]}, {karen["distance_m"]} m away, eye {karen["eye_colour"]}.");
-            else if ((bool)karen["heard"]) sb.AppendLine("You can hear KAREN's footsteps nearby.");
+            if ((bool)karen["visible"]) sb.AppendLine($"Karen is visible in {karen["region"]}, {karen["distance_m"]} m away, eye {karen["eye_colour"]}.");
+            else if ((bool)karen["heard"]) sb.AppendLine("You can hear Karen's footsteps nearby.");
             var power = (Dictionary<string, object>)o["power"];
             if (!(bool)power["lights_on"]) sb.AppendLine("The lights are out. Breakers: " + string.Join(", ",
                 ((List<object>)power["breakers"]).Cast<Dictionary<string, object>>().Select(b => $"{b["id"]} {((bool)b["on"] ? "on" : "off")} (hum pitch {b["hum_pitch_rank"]})")));

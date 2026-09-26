@@ -52,7 +52,7 @@ namespace Karoshi.Eval
     //   step(action)  — run one macro-action to completion through the real body and hands
     //   observe()     — the structured snapshot (EnvWorld), plus a prose rendering
     //
-    // Determinism: a seed fixes UnityEngine.Random (customers, spills) and KAREN's own RNG,
+    // Determinism: a seed fixes UnityEngine.Random (customers, spills) and Karen's own RNG,
     // Time.captureDeltaTime fixes every frame's dt, the reload is synchronous and the planner
     // has no wall-clock budget. The first shift after launch replays exactly; later ones in
     // the same process drift a little (engine-side threading), so compare paired seeds. Headless: with render off the cameras stop drawing, and a
@@ -127,9 +127,9 @@ namespace Karoshi.Eval
             Config = config ?? new EnvConfig();
             Metrics.Unsubscribe();
 
-            // Everything the next KAREN and the next shift will be built from.
+            // Everything the next Karen and the next shift will be built from.
             KarenBootstrap.Disabled = !Config.karen;
-            // An eval KAREN keeps her Ledger in a file of her own: resetting an episode must
+            // An eval Karen keeps her Ledger in a file of her own: resetting an episode must
             // never wipe what she has learned about the person who actually plays the game.
             var karen = new KarenConfig
             {
@@ -180,7 +180,7 @@ namespace Karoshi.Eval
             if (Config.verbose)
             {
                 KarenBrain brain = KarenBrain.Instance;
-                Debug.Log($"[env] reset seed {Config.seed}: KAREN {(brain != null ? $"online, rung {brain.config.rung}, seed {brain.config.seed}" : "absent")}; " +
+                Debug.Log($"[env] reset seed {Config.seed}: Karen {(brain != null ? $"online, rung {brain.config.rung}, seed {brain.config.seed}" : "absent")}; " +
                           $"shift {(Shift != null ? Shift.ShiftNumber : 0)} active={Shift != null && Shift.IsShiftActive}; player at {World.Map.NameAt(Driver.transform.position)}; " +
                           $"{NavMeshWalls.LastCount} walls carved, NavMesh agent radius {UnityEngine.AI.NavMesh.GetSettingsByIndex(0).agentRadius:0.00}");
             }
@@ -198,7 +198,7 @@ namespace Karoshi.Eval
             World.Reset();
 
             if (!Config.render)
-                foreach (Camera cam in FindObjectsByType<Camera>(FindObjectsSortMode.None)) cam.enabled = false;
+                foreach (Camera cam in FindObjectsByType<Camera>()) cam.enabled = false;
 
             var blink = FindAnyObjectByType<Karoshi.Blink.BlinkTracker>();
             Karoshi.Blink.BlinkClock.Simulated = Config.syntheticBlinks;
@@ -596,7 +596,7 @@ namespace Karoshi.Eval
         IEnumerator FlipBreaker(EnvAction a, ActionResult r)
         {
             string id = a.target ?? string.Empty;
-            BreakerSwitch target = FindObjectsByType<BreakerSwitch>(FindObjectsSortMode.None)
+            BreakerSwitch target = FindObjectsByType<BreakerSwitch>()
                 .FirstOrDefault(b => b.name.EndsWith(((LightCircuit)int.Parse(id.Replace("breaker_", string.Empty))).ToString()));
             if (target == null) { r.Fail($"no breaker '{a.target}'"); yield break; }
             yield return Approach(target.transform.position, 1.5f, a, r);
@@ -625,7 +625,7 @@ namespace Karoshi.Eval
         IEnumerator ReturnTool(EnvAction a, ActionResult r)
         {
             Item tool = World.Resolve<Item>(a.target);
-            ToolSnapPoint home = FindObjectsByType<ToolSnapPoint>(FindObjectsSortMode.None).FirstOrDefault(s => s.tool == tool);
+            ToolSnapPoint home = FindObjectsByType<ToolSnapPoint>().FirstOrDefault(s => s.tool == tool);
             if (home == null) { r.Fail("that has no home"); yield break; }
             yield return Approach(home.transform.position, 1.7f, a, r);
             if (r.Finished) yield break;

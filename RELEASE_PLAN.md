@@ -33,7 +33,7 @@ has zero scene instances, and `karen.md` is a design spec with no implementation
 are no menus of any kind — no main menu, pause, or options. And **no build has ever been
 produced**, so nothing has been tested outside the editor.
 
-*Update — the antagonist gap is closed:* KAREN (`karen.md`, all of it; status in §15 there)
+*Update — the antagonist gap is closed:* Karen (`karen.md`, all of it; status in §15 there)
 now installs into the store when it loads and replaces `EnemyAI.cs`. She has been exercised
 headless by simulated players across every ablation rung (`KAREN_RESULTS.md`), not yet by a
 person at the keyboard.
@@ -106,7 +106,7 @@ it is about one slice being *finished*.
 
 ### Antagonist — the biggest single gap
 - [x] Get `EnemyAI` into the scene with patrol points and a NavMesh route
-      *superseded: KAREN installs herself from code; `EnemyAI.cs` is retired*
+      *superseded: Karen installs herself from code; `EnemyAI.cs` is retired*
 - [x] Tune the existing FSM (Patrol / Sabotage / Search / Chase) until it reads as
       deliberate rather than random
       *superseded: belief grid, utility goals and a tactic library replace the FSM*
@@ -114,9 +114,9 @@ it is about one slice being *finished*.
       *graded sight, a noise bus with per-action loudness, and a tell before every tactic*
 - [x] A losing state — what actually happens when it catches you
       *a written warning: a 30 s lecture, overtime, and a recovery window; burnout ending*
-- [x] Pick the KAREN scope: full `karen.md` architecture, or a cut-down version for ship
+- [x] Pick the Karen scope: full `karen.md` architecture, or a cut-down version for ship
       *Decided: the full architecture, every rung switchable for the ablation*
-- [ ] Play-test and tune KAREN with people — so far she has only been measured against
+- [ ] Play-test and tune Karen with people — so far she has only been measured against
       scripted players
 
 ### Feel and readability
@@ -337,7 +337,7 @@ Ordered by how much damage each can still do.
 2. **No build has ever been made.** Every engine has a set of problems that only appear
    outside the editor. Finding them at Milestone 7 is expensive; finding them now is not.
 3. **The antagonist is the game's hook and it is not in the level.** Everything built so
-   far is the chore loop. The chore loop is not the pitch. *(Addressed: KAREN is in.)*
+   far is the chore loop. The chore loop is not the pitch. *(Addressed: Karen is in.)*
 4. **`karen.md` is much larger than the rest of the project.** It is a genuinely good
    design document, and implementing it fully is a bigger job than everything already
    built. Decide deliberately how much of it ships. *(Built in full; the open question is

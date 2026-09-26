@@ -95,6 +95,7 @@ public class CustomerRequest : MonoBehaviour
     // in the eval harness reads it here.
     public Vector3 Destination => destination;
     public string Wanted => wanted;
+    public ShelfUnit DestinationShelf => destinationShelf;
 
     // 0 = "Follow me", 1 = decline. Consumed by the conversation loop on its next frame.
     [System.NonSerialized] public int externalChoice = -1;

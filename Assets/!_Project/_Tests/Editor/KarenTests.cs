@@ -10,7 +10,7 @@ using NUnit.Framework;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
-// The rules in karen.md that can be checked without playing: that KAREN is blind to the
+// The rules in karen.md that can be checked without playing: that Karen is blind to the
 // player except through her senses, that every tactic is telegraphed and leaves the player
 // something to do, that learning is reversible, that the pacing gates hold, and that the
 // harness's JSON survives a round trip.
@@ -54,7 +54,7 @@ public class KarenRuleTests
                 leaks.Add($"{Path.GetFileName(file)}:{i + 1}: {lines[i].Trim()}");
             }
         }
-        Assert.IsEmpty(leaks, "KAREN read the player directly:\n" + string.Join("\n", leaks));
+        Assert.IsEmpty(leaks, "Karen read the player directly:\n" + string.Join("\n", leaks));
     }
 
     // ---- §9: every threat is telegraphed and answerable --------------------------------------

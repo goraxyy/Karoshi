@@ -8,7 +8,7 @@ namespace Karoshi.Karen
     //
     //     detect = angular · distance · light · motion · exposure
     //
-    // The same component serves KAREN's own eyes, the CCTV cameras (lower gain, narrower
+    // The same component serves Karen's own eyes, the CCTV cameras (lower gain, narrower
     // cone), and the possessed customers — each is just an eye with different numbers.
     public class SightSensor : MonoBehaviour
     {
@@ -21,7 +21,7 @@ namespace Karoshi.Karen
         public float gain = 2.2f;
         [Tooltip("Awareness lost per second while nothing is seen.")]
         public float decay = 0.45f;
-        [Tooltip("How well it sees in the dark, as a floor under the light term. KAREN's " +
+        [Tooltip("How well it sees in the dark, as a floor under the light term. Karen's " +
                  "eyes are not a person's; darkness hides you less than you'd like.")]
         [Range(0f, 1f)] public float darkVision = 0.35f;
 

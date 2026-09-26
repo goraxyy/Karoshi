@@ -11,7 +11,7 @@ namespace Karoshi.Blink
 {
     // The clock blinks are timed on. A real face blinks in wall-clock time; a synthetic or
     // replayed one in a fixed-step eval must blink in simulation time, or a run that goes
-    // five times faster than real time would hand KAREN blinks five times as long.
+    // five times faster than real time would hand Karen blinks five times as long.
     public static class BlinkClock
     {
         public static bool Simulated;
@@ -32,7 +32,7 @@ namespace Karoshi.Blink
 
     // ideas.md "Architecture": everything that can tell whether the eyes are shut.
     //   Keyboard — dev and accessibility fallback
-    //   Replay   — recorded or synthetic traces, so KAREN's blink behaviour can be tested
+    //   Replay   — recorded or synthetic traces, so Karen's blink behaviour can be tested
     //              without sitting in front of a camera blinking on cue
     //   Udp      — the webcam path, via the Python sidecar in tools/blink
     //   Sentis   — the webcam path in-engine, once a trained eye model is in the project
@@ -47,7 +47,7 @@ namespace Karoshi.Blink
     // ---- keyboard -------------------------------------------------------------------------
 
     // Hold the key to keep your eyes shut; tap it to blink. The first source to build, since
-    // it proves the whole chain including KAREN's reactions, and the one that makes the
+    // it proves the whole chain including Karen's reactions, and the one that makes the
     // mechanic playable without a camera.
     public sealed class KeyboardBlinkSource : IBlinkSource
     {

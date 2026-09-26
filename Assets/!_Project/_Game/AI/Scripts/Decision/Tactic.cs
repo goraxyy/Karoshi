@@ -9,7 +9,7 @@ namespace Karoshi.Karen
     // The spec asks for ScriptableObject assets; this repository carries code only, so a
     // tactic is a class instead — with exactly the same contract. Adding a scare is adding a
     // subclass with its preconditions, cost, cooldown, expected-panic prior, the tell it
-    // must emit and the chore it leaves behind. Nothing else in KAREN has to change.
+    // must emit and the chore it leaves behind. Nothing else in Karen has to change.
     public abstract class Tactic
     {
         public abstract string Id { get; }

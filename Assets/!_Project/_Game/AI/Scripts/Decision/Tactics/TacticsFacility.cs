@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Karoshi.Karen
 {
-    // Tactics where KAREN acts as the building rather than the body: the lights, the shelves,
+    // Tactics where Karen acts as the building rather than the body: the lights, the shelves,
     // the bins, the HUD, the PA (karen.md §8.1–8.3).
 
     // ================================================================ §8.1 sight
@@ -372,7 +372,7 @@ namespace Karoshi.Karen
 
         public override bool Available(KarenContext c, out string why)
         {
-            rack = Object.FindObjectsByType<ToolSnapPoint>(FindObjectsSortMode.None)
+            rack = Object.FindObjectsByType<ToolSnapPoint>()
                          .FirstOrDefault(s => s.tool != null && s.tool.type == ItemType.Mop && s.IsToolHome);
             why = rack == null ? "the mop isn't on its rack" : null;
             if (rack != null && TacticHelpers.WalkFromBelief(c, rack.transform.position) < 12f) { why = "the employee is near the rack"; return false; }
@@ -599,7 +599,7 @@ namespace Karoshi.Karen
 
         public override void Plan(KarenContext c, PlanBuilder plan)
         {
-            AutoDoubleDoor door = Object.FindObjectsByType<AutoDoubleDoor>(FindObjectsSortMode.None)
+            AutoDoubleDoor door = Object.FindObjectsByType<AutoDoubleDoor>()
                 .OrderBy(d => Vector3.Distance(d.transform.position, TacticHelpers.Believed(c)))
                 .FirstOrDefault();
             if (door == null) return;

@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Karoshi.Karen
 {
-    // Where KAREN thinks you are (karen.md §4).
+    // Where Karen thinks you are (karen.md §4).
     //
     // Never a "last known position": a probability distribution over every walkable cell
     // of the store map, Σ b(c) = 1, updated like a Bayes filter.
@@ -104,7 +104,7 @@ namespace Karoshi.Karen
         }
 
         // Certainty at a point — for a fresh shift with the player at the time clock, which
-        // KAREN knows because the time clock is hers.
+        // Karen knows because the time clock is hers.
         public void ResetTo(Vector3 position, float sigma)
         {
             System.Array.Copy(prior, b, b.Length);
@@ -114,7 +114,7 @@ namespace Karoshi.Karen
 
         // ---- predict --------------------------------------------------------------
 
-        // One step of diffusion. `speed` is how fast KAREN believes you move on average —
+        // One step of diffusion. `speed` is how fast Karen believes you move on average —
         // lower once she thinks you're out of energy, which is burnout narrowing the search.
         public void Predict(float dt, float speed)
         {
