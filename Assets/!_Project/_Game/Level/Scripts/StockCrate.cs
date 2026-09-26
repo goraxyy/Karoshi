@@ -1,3 +1,4 @@
+using Karoshi.Karen;
 using UnityEngine;
 
 // The stock crate. Carried in the inventory like any other item; while it's the item in
@@ -20,8 +21,15 @@ public class StockCrate : MonoBehaviour
         }
 
         // ShelfUnit refreshes its highlight and the task list as the slots fill.
-        return slot.owner != null
+        int filled = slot.owner != null
             ? slot.owner.FillAll(itemPrefab)
             : (slot.FillWithNewItem(itemPrefab) ? 1 : 0);
+
+        if (filled > 0)
+        {
+            NoiseBus.Emit(slot.transform.position, 0.45f, NoiseKind.Stocking, NoiseAuthor.Player);
+            GameEvents.RaiseShelfRestocked(slot.owner, filled);
+        }
+        return filled;
     }
 }

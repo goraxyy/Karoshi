@@ -1,3 +1,4 @@
+using Karoshi.Karen;
 using UnityEngine;
 
 // The section of the store a thing belongs to — not the product itself. A shelf slot
@@ -62,6 +63,10 @@ public class Item : MonoBehaviour
     public Vector3 holdPositionOffset = Vector3.zero;
     public Vector3 holdRotationOffset = Vector3.zero;
 
+    // Whoever last let go of it — a thing KAREN knocked off a shelf is her noise, a thing
+    // the employee threw is theirs.
+    [System.NonSerialized] public NoiseAuthor lastAuthor = NoiseAuthor.World;
+
     [HideInInspector] public bool isCarried;
     [HideInInspector] public bool isOnShelf;
     [HideInInspector] public Vector3 shelfRotationOffset;
@@ -106,6 +111,7 @@ public class Item : MonoBehaviour
         Vector3 where = collision.contactCount > 0 ? collision.GetContact(0).point : transform.position;
         float loudness = Mathf.InverseLerp(impactMinSpeed, impactLoudSpeed, speed);
         OneShotAudio.PlayAt(impactSound, where, Mathf.Lerp(0.3f, 1f, loudness));
+        NoiseBus.Emit(where, Mathf.Lerp(0.3f, 0.8f, loudness), NoiseKind.Impact, lastAuthor);
     }
 
     public void ApplyCarriedTransform()

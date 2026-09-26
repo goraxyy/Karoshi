@@ -1,3 +1,4 @@
+using Karoshi.Karen;
 using UnityEngine;
 
 // The time clock by the staff door. Press E to start the shift, E again to end it.
@@ -19,6 +20,7 @@ public class Puncher : HighlightInteractable
             return;
         }
 
+        NoiseBus.Emit(transform.position, 0.8f, NoiseKind.TimeClock, NoiseAuthor.Player);
         shiftManager.ToggleShift();
     }
 

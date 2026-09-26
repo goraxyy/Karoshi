@@ -91,6 +91,14 @@ public class CustomerRequest : MonoBehaviour
 
     public Stage CurrentStage { get; private set; }
 
+    // Where they want to go. The player sees it as the green cone over the shelf; an agent
+    // in the eval harness reads it here.
+    public Vector3 Destination => destination;
+    public string Wanted => wanted;
+
+    // 0 = "Follow me", 1 = decline. Consumed by the conversation loop on its next frame.
+    [System.NonSerialized] public int externalChoice = -1;
+
     CustomerNPC npc;
     NavMeshAgent agent;
     SpeechBubble bubble;
@@ -148,6 +156,14 @@ public class CustomerRequest : MonoBehaviour
             if (Pressed(KeyCode.UpArrow)) selected = 0;
             if (Pressed(KeyCode.DownArrow)) selected = 1;
             if (Pressed(KeyCode.E) || Pressed(KeyCode.Return)) confirmed = true;
+
+            // An agent answering without a keyboard (eval harness, simulated players).
+            if (externalChoice >= 0)
+            {
+                selected = externalChoice;
+                confirmed = true;
+                externalChoice = -1;
+            }
             if (!PlayerWithin(talkRange * 1.6f)) abandoned = true;
 
             bubble.ShowChoices(question, options, selected);
@@ -164,6 +180,7 @@ public class CustomerRequest : MonoBehaviour
         //    and turns back toward where it asked the moment they leave it. Nothing is
         //    reset by wandering off — walk back into the circle and it picks up again.
         yield return Escort();
+        GameEvents.RaiseDirectionsGiven(npc);
 
         Finish(thanksLine.Contains("{0}") ? string.Format(thanksLine, wanted) : thanksLine, 1.6f);
     }

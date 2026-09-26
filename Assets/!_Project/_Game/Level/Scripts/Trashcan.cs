@@ -67,6 +67,7 @@ public class Trashcan : HighlightInteractable
         }
 
         Empty();
+        GameEvents.RaiseBinBagged(this);
     }
 
     public void Empty()

@@ -6,6 +6,10 @@ using UnityEngine.AI;
 
 public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
 {
+    // Every shopper in the store — KAREN picks witnesses and puppets from this.
+    static readonly List<CustomerNPC> all = new List<CustomerNPC>();
+    public static IReadOnlyList<CustomerNPC> All => all;
+
     [Header("Route (leave empty if CustomerSpawner will assign these)")]
     public Transform[] shelfPoints;
     public Transform cashierPoint;
@@ -85,6 +89,10 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
         outline = GetComponent<OutlineHighlight>();
         request = GetComponent<CustomerRequest>();
 
+        // Every shopper remembers the last time it saw the employee (karen.md §3.4).
+        if (GetComponent<Karoshi.Karen.CustomerMemory>() == null)
+            gameObject.AddComponent<Karoshi.Karen.CustomerMemory>();
+
         GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
         if (playerObject != null)
             player = playerObject.transform;
@@ -97,12 +105,14 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
 
     void OnEnable()
     {
+        all.Add(this);
         PowerSystem.PowerChanged += OnPowerChanged;
         ApplyFreeze(!PowerSystem.PowerOn);
     }
 
     void OnDisable()
     {
+        all.Remove(this);
         PowerSystem.PowerChanged -= OnPowerChanged;
     }
 
@@ -430,6 +440,8 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
 
         served = true;
         OneShotAudio.PlayAt(serveSound, transform.position, serveVolume);
+        Karoshi.Karen.NoiseBus.Emit(transform.position, 0.4f, Karoshi.Karen.NoiseKind.Serve, Karoshi.Karen.NoiseAuthor.Player);
+        GameEvents.RaiseCustomerServed(this);
     }
 
     public string GetPrompt()
@@ -466,6 +478,56 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
     {
         if (outline != null)
             outline.SetHighlighted(hovered || forcedHighlight);
+    }
+
+    // ---- KAREN's hooks (karen.md §8.5) ------------------------------------------------
+
+    // A possessed shopper never queues; take it out of the till count if it was in it.
+    public void ReleaseQueueSpot() => IsWaitingToBeServed = false;
+
+    // Stop what it was doing and walk out of the store.
+    public void LeaveStore()
+    {
+        StopAllCoroutines();
+        IsWaitingToBeServed = false;
+        StartCoroutine(Leave());
+    }
+
+    IEnumerator Leave()
+    {
+        if (exitPoint != null) yield return MoveTo(exitPoint.position);
+        Despawn();
+    }
+
+    // Stops dead for a moment — the tell before she takes a shopper over.
+    public void Freeze(float seconds) => StartCoroutine(FreezeFor(seconds));
+
+    IEnumerator FreezeFor(float seconds)
+    {
+        if (agent != null && agent.isOnNavMesh) agent.isStopped = true;
+        yield return new WaitForSeconds(seconds);
+        if (agent != null && agent.isOnNavMesh && !isFrozen) agent.isStopped = false;
+    }
+
+    // The witness: walk to a spot, look around, then carry on out of the store.
+    public void SendToLook(Vector3 point, float seconds)
+    {
+        StopAllCoroutines();
+        IsWaitingToBeServed = false;
+        StartCoroutine(Look(point, seconds));
+    }
+
+    IEnumerator Look(Vector3 point, float seconds)
+    {
+        yield return MoveTo(point);
+        float end = Time.time + seconds;
+        while (Time.time < end)
+        {
+            transform.Rotate(Vector3.up, 60f * Time.deltaTime);
+            yield return null;
+        }
+        if (exitPoint != null) yield return MoveTo(exitPoint.position);
+        Despawn();
     }
 
     void Despawn()

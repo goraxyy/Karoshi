@@ -1,3 +1,4 @@
+using Karoshi.Karen;
 using UnityEngine;
 
 // Refills the burnout bar. Pour as many cups as you like: cooldownTime is 0 by default,
@@ -32,6 +33,8 @@ public class CoffeeMachine : HighlightInteractable
 
         burnout.DrinkCoffee();
         lastUseTime = Time.time;
+        NoiseBus.Emit(transform.position, 0.6f, NoiseKind.Coffee, NoiseAuthor.Player);
+        GameEvents.RaiseCoffeeDrunk(transform.position);
         OneShotAudio.PlayAt(pourSound, transform.position);
     }
 

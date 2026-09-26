@@ -69,6 +69,24 @@ public class PlayerInteract : MonoBehaviour
     IHoldInteractable holdTarget;
     float holdTimer;
 
+    // Programmatic hands, for the simulated players and the eval harness's agent driver.
+    // They go through exactly the same interaction code a person's keypresses do.
+    [System.NonSerialized] public IInteractable forcedTarget;
+    [System.NonSerialized] public bool forcedHold;
+    bool forcedTap;
+    bool forcedDrop;
+    float forcedDropSpeed;
+
+    public void TapInteract() => forcedTap = true;
+
+    // Put down (speed 0) or throw what's in hand.
+    public void DropNow(float throwSpeed = 0f)
+    {
+        forcedDrop = true;
+        forcedDropSpeed = throwSpeed;
+    }
+    public bool IsHolding => holdTarget != null;
+
     public IInteractable CurrentTarget => currentTarget;
 
     void Awake()
@@ -94,8 +112,9 @@ public class PlayerInteract : MonoBehaviour
 
         // E uses whatever is under the crosshair; with nothing there it falls through to
         // the thing in your hand, which is how the torch is switched on and off.
-        if (Input.GetKeyDown(interactKey))
+        if (Input.GetKeyDown(interactKey) || forcedTap)
         {
+            forcedTap = false;
             if (currentTarget != null) currentTarget.Interact(this);
             else UseHeldItem();
         }
@@ -106,6 +125,13 @@ public class PlayerInteract : MonoBehaviour
     // Tap Q to put an item down, hold it to wind up a throw.
     void HandleDropAndThrow()
     {
+        if (forcedDrop)
+        {
+            forcedDrop = false;
+            DropHeld(forcedDropSpeed, forcedDropSpeed > 0f ? 0.3f : 0f);
+            return;
+        }
+
         if (Input.GetKeyDown(dropKey))
         {
             dropHeldSince = Time.time;
@@ -155,6 +181,12 @@ public class PlayerInteract : MonoBehaviour
 
     void CheckForInteractable()
     {
+        if (forcedTarget != null && IsAlive(forcedTarget))
+        {
+            SetTarget(forcedTarget);
+            return;
+        }
+
         Ray ray = new Ray(rayOrigin.position, rayOrigin.forward);
 
         // Normal reach first.
@@ -205,6 +237,10 @@ public class PlayerInteract : MonoBehaviour
         Item dropped = carrySlot.Drop();
         if (dropped == null) return;
 
+        dropped.lastAuthor = Karoshi.Karen.NoiseAuthor.Player;
+        GameEvents.RaisePlayerDroppedItem(dropped, dropped.transform.position);
+        Karoshi.Karen.NoiseBus.Emit(dropped.transform.position, 0.7f, Karoshi.Karen.NoiseKind.DroppedItem, Karoshi.Karen.NoiseAuthor.Player);
+
         var body = dropped.GetComponent<Rigidbody>();
         if (body == null || throwSpeed <= 0f) return;
 
@@ -221,7 +257,7 @@ public class PlayerInteract : MonoBehaviour
     bool HandleHoldInteraction()
     {
         var candidate = currentTarget as IHoldInteractable;
-        bool eligible = candidate != null && candidate.CanHold(this) && Input.GetKey(KeyCode.E);
+        bool eligible = candidate != null && candidate.CanHold(this) && (Input.GetKey(KeyCode.E) || forcedHold);
 
         if (!eligible)
         {

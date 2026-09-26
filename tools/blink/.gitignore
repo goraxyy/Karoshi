@@ -1,0 +1,7 @@
+# Personal data and trained models never go in the repository.
+*.npz
+*.onnx
+*.pt
+*.task
+eye_dataset/
+__pycache__/
