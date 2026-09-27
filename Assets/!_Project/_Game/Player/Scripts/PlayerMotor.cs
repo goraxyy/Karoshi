@@ -172,19 +172,14 @@ public class PlayerMotor : MonoBehaviour
             return;
         }
 
-        if (Input.GetKeyDown(KeyCode.LeftControl))
-        {
-            if (isCrouching)
-            {
-                if (CanStandUp())
-                    SetCrouch(false);
-            }
-            else
-            {
-                SetCrouch(true);
-            }
-        }
+        // Crouch while Left Ctrl is held; let go and you stand up again, as soon as there's
+        // headroom. Sprinting wins: Shift stands you up and runs, if you've the breath for it.
+        bool wantsCrouch = Input.GetKey(KeyCode.LeftControl) && !WantsToSprint();
+        if (wantsCrouch && !isCrouching) SetCrouch(true);
+        else if (!wantsCrouch && isCrouching && CanStandUp()) SetCrouch(false);
     }
+
+    bool WantsToSprint() => !movementLocked && Input.GetKey(KeyCode.LeftShift) && (burnout == null || burnout.CanSprint);
 
     // Every step is a noise on the bus. Sprinting is loud and frequent, crouching is
     // nearly silent — the whole stealth game is in these three numbers (karen.md §3.2).

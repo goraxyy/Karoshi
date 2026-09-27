@@ -57,6 +57,27 @@ public class KarenRuleTests
         Assert.IsEmpty(leaks, "Karen read the player directly:\n" + string.Join("\n", leaks));
     }
 
+    // ---- her speed: fast, but a sprint always gets away -------------------------------------
+
+    [Test]
+    public void Karen_NeverOutrunsASprintingEmployee()
+    {
+        var motor = new GameObject("player").AddComponent<PlayerMotor>();
+        try
+        {
+            var config = new KarenConfig();
+            foreach (float pace in new[] { config.sneakSpeed, config.walkSpeed, config.hurrySpeed, config.runSpeed })
+                Assert.Less(pace, motor.sprintSpeed, "a default pace is faster than the default sprint");
+            Assert.Greater(config.hurrySpeed, motor.walkSpeed, "hurrying, she should outpace a walking employee");
+
+            // A scene with a slower sprint pulls her paces down with it.
+            KarenBootstrap.KeepBelowSprint(config, 5f);
+            foreach (float pace in new[] { config.sneakSpeed, config.walkSpeed, config.hurrySpeed, config.runSpeed })
+                Assert.Less(pace, 5f);
+        }
+        finally { Object.DestroyImmediate(motor.gameObject); }
+    }
+
     // ---- §9: every threat is telegraphed and answerable --------------------------------------
 
     [Test]

@@ -56,10 +56,13 @@ namespace Karoshi.Karen
         public float planBudgetMs = 3f;
 
         [Header("Body")]
-        public float sneakSpeed = 1.4f;
-        public float walkSpeed = 2.3f;
-        public float hurrySpeed = 3.8f;
-        public float runSpeed = 5.6f;        // slower than a sprinting employee on purpose
+        // Walking, she's a little slower than you walking; hurrying, she outpaces you unless you
+        // sprint; running, she is only just slower than a sprint. Never faster: KarenBootstrap caps every pace
+        // under the player's actual sprint speed, whatever the scene sets it to.
+        public float sneakSpeed = 2f;
+        public float walkSpeed = 3.4f;
+        public float hurrySpeed = 5f;
+        public float runSpeed = 6.1f;
         public float catchRadius = 1.1f;
         public float sightRange = 18f;
         public float sightFov = 120f;

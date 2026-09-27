@@ -10,8 +10,8 @@ Keys marked *(in the replay)*, *(on the F1 map)* or *(in the blink test)* only w
 |---|---|
 | W A S D | Walk |
 | Mouse | Look around |
-| Left Shift (hold) | Sprint. Loud: Karen hears it |
-| Left Ctrl | Crouch, or stand up again. Quiet |
+| Left Shift (hold) | Sprint; stands you up if you're crouching. Loud: Karen hears it |
+| Left Ctrl (hold) | Crouch while held; let go to stand up. Quiet, and slow |
 | Space | Jump |
 
 ## Hands and work
@@ -76,6 +76,7 @@ Keys marked *(in the replay)*, *(on the F1 map)* or *(in the blink test)* only w
 
 ## Settings (Esc)
 
+- **Shift**: restart this shift. The store resets, you go back to where you start, and the same shift begins again when you clock in. Karen still remembers earlier shifts.
 - **Volume**: everything, sound effects, Karen (her footsteps and warnings), music (the radio) and announcements (the PA). You hear a sample when you let go of a slider.
 - **Mouse**: look sensitivity.
 - **Karen**: show where she is looking, as a cone on the floor. Blue: walking her rounds. Orange: she noticed something. Red: she's hunting you, or can see you right now.

@@ -52,6 +52,7 @@ namespace Karoshi.Karen
             var brain = root.AddComponent<KarenBrain>();
             if (Override != null) brain.config = Override.Clone();
             ApplyCommandLine(brain.config);
+            KeepBelowSprint(brain.config);
             root.AddComponent<ShiftRecorder>();
             root.AddComponent<KarenDebugOverlay>();
             root.AddComponent<ReviewScreen>();
@@ -70,6 +71,23 @@ namespace Karoshi.Karen
                 if (args[i] == "-karen-rung" && i + 1 < args.Length) rungArg = args[i + 1];
                 if (args[i] == "-karen-seed" && i + 1 < args.Length) seedArg = args[i + 1];
             }
+        }
+
+        // However fast she gets, a sprinting employee can always pull away from her: every pace
+        // stays under the player's sprint speed as the scene actually has it.
+        static void KeepBelowSprint(KarenConfig config)
+        {
+            PlayerMotor motor = Object.FindAnyObjectByType<PlayerMotor>();
+            if (motor != null) KeepBelowSprint(config, motor.sprintSpeed);
+        }
+
+        public static void KeepBelowSprint(KarenConfig config, float sprintSpeed)
+        {
+            float cap = sprintSpeed * 0.94f;
+            config.sneakSpeed = Mathf.Min(config.sneakSpeed, cap);
+            config.walkSpeed = Mathf.Min(config.walkSpeed, cap);
+            config.hurrySpeed = Mathf.Min(config.hurrySpeed, cap);
+            config.runSpeed = Mathf.Min(config.runSpeed, cap);
         }
 
         static void ApplyCommandLine(KarenConfig config)

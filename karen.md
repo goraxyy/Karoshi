@@ -1130,7 +1130,7 @@ Every key in the game is in `CONTROLS.md` (and in the game under Esc → Keys). 
 
 | Key | What |
 |---|---|
-| Esc | settings: volume by kind of sound (Karen's own slider included), mouse, her floor cone, the webcam |
+| Esc | settings: restart the shift, volume by kind of sound (Karen's own slider included), mouse, her floor cone, the webcam |
 | F1 | live map of the store (you, Karen, her guess, customers, sounds, jobs) and a plain-words story of what Karen is doing; **H** adds her belief heat map, **T** the technical view |
 | F2 | replay of the shift so far on the same map: drag the timeline, Space plays, 1/2/3 speed, ←/→ jump 5 s, O opens the full report |
 | F8 | blink channel consent panel (webcam path stays off until you agree); starts the camera helper |
@@ -1139,6 +1139,15 @@ Every key in the game is in `CONTROLS.md` (and in the game under Esc → Keys). 
 | B | keyboard blink — hold to keep your eyes shut |
 | O | after a shift: open the shift report in the browser |
 | Enter / Q | after a shift: continue / hand in your notice (from shift 5) |
+
+### Her speed
+
+Sneak 2, walk 3.4, hurry 5 and run 6.1 m/s (`KarenConfig`). Walking she is a little slower
+than a walking employee (4 m/s); hurrying she outpaces one; running she is only just slower
+than a sprint. `KarenBootstrap` caps every pace at 94% of the player's actual sprint speed, so a
+sprinting employee can always pull away, whatever the scene sets the sprint to. The one
+exception is the blink lunge (up to 3 m at 11 m/s while your eyes are shut), which is the
+point of the blink channel.
 
 ### Her gaze on the floor
 

@@ -1,10 +1,11 @@
 using Karoshi.Blink;
 using Karoshi.Karen;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
-// Esc: the settings. Volume for each kind of sound, mouse sensitivity, Karen's floor cone,
-// the webcam, and a Keys tab listing every key in the game. The game pauses while it's
-// open, and everything chosen here is remembered.
+// Esc: the settings. Restart the shift, volume for each kind of sound, mouse sensitivity,
+// Karen's floor cone, the webcam, and a Keys tab listing every key in the game. The game
+// pauses while it's open, and everything chosen here is remembered.
 public sealed class SettingsMenu : MonoBehaviour
 {
     public static SettingsMenu Instance { get; private set; }
@@ -18,6 +19,7 @@ public sealed class SettingsMenu : MonoBehaviour
     float labelWidth;
     int slider;              // numbers the sliders as they're drawn
     int dragging = -1;       // the slider the mouse is holding
+    bool confirmingRestart, restartNow;
     AudioSource preview;
 
     const string SensitivityKey = "Karoshi.MouseSensitivity";
@@ -36,13 +38,27 @@ public sealed class SettingsMenu : MonoBehaviour
 
     void Start() => ApplySensitivity();
 
+    void OnEnable() => SceneManager.sceneLoaded += OnSceneLoaded;
+
     void OnDisable()
     {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
         if (Visible) Close();
     }
 
+    // A restarted store has a new player, who gets your sensitivity too.
+    static void OnSceneLoaded(Scene scene, LoadSceneMode mode) => ApplySensitivity();
+
     void Update()
     {
+        if (restartNow)
+        {
+            // Not from inside OnGUI: loading a scene mid-layout leaves the GUI stack unbalanced.
+            restartNow = false;
+            Close();
+            ShiftRestart.Restart();
+            return;
+        }
         if (!Input.GetKeyDown(KeyCode.Escape)) return;
         if (Visible) { Close(); return; }
         // Esc closes whatever else is open first: the map, the replay, the blink test, the
@@ -55,6 +71,7 @@ public sealed class SettingsMenu : MonoBehaviour
     public void Open()
     {
         Visible = true;
+        confirmingRestart = false;
         tab = Tab.Settings;
         scroll = Vector2.zero;
         FullScreenPanel.Set(this, true);
@@ -106,6 +123,21 @@ public sealed class SettingsMenu : MonoBehaviour
 
     void DrawSettings()
     {
+        Heading("Shift");
+        if (!confirmingRestart)
+        {
+            if (GUILayout.Button("Restart this shift", button, GUILayout.Width(size * 11f))) confirmingRestart = true;
+            GUILayout.Label("Starts the shift again from the beginning: the store resets and you go back to where you start.", small);
+        }
+        else
+        {
+            GUILayout.Label("Restart this shift? What you've done so far in it is lost; Karen remembers earlier shifts.", body);
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Yes, restart", button, GUILayout.Width(size * 8f))) restartNow = true;
+            if (GUILayout.Button("No", button, GUILayout.Width(size * 5f))) confirmingRestart = false;
+            GUILayout.EndHorizontal();
+        }
+
         Heading("Volume");
         float master = Slider("Everything", SoundSettings.Master, out bool masterDone);
         if (!Mathf.Approximately(master, SoundSettings.Master)) SoundSettings.Master = master;
