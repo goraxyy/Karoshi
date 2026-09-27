@@ -1,152 +1,189 @@
 # Karoshi
 
-> *karoshi (過労死) — Japanese: "death by overwork"*
+> *karoshi (過労死): Japanese for "death by overwork"*
 
-A first-person convenience-store shift simulator built in **Unity 6**. You clock in, keep the shelves stocked, mop up messes, empty the trash, and serve customers before your shift timer runs out — all while an AI supervisor patrols the store, sabotages your shelves, and hunts you down if you slip up.
+A first-person convenience-store night shift, built in **Unity 6**. You clock in, stock shelves,
+mop spills, empty the bins, serve customers and walk lost shoppers to the shelf they're looking
+for. Meanwhile **Karen**, the store's management AI, hunts you with only what she can see and
+hear, remembers where you hide, and moves when you blink. She rarely kills you: she gives you
+overtime.
 
----
+> *"Employee wellbeing is a tracked metric. I am optimising it."*
 
-## 📦 About this repository
-
-This repo is a **code-only mirror** of the project. It intentionally does **not** include the Unity scenes, prefabs, third-party asset packs, or `ProjectSettings` — just the C# scripts and the one custom shader under `Assets/!_Project/`, so the gameplay logic can be read, reviewed, or reused without pulling in the full asset library. It is not a drop-in, runnable Unity project on its own.
-
----
-
-## 🎮 Gameplay Overview
-
-- **Clock in/out** at the time **puncher** to start and end a shift
-- **Shop-floor customers** spawn at the entrance, browse random shelves, take stock, queue at the cashier until served, sometimes leave a mess or use the trash bin, then leave
-- **Restock shelves** — carry the stock crate and use it on any slot to refill the whole shelf unit; it never runs out
-- **Mop up spills** customers leave behind — hold the interact key while carrying the mop; progress shows visibly on the mess itself
-- **Empty the trash** — bag up a full bin, then drop the bag into the container out back
-- **Put tools back** by looking at their snap point and interacting, from anywhere
-- **Shift tasks** (mopping, trash, restocking) are tracked live and shown in an on-screen checklist (toggle with **F**); a shift can't be clocked out until they're all clear
-- **Avoid the AI supervisor**, who patrols the store, randomly knocks stock off shelves, and chases you on sight
-- **Manage your Burnout meter** — time and being chased drain it; coffee recovers it
+**Status:** prototype on its way to a vertical slice; not released yet. The plan to a Steam
+release is in [`RELEASE_PLAN.md`](RELEASE_PLAN.md), and the devlog and early-player plan is in
+[`MARKETING.md`](MARKETING.md).
 
 ---
 
-## 🧠 Systems
+## About this repository
 
-### Enemy AI
-A 4-state finite state machine (`EnemyAI.cs`):
-
-| State | Behavior |
-|-----------|--------------------------------------------------------------|
-| `Patrol` | Walks between waypoints; randomly decides to sabotage shelves |
-| `Sabotage` | Finds the nearest stocked shelf and ejects an item from it |
-| `Chase` | Pursues the player using NavMesh pathfinding |
-| `Search` | Moves to the player's last known position after losing sight |
-
-Uses a cone-based vision system with raycast occlusion — hide behind a shelf and it can't see you.
-
-### Customers (`Customernpc.cs`, `CustomerSpawner.cs`)
-NavMesh-driven shoppers with their own routine: enter → visit a few random shelf points → take an item if one's in reach (dropping mess behind them some of the time) → queue at the cashier and wait for the player to serve them → maybe detour to the trash can → exit and despawn. Line-of-sight and path-completeness checks keep them from interacting with things through walls.
-
-### Shelves & stocking (`ShelfSlot.cs`, `ShelfUnit.cs`, `StockCrate.cs`)
-Each shelf is a unit of individual slots. A `ShelfUnit` tracks how many of its slots are empty and highlights itself while understocked. The stock crate is carried in the inventory; while it's the item in hand, interacting with any slot refills that entire shelf, and the crate is never used up.
-
-### Cleaning (`Dirt.cs`)
-Spills are capped per shift and require the mop — implemented via `IHoldInteractable`, a hold-to-complete interaction with visible shrink/fade progress on the mess.
-
-### Trash (`Trashcan.cs`, `TrashBag.cs`, `TrashContainer.cs`)
-Bins fill as customers use them. Interacting with a non-empty bin bags it up into a carryable `TrashBag`; the job is only finished once that bag is physically dropped into the container out back, whose trigger volume swallows it.
-
-### Tools & snap points (`ItemHome.cs`, `ToolSnapPoint.cs`)
-The mop and the stock crate are ordinary inventory items — droppable anywhere — but each has a home. Looking at its snap point and interacting recalls the tool from the floor or straight out of the inventory. The spot shows a marker only while its tool is missing, and its trigger switches off while the tool is home so it never blocks picking the tool back up.
-
-### Shifts & tasks (`ShiftManager.cs`, `TaskManager.cs`, `Puncher.cs`)
-`ShiftManager` runs the clock-in/clock-out lifecycle and shift timer. `TaskManager` mixes one counted quota — mop N spills, growing each shift — with two live state checks: shelves all stocked, and all trash disposed of. The state tasks read the world directly rather than a running tally, so they un-check themselves the moment a customer empties a shelf or uses a bin. Clocking out is blocked until everything reads clear.
-
-### Interaction & highlighting (`PlayerInteract.cs`, `HighlightInteractable.cs`, `OutlineHighlight.cs`)
-A shared `IInteractable` / `IHoverable` / `IHoldInteractable` interface set drives all player interactions. `OutlineHighlight` draws an inverted-hull yellow outline on lookat, either per-mesh (items, customers) or as a single bounding box (shelves, fixtures) depending on the object's geometry.
-
-### Inventory & tools (`CarrySlot.cs`, `PlayerTools.cs`, `Inventoryui.cs`)
-Shelf-stock items live in a 4-slot `CarrySlot` inventory with an on-screen icon per slot; bulkier one-at-a-time tools (mop, trash can) go through `PlayerTools`, which handles holding and returning them to their original transform.
+This is a **code-only mirror**: the C# scripts (with their `.meta` files), the custom shader,
+the Python and Swift tools, and the design documents. It deliberately leaves out the scenes,
+models, materials, audio, prefabs, third-party packs and `ProjectSettings`, so it is not a
+runnable Unity project on its own. Data that would normally live in assets (Karen's tactics, the
+store's planogram) is written in code so that it can be reviewed here.
 
 ---
 
-## 🕹️ Controls
+## The game
 
-| Action | Key |
-|------------|----------------------|
-| Move | `WASD` |
-| Sprint | `Left Shift` |
-| Crouch | `Left Ctrl` |
-| Jump | `Space` |
-| Interact / hold-to-use | `E` |
-| Drop held item/tool | `Q` |
-| Toggle task list | `F` |
-| Switch inventory slot | `1`–`4` / scroll wheel |
-| Look | Mouse |
+- **The shift.** Clock in at the time clock. Customers come in, browse, take stock, leave messes,
+  use the bins and queue at the till. You can't clock out until the shelves are full, the spills
+  are mopped and the rubbish is out.
+- **The jobs.** Restock (carry the stock crate to a shelf), mop (hold **E** with the mop), bag the
+  bins and take the bag to the skip out back, serve at the till, and walk customers to the shelf
+  they asked about in a 150×150 m maze of a store (189 shelf units, 13 sections, 80 products).
+- **Burnout.** Your energy drains over the shift and with sprinting; coffee restores it. At zero
+  you can only walk.
+- **The building.** Mains power with breakers, 240 ceiling lights, a store radio on 64 speakers,
+  automatic doors, a flashlight, and procedural sound for everything Karen does.
 
----
+## Karen, the adaptive antagonist
 
-## 🏗️ Script Layout
+Designed in [`karen.md`](karen.md) (1,200 lines) and implemented in `Assets/!_Project/_Game/AI/`
+(about 11,500 lines of C#). She runs three minds:
+
+| Mind | Knows | Controls |
+|---|---|---|
+| **The Body** | only what it senses | where she walks and what she does to you |
+| **The Director** | everything | pacing: tension, breathers, when tricks are allowed |
+| **The Ledger** | your history across shifts | which of her tricks she's inclined to try on you |
+
+- **Perception.** Graded sight (distance, angle, light, movement), a noise bus where every action
+  has a loudness, customers who tell her they saw you, and building sensors (doors, the till).
+- **Belief.** A probability map of where you might be over the store's regions. It sharpens on a
+  sighting, spreads out over time, and clears where she looks and doesn't find you.
+- **Decisions.** Utility-scored goals and a planner over **35 tactics**: blackouts, fake door
+  chimes, PA announcements of where you are, customers she "possesses", shelves she empties behind
+  you, fog, cameras, footprint trails, and more.
+- **Learning.** A multi-armed bandit (UCB or Thompson sampling, with a habituation penalty)
+  chooses between tactics. The persistent Ledger remembers where you dwell and hide and the routes
+  you take. Everything she learns fades if you change your habits.
+- **Fairness, enforced by tests.** The body and decision code may not read your true position (an
+  automated test scans for it). Every tactic has a warning at least 0.8 s ahead: a flicker, a
+  chime, a PA crackle. She can never outrun a sprint: her paces are capped below your sprint speed.
+- **Visible gaze.** Her field of view is painted on the floor, cut short by shelves and walls:
+  blue while she walks her rounds, orange when she's noticed something, red while she hunts or
+  can see you.
+
+## The blink channel
+
+Opt-in webcam blink tracking. A small helper program reads your eyes, either Apple Vision
+([`tools/blink/mac`](tools/blink/mac), no downloads) or MediaPipe
+([`tools/blink/setup_mediapipe.sh`](tools/blink/setup_mediapipe.sh)), and sends the game one
+number per frame over localhost. The game calibrates to your eyes, compensates for the helper's
+delay, and lets Karen act inside the ~300 ms of your blink. Nothing is recorded, and nothing
+leaves the computer.
+
+**F8** turns it on, **F9** runs a 12-second guided calibration, **F10** is a live test panel, and
+**B** blinks from the keyboard with or without a camera. Setup:
+[`tools/blink/README.md`](tools/blink/README.md).
+
+## Seeing what happened
+
+- **F1:** a live map of the store (walls, shelves by section, doors) with you, Karen, her view
+  cone and her guess of where you are, customers by what they're doing (a dashed line to the
+  shelf one is asking about), sounds as rings, spills, empty shelves and bins, plus a plain-English
+  story of what Karen is doing. **H** adds her belief heat map; **T** the technical view.
+- **F2:** a replay of the shift so far on the same map.
+- **Shift reports.** Every shift is recorded (positions five times a second, every event) and
+  saved as JSON plus a self-contained HTML report: a replay with a timeline, a clickable event
+  list, and an analysis (jobs, time per area, when and where she spotted you, the closest she got,
+  what she tried most).
+
+## Evaluation harness
+
+Karen is measured, not just tuned by feel (`Assets/!_Project/_Game/Eval/`, [`tools/eval`](tools/eval)):
+
+- A headless, fixed-timestep simulation that runs faster than real time.
+- A socket environment for external agents, with Python clients: scripted baselines and an LLM
+  agent (Claude plays the shift).
+- Simulated players in three profiles: *efficient*, *skittish* and *reckless*.
+- An **ablation ladder**: six versions of Karen, from a random patrol (A) up to the full system
+  with learning and the blink channel (F), on paired seeds.
+
+Results are in [`KAREN_RESULTS.md`](KAREN_RESULTS.md). Across 216 simulated shifts, the belief map
+and planner found players twice as fast as the patrols (first detection 51 s against about
+100 s) with about 11 more detections a shift, and the fairness rules held with 0 violations. The
+learning rungs did not separate from the non-learning one against scripted players; the write-up
+says why, and what to test next.
+
+## Controls
+
+The essentials (the full list is in [`CONTROLS.md`](CONTROLS.md), and in the game under
+**Esc → Keys**):
+
+| Key | Action |
+|---|---|
+| WASD, mouse | Move, look |
+| Left Shift (hold) | Sprint (loud; stands you up from a crouch) |
+| Left Ctrl (hold) | Crouch while held (quiet) |
+| E / hold E | Use / mop, clear, unplug |
+| Q / hold Q | Put down / throw |
+| 1–4, mouse wheel | Hand slot |
+| C | Task list |
+| Esc | Settings: restart the shift, volume by kind of sound, mouse, Karen's floor cone, webcam |
+| F1 / F2 | Live map / replay |
+| F8 / F9 / F10 / B | Webcam blink on-off / calibrate / test panel / keyboard blink |
+
+## Running the tests and the evaluation headless
+
+With the project closed in the editor (Unity allows one instance per project):
+
+```bash
+# EditMode tests: AI rules, fairness, the belief map, shift records, the key list
+Unity -batchmode -nographics -projectPath . -runTests -testPlatform EditMode -testResults results.xml
+
+# One simulated shift against the full Karen, which also writes a shift report
+Unity -batchmode -nographics -projectPath . -executeMethod EvalBatch.Play \
+  -karoshi-ablation -ablation-careers 1 -ablation-shifts 1 -ablation-rungs F -ablation-profiles efficient
+```
+
+The full ablation command and its analysis script are in [`KAREN_RESULTS.md`](KAREN_RESULTS.md).
+
+## Repository layout
 
 ```
 Assets/!_Project/
-├── _Core/Scripts/Runtime/
-│   ├── BurnoutSystem.cs
-│   ├── ShiftManager.cs
-│   └── TaskManager.cs
+├── _Core/Scripts/Runtime/     shift, tasks, burnout, events, settings, pause, restart, JSON
 ├── _Game/
 │   ├── AI/Scripts/
-│   │   └── EnemyAI.cs
-│   ├── Characters/
-│   │   ├── Scripts/
-│   │   │   ├── Customernpc.cs
-│   │   │   ├── CustomerSpawner.cs
-│   │   │   └── OutlineHighlight.cs
-│   │   └── Shaders/
-│   │       └── CustomerOutline.shader
-│   ├── Items/Scripts/
-│   │   ├── Item.cs
-│   │   ├── ItemHome.cs                 # tools that return to a fixed spot
-│   │   ├── PickupInteractable.cs
-│   │   └── ToolSnapPoint.cs            # the spot itself; E here recalls the tool
-│   ├── Level/
-│   │   ├── Editor/
-│   │   │   └── ShelfPrefabBuilder.cs   # editor tool: generates shelf model/stocked prefab variants
-│   │   └── Scripts/
-│   │       ├── AutoDoubleDoor.cs
-│   │       ├── CoffeeMachine.cs
-│   │       ├── Dirt.cs
-│   │       ├── HighlightInteractable.cs
-│   │       ├── HingeDoor.cs
-│   │       ├── OneShotAudio.cs
-│   │       ├── ParentMaterialController.cs
-│   │       ├── Puncher.cs
-│   │       ├── ShelfSlot.cs
-│   │       ├── ShelfUnit.cs
-│   │       ├── StockCrate.cs
-│   │       ├── TrashBag.cs
-│   │       ├── TrashContainer.cs       # trigger volume that swallows bags
-│   │       └── Trashcan.cs
-│   └── Player/Scripts/
-│       ├── CarrySlot.cs
-│       ├── Inventoryui.cs
-│       ├── PlayerInteract.cs
-│       ├── PlayerMotor.cs
-│       ├── PlayerTools.cs
-│       └── TaskListUI.cs
+│   │   ├── Core/              Karen's brain, body, Director, Ledger, config, bootstrap
+│   │   ├── Perception/        sight, the noise bus, witnesses, traces, the building
+│   │   ├── Belief/            the belief grid
+│   │   ├── Decision/          goals, the planner, and the 35 tactics
+│   │   ├── World/             what she does to the store: lights, PA, props, maze, floor cone
+│   │   └── Diagnostics/       F1 map, narrator, shift recorder and analysis, HTML report
+│   ├── Blink/Scripts/         blink sources, tracker, calibration, helper launcher, F10 panel
+│   ├── Eval/                  headless env, simulated players, ablation runner, batch entry
+│   ├── Map/                   store map, floor plan, NavMesh walls
+│   ├── Level/                 shelves, planogram, doors, power, radio, bins, spills, audio
+│   ├── Characters/            customers, requests for directions, speech bubbles
+│   ├── Items/                 items, tools and their homes, flashlight
+│   └── Player/                movement, interaction, inventory, controls, settings menu
+└── _Tests/Editor/             EditMode tests
+tools/
+├── blink/                     webcam helpers (Swift / Apple Vision, Python / MediaPipe), training path
+└── eval/                      Python clients for the eval env, ablation analysis
 ```
 
----
+## Tech stack
 
-## ⚙️ Tech Stack
+- **Unity 6** (6000.5), **C#**, **URP**, NavMesh (`Unity.AI.Navigation`), TextMeshPro
+- **Swift** with Apple Vision and AVFoundation for the macOS blink helper
+- **Python** for the eval clients, the analysis, and the optional MediaPipe blink helper
+- Unity batch mode for headless tests, simulation and ablations
 
-- **Engine:** Unity 6 (6000.x)
-- **Language:** C#
-- **AI Navigation:** Unity NavMesh / NavMeshAgent (`Unity.AI.Navigation`)
-- **Rendering:** URP (Universal Render Pipeline), custom outline shader
-- **UI:** TextMeshPro
+## Documents
 
----
-
-## 📋 Roadmap
-
-- [ ] Score/results screen between shifts
-- [ ] Sound design pass
-- [ ] More level layouts
-- [ ] Player-facing penalty when caught by the supervisor
+| File | What it is |
+|---|---|
+| [`karen.md`](karen.md) | Karen's full design, and where the code departs from it |
+| [`ideas.md`](ideas.md) | Research ideas: the agent-eval environment, the ablation ladder, the thought log, the blink channel |
+| [`KAREN_RESULTS.md`](KAREN_RESULTS.md) | The ablation results |
+| [`CONTROLS.md`](CONTROLS.md) | Every key |
+| [`RELEASE_PLAN.md`](RELEASE_PLAN.md) | Milestones to a Steam release |
+| [`MARKETING.md`](MARKETING.md) | Devlog, platforms and getting early players |
+| [`STORE_CATALOG.md`](STORE_CATALOG.md), [`STORE_MAP.md`](STORE_MAP.md) | The planogram and the store's map |
+| [`tools/blink/README.md`](tools/blink/README.md), [`tools/eval/README.md`](tools/eval/README.md) | Tool setup |
