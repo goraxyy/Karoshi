@@ -6,7 +6,7 @@ using System.Linq;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
-namespace Karoshi.Blink
+namespace Kehai.Blink
 {
     // Starts and stops the camera helper that reads your eyes, so blinking works without
     // opening a terminal. On a Mac it's tools/blink/mac/build/BlinkVision (Apple Vision, no
@@ -35,8 +35,8 @@ namespace Karoshi.Blink
         // Which camera the Mac helper opens; C in the F10 panel steps through them.
         public static int CameraIndex
         {
-            get => PlayerPrefs.GetInt("Karoshi.BlinkCamera", 0);
-            set => PlayerPrefs.SetInt("Karoshi.BlinkCamera", Mathf.Max(0, value));
+            get => PlayerPrefs.GetInt("Kehai.BlinkCamera", 0);
+            set => PlayerPrefs.SetInt("Kehai.BlinkCamera", Mathf.Max(0, value));
         }
 
         static string[] cameras;
@@ -107,8 +107,8 @@ namespace Karoshi.Blink
         // accurate, so once someone has set it up it's the default; M in the F10 panel switches.
         public static bool PreferMediaPipe
         {
-            get => PlayerPrefs.GetInt("Karoshi.BlinkMediaPipe", MediaPipeReady && File.Exists(Model) ? 1 : 0) == 1;
-            set => PlayerPrefs.SetInt("Karoshi.BlinkMediaPipe", value ? 1 : 0);
+            get => PlayerPrefs.GetInt("Kehai.BlinkMediaPipe", MediaPipeReady && File.Exists(Model) ? 1 : 0) == 1;
+            set => PlayerPrefs.SetInt("Kehai.BlinkMediaPipe", value ? 1 : 0);
         }
 
         public static void SwitchHelper(int port)

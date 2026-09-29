@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-namespace Karoshi.Store
+namespace Kehai.Store
 {
     // The store map in forms other things can read.
     //
@@ -12,7 +12,7 @@ namespace Karoshi.Store
     //                every region, for a person or a language model to read.
     //   ToJson     — the same graph as data, served to agents by the eval harness.
     //
-    // Karen reads the StoreMap object itself; these are views of it, generated rather than
+    // Aiko reads the StoreMap object itself; these are views of it, generated rather than
     // written, so they can never disagree with what the game is actually doing.
     public static class StoreMapReport
     {
@@ -23,10 +23,10 @@ namespace Karoshi.Store
         {
             var sb = new StringBuilder(64 * 1024);
 
-            sb.AppendLine("# Karoshi — Store Map");
+            sb.AppendLine("# Kehai — Store Map");
             sb.AppendLine();
-            sb.AppendLine("The building as Karen and the eval harness see it. **Generated** from the scene by");
-            sb.AppendLine("`Karoshi/Map/Export STORE_MAP.md` (`StoreMap.cs` + `StoreMapReport.cs`) — do not edit by");
+            sb.AppendLine("The building as " + GameNames.Antagonist + " and the eval harness see it. **Generated** from the scene by");
+            sb.AppendLine("`Kehai/Map/Export STORE_MAP.md` (`StoreMap.cs` + `StoreMapReport.cs`) — do not edit by");
             sb.AppendLine("hand; move a shelf and re-export instead.");
             sb.AppendLine();
             sb.AppendLine($"**{map.Summary()}**");
@@ -138,7 +138,7 @@ namespace Karoshi.Store
             // ---- chokepoints
             sb.AppendLine("## Chokepoints");
             sb.AppendLine();
-            sb.AppendLine("Regions whose loss cuts part of the store off. Karen blocks these first; a player who");
+            sb.AppendLine("Regions whose loss cuts part of the store off. " + GameNames.Antagonist + " blocks these first; a player who");
             sb.AppendLine("knows them knows where not to be cornered.");
             sb.AppendLine();
             foreach (Region r in map.Regions.Where(r => r.IsChokepoint))

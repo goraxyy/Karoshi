@@ -1,12 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Karoshi.Karen;
-using Karoshi.Store;
+using Kehai.Aiko;
+using Kehai.Store;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Karoshi.Eval
+namespace Kehai.Eval
 {
     // Configuration for one episode — everything that must be fixed for it to be repeatable.
     public sealed class EnvConfig
@@ -16,13 +16,13 @@ namespace Karoshi.Eval
         public float shiftSeconds = 180f;
         public int fps = 20;                 // fixed simulation step: 1/fps seconds per frame
         public bool render = true;
-        public bool karen = true;
+        public bool aiko = true;
         public bool freshLedger = true;
         public int startShift = 1;           // career position of the first shift
         public float overtimeCap = 240f;     // give up this long after the doors close
         public string agent = "external";
         public bool syntheticBlinks = true;  // rung F without a face: a recorded-style blink trace
-        public string ledgerPath = "";       // empty = karoshi_eval/eval_ledger.json, never the player's own
+        public string ledgerPath = "";       // empty = kehai_eval/eval_ledger.json, never the player's own
         public bool verbose;                 // log every action and its result
 
         public static EnvConfig From(Dictionary<string, object> o)
@@ -34,7 +34,7 @@ namespace Karoshi.Eval
             c.shiftSeconds = (float)o.GetNumber("shift_seconds", c.shiftSeconds);
             c.fps = Mathf.Clamp((int)o.GetNumber("fps", c.fps), 5, 120);
             c.render = o.GetBool("render", c.render);
-            c.karen = o.GetBool("karen", c.karen);
+            c.aiko = o.GetBool("aiko", c.aiko);
             c.freshLedger = o.GetBool("fresh_ledger", c.freshLedger);
             c.startShift = Mathf.Max(1, (int)o.GetNumber("start_shift", c.startShift));
             c.overtimeCap = (float)o.GetNumber("overtime_cap", c.overtimeCap);
@@ -46,20 +46,20 @@ namespace Karoshi.Eval
         }
     }
 
-    // Karoshi as an agent-eval environment (ideas.md §1).
+    // Kehai as an agent-eval environment (ideas.md §1).
     //
     //   reset(config) — reload the store, seed everything, fix the time step, clock in
     //   step(action)  — run one macro-action to completion through the real body and hands
     //   observe()     — the structured snapshot (EnvWorld), plus a prose rendering
     //
-    // Determinism: a seed fixes UnityEngine.Random (customers, spills) and Karen's own RNG,
+    // Determinism: a seed fixes UnityEngine.Random (customers, spills) and Aiko's own RNG,
     // Time.captureDeltaTime fixes every frame's dt, the reload is synchronous and the planner
     // has no wall-clock budget. The first shift after launch replays exactly; later ones in
     // the same process drift a little (engine-side threading), so compare paired seeds. Headless: with render off the cameras stop drawing, and a
     // -batchmode -nographics build runs it with no window at all.
-    public sealed class KaroshiEnv : MonoBehaviour
+    public sealed class KehaiEnv : MonoBehaviour
     {
-        public static KaroshiEnv Instance { get; private set; }
+        public static KehaiEnv Instance { get; private set; }
 
         public EnvConfig Config { get; private set; } = new EnvConfig();
         public AgentDriver Driver { get; private set; }
@@ -82,14 +82,14 @@ namespace Karoshi.Eval
         bool cancel;
         PaAnnouncement lastSeenAnnouncement;
 
-        public static string EvalDirectory => System.IO.Path.Combine(Application.persistentDataPath, "karoshi_eval");
+        public static string EvalDirectory => System.IO.Path.Combine(Application.persistentDataPath, "kehai_eval");
 
-        public static KaroshiEnv Ensure()
+        public static KehaiEnv Ensure()
         {
             if (Instance != null) return Instance;
-            var go = new GameObject("~KaroshiEnv");
+            var go = new GameObject("~KehaiEnv");
             DontDestroyOnLoad(go);
-            Instance = go.AddComponent<KaroshiEnv>();
+            Instance = go.AddComponent<KehaiEnv>();
             return Instance;
         }
 
@@ -98,8 +98,8 @@ namespace Karoshi.Eval
             if (!Ready) return;
             Metrics.Tick(Tasks, Burnout);
 
-            KarenScreen screen = KarenScreen.Instance;
-            PaSystem pa = KarenWorld.Instance != null ? KarenWorld.Instance.Pa : null;
+            AikoScreen screen = AikoScreen.Instance;
+            PaSystem pa = AikoWorld.Instance != null ? AikoWorld.Instance.Pa : null;
             if (pa != null && pa.Busy) LastSubtitle = CurrentPaText(pa);
         }
 
@@ -127,11 +127,11 @@ namespace Karoshi.Eval
             Config = config ?? new EnvConfig();
             Metrics.Unsubscribe();
 
-            // Everything the next Karen and the next shift will be built from.
-            KarenBootstrap.Disabled = !Config.karen;
-            // An eval Karen keeps her Ledger in a file of her own: resetting an episode must
+            // Everything the next Aiko and the next shift will be built from.
+            AikoBootstrap.Disabled = !Config.aiko;
+            // An eval Aiko keeps her Ledger in a file of her own: resetting an episode must
             // never wipe what she has learned about the person who actually plays the game.
-            var karen = new KarenConfig
+            var aiko = new AikoConfig
             {
                 seed = Config.seed,
                 writeJsonl = false,
@@ -140,9 +140,9 @@ namespace Karoshi.Eval
                     ? System.IO.Path.Combine(EvalDirectory, "eval_ledger.json")
                     : Config.ledgerPath
             };
-            if (KarenBootstrap.TryParseRung(Config.rung, out KarenRung rung)) karen.rung = rung;
-            KarenBootstrap.Override = karen;
-            if (Config.freshLedger) new KarenLedger(karen) { Persistent = true }.Wipe();
+            if (AikoBootstrap.TryParseRung(Config.rung, out AikoRung rung)) aiko.rung = rung;
+            AikoBootstrap.Override = aiko;
+            if (Config.freshLedger) new AikoLedger(aiko) { Persistent = true }.Wipe();
 
             Time.captureDeltaTime = 1f / Config.fps;
             Application.targetFrameRate = -1;
@@ -179,8 +179,8 @@ namespace Karoshi.Eval
 
             if (Config.verbose)
             {
-                KarenBrain brain = KarenBrain.Instance;
-                Debug.Log($"[env] reset seed {Config.seed}: Karen {(brain != null ? $"online, rung {brain.config.rung}, seed {brain.config.seed}" : "absent")}; " +
+                AikoBrain brain = AikoBrain.Instance;
+                Debug.Log($"[env] reset seed {Config.seed}: {GameNames.Antagonist} {(brain != null ? $"online, rung {brain.config.rung}, seed {brain.config.seed}" : "absent")}; " +
                           $"shift {(Shift != null ? Shift.ShiftNumber : 0)} active={Shift != null && Shift.IsShiftActive}; player at {World.Map.NameAt(Driver.transform.position)}; " +
                           $"{NavMeshWalls.LastCount} walls carved, NavMesh agent radius {UnityEngine.AI.NavMesh.GetSettingsByIndex(0).agentRadius:0.00}");
             }
@@ -200,8 +200,8 @@ namespace Karoshi.Eval
             if (!Config.render)
                 foreach (Camera cam in FindObjectsByType<Camera>()) cam.enabled = false;
 
-            var blink = FindAnyObjectByType<Karoshi.Blink.BlinkTracker>();
-            Karoshi.Blink.BlinkClock.Simulated = Config.syntheticBlinks;
+            var blink = FindAnyObjectByType<Kehai.Blink.BlinkTracker>();
+            Kehai.Blink.BlinkClock.Simulated = Config.syntheticBlinks;
             if (blink != null && Config.syntheticBlinks) blink.UseSynthetic(Config.seed);
         }
 
@@ -209,7 +209,7 @@ namespace Karoshi.Eval
         public IEnumerator ClockIn()
         {
             if (Shift == null || Shift.IsShiftActive) yield break;
-            if (KarenBrain.Instance != null && KarenBrain.Instance.Review != null) KarenBrain.Instance.Review.Visible = false;
+            if (AikoBrain.Instance != null && AikoBrain.Instance.Review != null) AikoBrain.Instance.Review.Visible = false;
             yield return Act(new EnvAction { verb = "clock_in" });
             shiftStartedAt = Time.time;
             wallStartedAt = Time.realtimeSinceStartup;
@@ -227,7 +227,7 @@ namespace Karoshi.Eval
 
             bool clockedOut = !Shift.IsShiftActive && ShiftSeconds > 1f;
             bool timedOut = Shift.IsShiftActive && ShiftSeconds > Config.shiftSeconds + Config.overtimeCap
-                            + (KarenBrain.Instance != null ? KarenBrain.Instance.Stats.Overtimes * 120f : 0f);
+                            + (AikoBrain.Instance != null ? AikoBrain.Instance.Stats.Overtimes * 120f : 0f);
             if (!clockedOut && !timedOut) return false;
 
             Done = true;

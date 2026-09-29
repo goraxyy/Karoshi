@@ -1,3 +1,5 @@
+using Kehai;
+
 // Every key the game uses, in one place. The Esc menu's Keys tab shows this list, and
 // CONTROLS.md is the same list to read outside the game (a test keeps the two in step).
 public static class Controls
@@ -22,7 +24,7 @@ public static class Controls
         new Section("Moving",
             K("W A S D", "Walk"),
             K("Mouse", "Look around"),
-            K("Left Shift (hold)", "Sprint; stands you up if you're crouching. Loud: Karen hears it"),
+            K("Left Shift (hold)", "Sprint; stands you up if you're crouching. Loud: " + GameNames.Antagonist + " hears it"),
             K("Left Ctrl (hold)", "Crouch while held; let go to stand up. Quiet, and slow"),
             K("Space", "Jump")),
         new Section("Hands and work",
@@ -37,9 +39,9 @@ public static class Controls
             K("Up / Down", "Choose an answer when a customer asks you something"),
             K("E / Enter", "Give that answer")),
         new Section("Menus and maps",
-            K("Esc", "Settings: volume, mouse, Karen's floor cone, webcam; closes any open panel"),
-            K("F1", "Live map of the store and what Karen is doing, in plain words"),
-            K("H (on the F1 map)", "Karen's guess of where you are, as a heat map"),
+            K("Esc", "Settings: volume, mouse, " + GameNames.Antagonist + "'s floor cone, webcam; closes any open panel"),
+            K("F1", "Live map of the store and what " + GameNames.Antagonist + " is doing, in plain words"),
+            K("H (on the F1 map)", GameNames.Antagonist + "'s guess of where you are, as a heat map"),
             K("T (on the F1 map)", "Technical view: goal scores and her thought log"),
             K("F2", "Replay the shift so far"),
             K("Space (in the replay)", "Play or pause"),

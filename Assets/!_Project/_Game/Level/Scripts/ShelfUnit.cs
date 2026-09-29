@@ -11,7 +11,7 @@ public class ShelfUnit : MonoBehaviour
 
     [Header("Planogram")]
     [Tooltip("Which part of the shop floor this bay stands in — \"Aisle 3 · Cereal & " +
-             "Breakfast\". Written by Karoshi/Store/Apply Layout; shown on signage and in " +
+             "Breakfast\". Written by Kehai/Store/Apply Layout; shown on signage and in " +
              "the customer's directions.")]
     public string section;
 

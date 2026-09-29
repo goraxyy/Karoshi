@@ -1,11 +1,11 @@
 using System.Collections.Generic;
-using Karoshi.Store;
+using Kehai.Store;
 using UnityEngine;
 using UnityEngine.AI;
 
-namespace Karoshi.Karen
+namespace Kehai.Aiko
 {
-    // The fairness contract (karen.md §9), enforced in code.
+    // The fairness contract (aiko.md §9), enforced in code.
     //
     // Some of the checks need the truth — whether the employee could still finish the
     // shift, whether they can see her path — and this is the one place outside the Director
@@ -60,12 +60,12 @@ namespace Karoshi.Karen
             if (ViolationLog.Count < 500) ViolationLog.Add($"[{Time.time:0.0}] {what}");
             // Loud, but not a flood: the first few, then one in fifty.
             if (Violations <= 10 || Violations % 50 == 0)
-                Debug.LogWarning($"Karen fairness violation #{Violations}: {what}");
+                Debug.LogWarning($"{GameNames.Antagonist} fairness violation #{Violations}: {what}");
             return false;
         }
 
         // Rule 2: the hint is withheld while the employee can see the path she's walking.
-        public static bool PlayerSeesPath(KarenBody body, PlayerPresence player)
+        public static bool PlayerSeesPath(AikoBody body, PlayerPresence player)
         {
             if (body == null || player == null) return false;
             Vector3 eye = player.Head;

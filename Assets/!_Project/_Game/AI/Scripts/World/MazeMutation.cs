@@ -1,13 +1,13 @@
 using System.Collections.Generic;
 using System.Text;
-using Karoshi.Store;
+using Kehai.Store;
 using Unity.AI.Navigation;
 using UnityEngine;
 using UnityEngine.AI;
 
-namespace Karoshi.Karen
+namespace Kehai.Aiko
 {
-    // The shelving is on castors (karen.md §5.5). Between shifts Karen rolls a few bays to a
+    // The shelving is on castors (aiko.md §5.5). Between shifts Aiko rolls a few bays to a
     // new spot on the 5 m lattice, so the store you walk into is *wrong* and the route you
     // learned is no longer the route.
     //
@@ -27,11 +27,11 @@ namespace Karoshi.Karen
         }
 
         // Returns the moves that stuck. `report` is a line per attempt for the thought log.
-        public static List<Move> Mutate(KarenRng rng, int wanted, out string report)
+        public static List<Move> Mutate(AikoRng rng, int wanted, out string report)
         {
             var kept = new List<Move>();
             var log = new StringBuilder();
-            NavMeshSurface surface = KarenWorld.StoreSurface();
+            NavMeshSurface surface = AikoWorld.StoreSurface();
             if (surface == null)
             {
                 report = "no NavMeshSurface covers the store — mutation skipped";

@@ -3,14 +3,14 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-namespace Karoshi.Karen
+namespace Kehai.Aiko
 {
-    // Karen's performance review of you, printed at the end of every shift (karen.md §6.6).
+    // Aiko's performance review of you, printed at the end of every shift (aiko.md §6.6).
     // A redacted version of her own thought log: being outplayed is only fun when you can
     // see the play. From shift five it also offers the way out.
     public sealed class PerformanceReview
     {
-        readonly KarenBrain brain;
+        readonly AikoBrain brain;
         public string Text { get; private set; } = string.Empty;
         public bool Visible { get; set; }
         public bool BrokeHer { get; private set; }
@@ -18,7 +18,7 @@ namespace Karoshi.Karen
 
         float blackoutSeconds = -1f;
 
-        public PerformanceReview(KarenBrain brain)
+        public PerformanceReview(AikoBrain brain)
         {
             this.brain = brain;
         }
@@ -27,8 +27,8 @@ namespace Karoshi.Karen
 
         public void Compose()
         {
-            KarenStats s = brain.Stats;
-            KarenLedger l = brain.Ledger;
+            AikoStats s = brain.Stats;
+            AikoLedger l = brain.Ledger;
             var sb = new StringBuilder();
 
             sb.AppendLine($"<b>PERFORMANCE REVIEW</b> — {l.PlayerName}, shift {s.Shift}");
@@ -99,7 +99,7 @@ namespace Karoshi.Karen
         string Redact(string line)
         {
             var sb = new StringBuilder(line);
-            foreach (Karoshi.Store.Region r in brain.Map.Regions)
+            foreach (Kehai.Store.Region r in brain.Map.Regions)
             {
                 if (r.Name == null || r.Name.Length < 4) continue;
                 string s = sb.ToString();
@@ -112,16 +112,16 @@ namespace Karoshi.Karen
 
         public string EndingText(string kind)
         {
-            KarenLedger l = brain.Ledger;
+            AikoLedger l = brain.Ledger;
             switch (kind)
             {
                 case "burnout":
                     return $"{l.PlayerName} worked {l.Data.shiftsWorked} shifts. Energy at the last clock-out: 0.\n" +
-                           "The last thing that happened is that Karen made you a coffee.\n\n" +
+                           "The last thing that happened is that " + GameNames.Antagonist + " made you a coffee.\n\n" +
                            "<i>Employee wellbeing is a tracked metric. It was optimised.</i>";
                 case "broke":
                     return $"{l.PlayerName} was never located. Cameras unplugged, the PA silenced, the routes changed.\n" +
-                           "Karen's confidence collapsed and did not recover.\n\n<i>Employee is unmanageable. The position has been advertised.</i>";
+                           GameNames.Antagonist + "'s confidence collapsed and did not recover.\n\n<i>Employee is unmanageable. The position has been advertised.</i>";
                 default:
                     return $"{l.PlayerName} worked {l.Data.shiftsWorked} shifts, received {l.Data.warnings} written warning(s), " +
                            $"and clocked out {l.Data.shiftsClockedOut} time(s).\n\n<i>Your notice has been accepted. We are sorry to see you go. We are always sorry.</i>";
@@ -132,10 +132,10 @@ namespace Karoshi.Karen
     // Draws the review and handles its two keys.
     public sealed class ReviewScreen : MonoBehaviour
     {
-        KarenBrain brain;
+        AikoBrain brain;
         GUIStyle style;
 
-        void Awake() => brain = GetComponent<KarenBrain>();
+        void Awake() => brain = GetComponent<AikoBrain>();
 
         void Update()
         {
@@ -173,7 +173,7 @@ namespace Karoshi.Karen
             GUI.DrawTexture(rect, Texture2D.whiteTexture);
             GUI.color = Color.white;
 
-            // Karen's review, then what the recording says happened.
+            // Aiko's review, then what the recording says happened.
             var text = new System.Text.StringBuilder(brain.Review.Text);
             ShiftAnalysis analysis = ShiftRecorder.Instance != null ? ShiftRecorder.Instance.LastAnalysis : null;
             if (analysis != null && analysis.Findings.Count > 0)

@@ -1,6 +1,6 @@
 # Controls
 
-Every key in Karoshi. The same list is in the game: press **Esc**, then **Keys**.
+Every key in Kehai. The same list is in the game: press **Esc**, then **Keys**.
 
 Keys marked *(in the replay)*, *(on the F1 map)* or *(in the blink test)* only work while that panel is open.
 
@@ -10,7 +10,7 @@ Keys marked *(in the replay)*, *(on the F1 map)* or *(in the blink test)* only w
 |---|---|
 | W A S D | Walk |
 | Mouse | Look around |
-| Left Shift (hold) | Sprint; stands you up if you're crouching. Loud: Karen hears it |
+| Left Shift (hold) | Sprint; stands you up if you're crouching. Loud: Aiko hears it |
 | Left Ctrl (hold) | Crouch while held; let go to stand up. Quiet, and slow |
 | Space | Jump |
 
@@ -37,9 +37,9 @@ Keys marked *(in the replay)*, *(on the F1 map)* or *(in the blink test)* only w
 
 | Key | What it does |
 |---|---|
-| Esc | Settings: volume, mouse, Karen's floor cone, webcam; closes any open panel |
-| F1 | Live map of the store and what Karen is doing, in plain words |
-| H (on the F1 map) | Karen's guess of where you are, as a heat map |
+| Esc | Settings: volume, mouse, Aiko's floor cone, webcam; closes any open panel |
+| F1 | Live map of the store and what Aiko is doing, in plain words |
+| H (on the F1 map) | Aiko's guess of where you are, as a heat map |
 | T (on the F1 map) | Technical view: goal scores and her thought log |
 | F2 | Replay the shift so far |
 | Space (in the replay) | Play or pause |
@@ -76,10 +76,10 @@ Keys marked *(in the replay)*, *(on the F1 map)* or *(in the blink test)* only w
 
 ## Settings (Esc)
 
-- **Shift**: restart this shift. The store resets, you go back to where you start, and the same shift begins again when you clock in. Karen still remembers earlier shifts.
-- **Volume**: everything, sound effects, Karen (her footsteps and warnings), music (the radio) and announcements (the PA). You hear a sample when you let go of a slider.
+- **Shift**: restart this shift. The store resets, you go back to where you start, and the same shift begins again when you clock in. Aiko still remembers earlier shifts.
+- **Volume**: everything, sound effects, Aiko (her footsteps and warnings), music (the radio) and announcements (the PA). You hear a sample when you let go of a slider.
 - **Mouse**: look sensitivity.
-- **Karen**: show where she is looking, as a cone on the floor. Blue: walking her rounds. Orange: she noticed something. Red: she's hunting you, or can see you right now.
+- **Aiko**: show where she is looking, as a cone on the floor. Blue: walking her rounds. Orange: she noticed something. Red: she's hunting you, or can see you right now.
 - **Webcam blinking**: turn it on or off, calibrate, open the blink test.
 
 The game pauses while the menu is open, and your choices are remembered.

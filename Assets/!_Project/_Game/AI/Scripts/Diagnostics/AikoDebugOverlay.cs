@@ -1,21 +1,21 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Karoshi.Store;
+using Kehai.Store;
 using UnityEngine;
 
-namespace Karoshi.Karen
+namespace Kehai.Aiko
 {
-    // The store map, and what Karen is up to, in plain words.
+    // The store map, and what Aiko is up to, in plain words.
     //
-    //   F1  the live map: the real floor plan with you, Karen (and where she's looking), her
+    //   F1  the live map: the real floor plan with you, Aiko (and where she's looking), her
     //       guess of where you are, every customer and what they're doing, the sounds being
     //       made, her warnings, and the jobs. Beside it, what she's doing and a running story
     //       of the shift. H adds her guess as a heat map; T swaps the story for the technical
     //       numbers.
     //   F2  the replay of this shift (or the last one): drag the timeline, Space to play,
     //       1/2/3 for speed, ←/→ to skip, O to open the full report in your browser.
-    public sealed class KarenDebugOverlay : MonoBehaviour
+    public sealed class AikoDebugOverlay : MonoBehaviour
     {
         public KeyCode overlayKey = KeyCode.F1;
         public KeyCode replayKey = KeyCode.F2;
@@ -26,7 +26,7 @@ namespace Karoshi.Karen
         public bool showHeat;
         public bool showTechnical;
 
-        KarenBrain brain;
+        AikoBrain brain;
         MapPainter painter;
         GUIStyle body, heading, small;
 
@@ -34,7 +34,7 @@ namespace Karoshi.Karen
         bool playing;
         float speed = 4f;
 
-        void Awake() => brain = GetComponent<KarenBrain>();
+        void Awake() => brain = GetComponent<AikoBrain>();
 
         void OnDisable() => FullScreenPanel.Set(this, false);
 
@@ -154,16 +154,16 @@ namespace Karoshi.Karen
             GUILayout.Label(brain.StatusLine, heading);
 
             string guess;
-            if (f.KarenSees) guess = "<color=#FF5454><b>She can see you right now!</b></color>";
+            if (f.AikoSees) guess = "<color=#FF5454><b>She can see you right now!</b></color>";
             else if (!brain.ShiftActive) guess = "Clock in at the time clock in the Staff room to start the shift.";
             else if (f.GuessConfidence < 0.12f) guess = "She has no idea where you are.";
-            else guess = $"She thinks you're <b>{KarenNarrator.In(new Vector3(f.Guess.x, 0f, f.Guess.y))}</b> — {KarenNarrator.Sureness(f.GuessConfidence)}.";
+            else guess = $"She thinks you're <b>{AikoNarrator.In(new Vector3(f.Guess.x, 0f, f.Guess.y))}</b> — {AikoNarrator.Sureness(f.GuessConfidence)}.";
             GUILayout.Label(guess, body);
 
             if (brain.ShiftActive && brain.Director != null)
             {
-                float d = Vector2.Distance(f.Player, f.Karen);
-                GUILayout.Label($"Pace of the shift: <b>{KarenNarrator.PhaseShort(brain.Director.CurrentPhase)}</b>.  She is <b>{d:0} m</b> from you.", body);
+                float d = Vector2.Distance(f.Player, f.Aiko);
+                GUILayout.Label($"Pace of the shift: <b>{AikoNarrator.PhaseShort(brain.Director.CurrentPhase)}</b>.  She is <b>{d:0} m</b> from you.", body);
             }
 
             // Your side.
@@ -196,7 +196,7 @@ namespace Karoshi.Karen
             GUILayout.Space(FontSize * 0.6f);
             GUILayout.Label("What just happened", heading);
             int shown = 0;
-            IReadOnlyList<StoryLine> story = KarenNarrator.Recent;
+            IReadOnlyList<StoryLine> story = AikoNarrator.Recent;
             ShiftRecorder rec = ShiftRecorder.Instance;
             var lines = new List<(float t, string text, Color c)>();
             for (int i = story.Count - 1; i >= 0 && lines.Count < 14; i--)
@@ -223,7 +223,7 @@ namespace Karoshi.Karen
             switch (kind)
             {
                 case StoryKind.Seen:
-                case StoryKind.Chase: return MapPainter.KarenRed;
+                case StoryKind.Chase: return MapPainter.AikoRed;
                 case StoryKind.Warning: return MapPainter.Warning;
                 case StoryKind.Guess: return MapPainter.Guess;
                 case StoryKind.Heard: return new Color(1f, 0.6f, 0.5f);
@@ -238,9 +238,9 @@ namespace Karoshi.Karen
         void Technical()
         {
             var sb = new StringBuilder();
-            KarenDirector d = brain.Director;
+            AikoDirector d = brain.Director;
             StoreMap map = brain.Map;
-            sb.AppendLine($"<b>Karen</b>  rung {brain.config.rung}  shift {brain.Stats.Shift}  t={brain.ShiftTime:0}s");
+            sb.AppendLine($"<b>{GameNames.Antagonist}</b>  rung {brain.config.rung}  shift {brain.Stats.Shift}  t={brain.ShiftTime:0}s");
             if (d != null) sb.AppendLine($"phase <b>{d.PhaseName}</b>  panic {d.Panic:0.00} → setpoint {d.Setpoint:0.00}  pressure {d.Pressure:+0.00;-0.00}  tension {d.Tension:0.00}");
             if (brain.Belief != null) sb.AppendLine($"belief peak <b>{map.RegionName(brain.Belief.PeakRegion)}</b> p={brain.Belief.Confidence:0.00} H={brain.Belief.Entropy:0.00} stale={Mathf.Min(999f, brain.Belief.Staleness):0}s");
             sb.AppendLine($"sight {brain.Body.Sight.Band} ({brain.Body.Sight.Awareness:0.00})  energy belief {brain.Energy.Energy:0.00}");
@@ -281,7 +281,7 @@ namespace Karoshi.Karen
             foreach (ShiftEvent e in r.Events)
             {
                 Color c;
-                if (e.Kind == nameof(StoryKind.Chase)) c = MapPainter.KarenRed;
+                if (e.Kind == nameof(StoryKind.Chase)) c = MapPainter.AikoRed;
                 else if (e.Kind == nameof(StoryKind.Seen) && e.Text.Contains("spotted")) c = new Color(1f, 0.45f, 0.45f);
                 else if (e.Kind == nameof(StoryKind.Warning)) c = MapPainter.Warning;
                 else if (e.Kind == "job") c = MapPainter.Following;
@@ -299,17 +299,17 @@ namespace Karoshi.Karen
                     Event.current.Use();
                 }
             GUI.Label(new Rect(bar.x, bar.yMax + 4f, bar.width, size * 1.6f),
-                $"{KarenNarrator.Clock(replayT)} / {KarenNarrator.Clock(end)}   {(playing ? "playing" : "paused")} at {speed:0}×   " +
+                $"{AikoNarrator.Clock(replayT)} / {AikoNarrator.Clock(end)}   {(playing ? "playing" : "paused")} at {speed:0}×   " +
                 "<color=#8A909C>Space play/pause · 1/2/3 speed · ←/→ 5 s · drag the bar · O open the full report · F2 close</color>", small);
 
             // The story around this moment.
             var panel = new Rect(mapWidth + margin, margin, Screen.width - mapWidth - margin * 2f, Screen.height - timelineH - margin * 2f);
             GUILayout.BeginArea(panel);
             GUILayout.Label($"Shift {r.ShiftNumber} — replay", heading);
-            GUILayout.Label($"Karen is {Vector2.Distance(f.Player, f.Karen):0} m from you" + (f.KarenSees ? " and <color=#FF5454><b>can see you</b></color>." : "."), body);
+            GUILayout.Label($"{GameNames.Antagonist} is {Vector2.Distance(f.Player, f.Aiko):0} m from you" + (f.AikoSees ? " and <color=#FF5454><b>can see you</b></color>." : "."), body);
             var near = r.Events.Where(e => e.Kind != "sound" && e.T <= replayT && e.T > replayT - 90f).Reverse().Take(14);
             foreach (ShiftEvent e in near)
-                GUILayout.Label($"<color=#8A909C>{KarenNarrator.Clock(e.T)}</color>  {e.Text}", body);
+                GUILayout.Label($"<color=#8A909C>{AikoNarrator.Clock(e.T)}</color>  {e.Text}", body);
             GUILayout.FlexibleSpace();
             MapPainter.Legend(GUILayoutUtility.GetRect(panel.width, MapPainter.LegendHeight(panel.width, size)), size);
             GUILayout.EndArea();

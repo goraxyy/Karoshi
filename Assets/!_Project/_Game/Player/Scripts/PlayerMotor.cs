@@ -1,8 +1,9 @@
-using Karoshi.Karen;
+using Kehai;
+using Kehai.Aiko;
 using UnityEngine;
 
 // Anything other than the keyboard and mouse that wants to walk the player around: the
-// simulated players Karen is tested against, and the eval harness's agent driver. They
+// simulated players Aiko is tested against, and the eval harness's agent driver. They
 // steer the same CharacterController a person does, so collisions, sprint rules and
 // footstep noise are identical whoever is playing.
 public interface IMotorInput
@@ -40,7 +41,7 @@ public class PlayerMotor : MonoBehaviour
     public BurnoutSystem burnout;
 
     [Header("Footsteps")]
-    [Tooltip("Seconds between steps at each pace. Every step is a noise Karen can hear.")]
+    [Tooltip("Seconds between steps at each pace. Every step is a noise " + GameNames.Antagonist + " can hear.")]
     public float walkStepInterval = 0.5f;
     public float sprintStepInterval = 0.33f;
     public float crouchStepInterval = 0.65f;
@@ -48,7 +49,7 @@ public class PlayerMotor : MonoBehaviour
     // Set by a bot or the eval harness to drive the player instead of the keyboard.
     [System.NonSerialized] public IMotorInput externalInput;
 
-    // Frozen in place — Karen's lecture after a catch. Looking around still works.
+    // Frozen in place — Aiko's lecture after a catch. Looking around still works.
     [System.NonSerialized] public bool movementLocked;
 
     CharacterController controller;
@@ -182,7 +183,7 @@ public class PlayerMotor : MonoBehaviour
     bool WantsToSprint() => !movementLocked && Input.GetKey(KeyCode.LeftShift) && (burnout == null || burnout.CanSprint);
 
     // Every step is a noise on the bus. Sprinting is loud and frequent, crouching is
-    // nearly silent — the whole stealth game is in these three numbers (karen.md §3.2).
+    // nearly silent — the whole stealth game is in these three numbers (aiko.md §3.2).
     void HandleFootsteps()
     {
         if (!IsMoving || !controller.isGrounded)

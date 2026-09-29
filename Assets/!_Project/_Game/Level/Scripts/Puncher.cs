@@ -1,4 +1,4 @@
-using Karoshi.Karen;
+using Kehai.Aiko;
 using UnityEngine;
 
 // The time clock by the staff door. Press E to start the shift, E again to end it.

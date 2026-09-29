@@ -6,13 +6,13 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using Karoshi.Store;
+using Kehai.Store;
 using UnityEngine;
 
-namespace Karoshi.Eval
+namespace Kehai.Eval
 {
     // The eval harness over the wire: newline-delimited JSON on a local TCP port, one
-    // request, one reply. tools/eval/karoshi_env.py is the client.
+    // request, one reply. tools/eval/kehai_env.py is the client.
     //
     //   {"cmd":"reset","config":{"seed":7,"rung":"F","shift_seconds":180,"fps":20,"render":false}}
     //   {"cmd":"step","action":{"verb":"mop","target":"spill_2"}}
@@ -31,27 +31,27 @@ namespace Karoshi.Eval
         volatile bool running;
         readonly ConcurrentQueue<(string line, StreamWriter reply, ManualResetEventSlim answered)> inbox =
             new ConcurrentQueue<(string, StreamWriter, ManualResetEventSlim)>();
-        KaroshiEnv env;
+        KehaiEnv env;
 
         public static EnvServer Start(int port, bool quitOnClose)
         {
-            KaroshiEnv env = KaroshiEnv.Ensure();
+            KehaiEnv env = KehaiEnv.Ensure();
             var server = env.gameObject.AddComponent<EnvServer>();
             server.port = port;
             server.quitOnClose = quitOnClose;
             return server;
         }
 
-        void Awake() => env = KaroshiEnv.Ensure();
+        void Awake() => env = KehaiEnv.Ensure();
 
         void OnEnable()
         {
             running = true;
             listener = new TcpListener(IPAddress.Loopback, port);
             listener.Start();
-            thread = new Thread(Listen) { IsBackground = true, Name = "KaroshiEnvServer" };
+            thread = new Thread(Listen) { IsBackground = true, Name = "KehaiEnvServer" };
             thread.Start();
-            Debug.Log($"Karoshi env server listening on 127.0.0.1:{port}");
+            Debug.Log($"Kehai env server listening on 127.0.0.1:{port}");
             StartCoroutine(Pump());
         }
 

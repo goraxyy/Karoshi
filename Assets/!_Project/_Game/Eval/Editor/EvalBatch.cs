@@ -1,7 +1,7 @@
 using System.Linq;
 using System.Text;
-using Karoshi.Eval;
-using Karoshi.Store;
+using Kehai.Eval;
+using Kehai.Store;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -9,10 +9,10 @@ using UnityEngine.AI;
 
 // The eval harness without a window — for runs from a terminal, CI, or an agent:
 //
-//   Unity -batchmode -projectPath . -executeMethod EvalBatch.Play -karoshi-ablation \
+//   Unity -batchmode -projectPath . -executeMethod EvalBatch.Play -kehai-ablation \
 //         -ablation-careers 2 -ablation-shifts 4 -eval-timeout-min 90 -logFile eval.log
 //
-// Play opens the store (or -evalScene <path>) and enters play mode; the -karoshi-* flags
+// Play opens the store (or -evalScene <path>) and enters play mode; the -kehai-* flags
 // are then picked up by EvalCommandLine exactly as they are in a built player.
 [InitializeOnLoad]
 public static class EvalBatch

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Karoshi
+namespace Kehai
 {
     public static class ComponentExtensions
     {

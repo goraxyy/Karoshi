@@ -13,7 +13,7 @@ using UnityEngine.SceneManagement;
 // It runs at load rather than being baked into the scene, for two reasons. The scene is a
 // binary asset that isn't in version control, so a planogram stored in it could never be
 // reviewed or shared; and 3,400 facings baked as prefab overrides is a lot of scene to
-// carry for something a lookup answers in a millisecond. Karoshi/Store/Apply Layout will
+// carry for something a lookup answers in a millisecond. Kehai/Store/Apply Layout will
 // still write it into the scene when you want the Inspector to show the truth.
 //
 // STORE_CATALOG.md is this file written out in prose.

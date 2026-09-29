@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Blink sidecar for Karoshi (ideas.md "Blink": webcam path).
+"""Blink sidecar for Kehai (ideas.md "Blink": webcam path).
 
 Owns the camera, decides how shut your eyes are, and sends one small JSON packet per frame
 to the game over UDP on 127.0.0.1 — nothing else. It never records, never saves a frame,
@@ -281,7 +281,7 @@ def run_camera(args) -> None:
                 cv2.rectangle(frame, (10, 10), (10 + bar, 30), (0, 0, 255) if packet["closed"] > 0.6 else (0, 200, 0), -1)
                 cv2.putText(frame, f"{args.method} closed={packet['closed']:.2f} conf={packet['conf']:.2f} {packet['fps']:.0f}fps",
                             (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-                cv2.imshow("Karoshi blink sidecar (preview only - nothing is saved)", frame)
+                cv2.imshow("Kehai blink sidecar (preview only - nothing is saved)", frame)
                 if cv2.waitKey(1) & 0xFF == 27:
                     break
     except KeyboardInterrupt:

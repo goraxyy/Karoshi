@@ -1,14 +1,14 @@
-"""Client for the Karoshi eval environment (ideas.md §1).
+"""Client for the Kehai eval environment (ideas.md §1).
 
-The game runs the server — in the editor (Karoshi → Eval → Start Env Server) or a build:
+The game runs the server — in the editor (Kehai → Eval → Start Env Server) or a build:
 
-    Karoshi.app/Contents/MacOS/Karoshi -batchmode -nographics -karoshi-env 5555
+    Kehai.app/Contents/MacOS/Kehai -batchmode -nographics -kehai-env 5555
 
 and this speaks its protocol: one JSON object per line over TCP on localhost, one reply per
 request.
 
-    from karoshi_env import KaroshiEnv
-    with KaroshiEnv() as env:
+    from kehai_env import KehaiEnv
+    with KehaiEnv() as env:
         obs = env.reset(seed=7, rung="F", shift_seconds=180)
         while not env.done:
             obs = env.step("mop", "spill_1")
@@ -43,11 +43,11 @@ VERBS = {
 }
 
 
-class KaroshiError(RuntimeError):
+class KehaiError(RuntimeError):
     pass
 
 
-class KaroshiEnv:
+class KehaiEnv:
     def __init__(self, host: str = "127.0.0.1", port: int = 5555, timeout: float = 600.0):
         self.sock = socket.create_connection((host, port), timeout=timeout)
         self.reader = self.sock.makefile("r", encoding="utf-8")
@@ -61,10 +61,10 @@ class KaroshiEnv:
         self.writer.flush()
         line = self.reader.readline()
         if not line:
-            raise KaroshiError("the game closed the connection")
+            raise KehaiError("the game closed the connection")
         reply = json.loads(line)
         if not reply.get("ok", False):
-            raise KaroshiError(reply.get("error", "unknown error"))
+            raise KehaiError(reply.get("error", "unknown error"))
         if "obs" in reply:          # map/metrics replies don't replace the last observation
             self.last = reply
         return reply
@@ -106,11 +106,11 @@ class KaroshiEnv:
     def close(self) -> None:
         try:
             self.request({"cmd": "close"})
-        except (KaroshiError, OSError):
+        except (KehaiError, OSError):
             pass
         self.sock.close()
 
-    def __enter__(self) -> "KaroshiEnv":
+    def __enter__(self) -> "KehaiEnv":
         return self
 
     def __exit__(self, *exc) -> None:

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 
-namespace Karoshi
+namespace Kehai
 {
     // Just enough JSON for the eval harness, the thought log and the map export.
     //

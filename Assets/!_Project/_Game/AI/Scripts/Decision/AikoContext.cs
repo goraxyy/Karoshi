@@ -1,11 +1,11 @@
-using Karoshi.Store;
+using Kehai.Store;
 using UnityEngine;
 
-namespace Karoshi.Karen
+namespace Kehai.Aiko
 {
     public enum GoalId { Patrol, Investigate, Sweep, Flush, Deny, Herd, Ambush, Stalk, Pursue, Withdraw, Assist }
 
-    // The handful of scalars the decision layer actually uses (karen.md §6.2), refreshed at
+    // The handful of scalars the decision layer actually uses (aiko.md §6.2), refreshed at
     // the appraisal rate. Everything above the body reads this, not the raw grid.
     public struct Appraisal
     {
@@ -28,19 +28,19 @@ namespace Karoshi.Karen
     }
 
     // Everything a goal, tactic or primitive may touch, in one place. Notice what is not
-    // here: the player. Karen acts on what she believes.
-    public sealed class KarenContext
+    // here: the player. Aiko acts on what she believes.
+    public sealed class AikoContext
     {
-        public KarenBrain Brain;
-        public KarenBody Body;
+        public AikoBrain Brain;
+        public AikoBody Body;
         public StoreMap Map;
         public BeliefGrid Belief;
-        public KarenDirector Director;
-        public KarenLedger Ledger;
-        public KarenWorld World;
+        public AikoDirector Director;
+        public AikoLedger Ledger;
+        public AikoWorld World;
         public ThoughtLog Log;
-        public KarenRng Rng;
-        public KarenConfig Config;
+        public AikoRng Rng;
+        public AikoConfig Config;
         public TaskManager Tasks;
         public ShiftManager Shift;
         public Appraisal A;

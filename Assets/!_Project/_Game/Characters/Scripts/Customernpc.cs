@@ -6,7 +6,7 @@ using UnityEngine.AI;
 
 public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
 {
-    // Every shopper in the store — Karen picks witnesses and puppets from this.
+    // Every shopper in the store — Aiko picks witnesses and puppets from this.
     static readonly List<CustomerNPC> all = new List<CustomerNPC>();
     public static IReadOnlyList<CustomerNPC> All => all;
 
@@ -96,9 +96,9 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
         outline = GetComponent<OutlineHighlight>();
         request = GetComponent<CustomerRequest>();
 
-        // Every shopper remembers the last time it saw the employee (karen.md §3.4).
-        if (GetComponent<Karoshi.Karen.CustomerMemory>() == null)
-            gameObject.AddComponent<Karoshi.Karen.CustomerMemory>();
+        // Every shopper remembers the last time it saw the employee (aiko.md §3.4).
+        if (GetComponent<Kehai.Aiko.CustomerMemory>() == null)
+            gameObject.AddComponent<Kehai.Aiko.CustomerMemory>();
 
         GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
         if (playerObject != null)
@@ -456,7 +456,7 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
 
         served = true;
         OneShotAudio.PlayAt(serveSound, transform.position, serveVolume);
-        Karoshi.Karen.NoiseBus.Emit(transform.position, 0.4f, Karoshi.Karen.NoiseKind.Serve, Karoshi.Karen.NoiseAuthor.Player);
+        Kehai.Aiko.NoiseBus.Emit(transform.position, 0.4f, Kehai.Aiko.NoiseKind.Serve, Kehai.Aiko.NoiseAuthor.Player);
         GameEvents.RaiseCustomerServed(this);
     }
 
@@ -496,7 +496,7 @@ public class CustomerNPC : MonoBehaviour, IInteractable, IHoverable
             outline.SetHighlighted(hovered || forcedHighlight);
     }
 
-    // ---- Karen's hooks (karen.md §8.5) ------------------------------------------------
+    // ---- Aiko's hooks (aiko.md §8.5) ------------------------------------------------
 
     // A possessed shopper never queues; take it out of the till count if it was in it.
     public void ReleaseQueueSpot() => IsWaitingToBeServed = false;

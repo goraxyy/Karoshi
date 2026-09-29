@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.AI;
 
-namespace Karoshi.Eval
+namespace Kehai.Eval
 {
     // Drives the real player body from code (ideas.md §1 "Action space").
     //
@@ -109,7 +109,7 @@ namespace Karoshi.Eval
             {
                 float length = 0f;
                 for (int i = 1; i < corners.Length; i++) length += Vector3.Distance(corners[i - 1], corners[i]);
-                Debug.Log($"[driver] path {path.status} {corners.Length} corners, {length:0.0} m, from {Karoshi.Store.StoreMap.Current.NameAt(transform.position)} to {Karoshi.Store.StoreMap.Current.NameAt(goal)} (replan {replans})");
+                Debug.Log($"[driver] path {path.status} {corners.Length} corners, {length:0.0} m, from {Kehai.Store.StoreMap.Current.NameAt(transform.position)} to {Kehai.Store.StoreMap.Current.NameAt(goal)} (replan {replans})");
             }
             return true;
         }
@@ -163,7 +163,7 @@ namespace Karoshi.Eval
                     // A closed door in the way: open it, as a person presses E on reaching it,
                     // then re-plan once it has swung (the open panel is carved out of the NavMesh).
                     HingeDoor door = HingeDoor.ClosedAhead(here, MoveWorld, 2.2f);
-                    if (door != null && !door.Locked && door.OpenFor(here, Karoshi.Karen.NoiseAuthor.Player))
+                    if (door != null && !door.Locked && door.OpenFor(here, Kehai.Aiko.NoiseAuthor.Player))
                         replanAt = Time.time + 1.2f;
                     if (replanAt > 0f && Time.time > replanAt)
                     {
@@ -174,7 +174,7 @@ namespace Karoshi.Eval
                     // Wedged on a corner or a customer: re-plan, then give up.
                     Vector3 moved = here - lastPosition;
                     moved.y = 0f;
-                    // Held still by Karen's lecture: that's waiting, not being stuck.
+                    // Held still by Aiko's lecture: that's waiting, not being stuck.
                     bool held = motor != null && motor.movementLocked;
                     if (held) progressFrom = here;
                     stuckFor = !held && moved.magnitude < 0.3f * dt ? stuckFor + dt : 0f;
@@ -183,9 +183,9 @@ namespace Karoshi.Eval
                         stuckFor = 0f;
                         replans++;
                         Collider blocker = Blocker(here, d);
-                        if (verbose) Debug.Log($"[driver] stuck at {here} ({Karoshi.Store.StoreMap.Current.NameAt(here)}) heading for corner {corner}/{corners.Length - 1} at {corners[Mathf.Min(corner, corners.Length - 1)]}, blocked by {Describe(blocker)}");
+                        if (verbose) Debug.Log($"[driver] stuck at {here} ({Kehai.Store.StoreMap.Current.NameAt(here)}) heading for corner {corner}/{corners.Length - 1} at {corners[Mathf.Min(corner, corners.Length - 1)]}, blocked by {Describe(blocker)}");
 
-                        // A person (a shopper, Karen) isn't on the NavMesh: walk round them.
+                        // A person (a shopper, Aiko) isn't on the NavMesh: walk round them.
                         bool person = blocker != null && (blocker.GetComponentInParent<NavMeshAgent>() != null || blocker.GetComponentInParent<CustomerNPC>() != null);
                         if (person)
                         {
@@ -214,7 +214,7 @@ namespace Karoshi.Eval
                     if (verbose && Time.time > nextTrace)
                     {
                         nextTrace = Time.time + 3f;
-                        Debug.Log($"[driver] at {here} {Karoshi.Store.StoreMap.Current.NameAt(here)} → corner {corner}/{corners.Length - 1}, {DistanceTo(goal):0.0} m to go, speed {(motor != null ? motor.PlanarSpeed : 0f):0.0}");
+                        Debug.Log($"[driver] at {here} {Kehai.Store.StoreMap.Current.NameAt(here)} → corner {corner}/{corners.Length - 1}, {DistanceTo(goal):0.0} m to go, speed {(motor != null ? motor.PlanarSpeed : 0f):0.0}");
                     }
                 }
                 lastPosition = here;

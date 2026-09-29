@@ -1,4 +1,4 @@
-# Karoshi — Store Catalogue
+# Kehai — Store Catalogue
 
 Everything the shop sells, what it is made of, and where it stands.
 
@@ -418,7 +418,7 @@ shelf in the building would fill up with cereal whatever its sign said.
 | `_Game/Level/Scripts/ShelfSlot.cs` | `requiredType` + `productId` per facing; `Label`; stamps restocked items |
 | `_Game/Level/Scripts/ShelfUnit.cs` | `section` sign and `category` per bay |
 | `_Game/Characters/Scripts/CustomerRequest.cs` | asks for a product by name; the bubble's position |
-| `_Game/Level/Editor/StoreLayoutBuilder.cs` | `Karoshi/Store/Report Layout` and `Karoshi/Store/Apply Layout` |
+| `_Game/Level/Editor/StoreLayoutBuilder.cs` | `Kehai/Store/Report Layout` and `Kehai/Store/Apply Layout` |
 
 **The shop stocks itself at load** — `StoreLayout` has a `[RuntimeInitializeOnLoadMethod]`
 that runs the plan over every bay before the first frame. Nothing needs to be baked for the
@@ -426,9 +426,9 @@ game to work.
 
 The two menu items are for authoring:
 
-- **`Karoshi/Store/Report Layout`** — prints the table in section 4 for the scene as it
+- **`Kehai/Store/Report Layout`** — prints the table in section 4 for the scene as it
   currently stands, and names any product that has ended up with no facing. Writes nothing.
-- **`Karoshi/Store/Apply Layout`** — bakes the plan into the scene so the Inspector shows
+- **`Kehai/Store/Apply Layout`** — bakes the plan into the scene so the Inspector shows
   each bay's section and each facing's product instead of the placeholder cereal. Optional,
   undoable, and it costs something: every facing becomes a prefab override in a scene file
   that is already a megabyte. Reach for the report first.

@@ -2,10 +2,10 @@ using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.SceneManagement;
 
-namespace Karoshi.Store
+namespace Kehai.Store
 {
     // The building's walls are 3 cm boxes — thinner than a NavMesh voxel, so the bake left
-    // them out and every NavMesh path ran straight through them: customers and Karen could
+    // them out and every NavMesh path ran straight through them: customers and Aiko could
     // walk through walls, and anything following a path into one (the eval's agent driver)
     // stuck fast. This carves each thin wall back into the NavMesh when the store loads.
     //

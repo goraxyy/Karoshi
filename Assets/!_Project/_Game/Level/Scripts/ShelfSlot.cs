@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Karoshi.Karen;
+using Kehai.Aiko;
 using UnityEngine;
 
 public class ShelfSlot : MonoBehaviour, IInteractable
@@ -15,7 +15,7 @@ public class ShelfSlot : MonoBehaviour, IInteractable
 
     [Tooltip("The planogram: which ProductCatalog id this facing is stocked with. " +
              "Within a section any item still fits — this is what the shelf *should* hold, " +
-             "and it's what a customer asks for by name. Set by Karoshi/Store/Apply Layout.")]
+             "and it's what a customer asks for by name. Set by Kehai/Store/Apply Layout.")]
     public string productId;
 
     public Transform snapPoint;
@@ -149,7 +149,7 @@ public class ShelfSlot : MonoBehaviour, IInteractable
         return true;
     }
 
-    // Called by Karen to knock an item off the shelf (her shelf sweep)
+    // Called by Aiko to knock an item off the shelf (her shelf sweep)
     public void Eject()
     {
         if (!isFilled) return;
@@ -157,7 +157,7 @@ public class ShelfSlot : MonoBehaviour, IInteractable
         if (storedItem != null)
         {
             storedItem.SetCarried(false, null);
-            storedItem.lastAuthor = NoiseAuthor.Karen;
+            storedItem.lastAuthor = NoiseAuthor.Aiko;
 
             Rigidbody rb = storedItem.GetComponent<Rigidbody>();
             if (rb != null)

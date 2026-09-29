@@ -1,7 +1,7 @@
 using System.IO;
 using System.Linq;
-using Karoshi.Eval;
-using Karoshi;
+using Kehai;
+using Kehai.Eval;
 using UnityEditor;
 using UnityEngine;
 
@@ -10,7 +10,7 @@ using UnityEngine;
 [InitializeOnLoad]
 public static class EvalMenu
 {
-    const string PendingKey = "Karoshi.Eval.Pending";
+    const string PendingKey = "Kehai.Eval.Pending";
 
     static EvalMenu()
     {
@@ -23,23 +23,23 @@ public static class EvalMenu
         };
     }
 
-    [MenuItem("Karoshi/Eval/Start Env Server (port 5555)")]
+    [MenuItem("Kehai/Eval/Start Env Server (port 5555)")]
     static void StartServer() => Run("server");
 
-    [MenuItem("Karoshi/Eval/Run Quick Ablation (1 career, 2 shifts, 90 s)")]
+    [MenuItem("Kehai/Eval/Run Quick Ablation (1 career, 2 shifts, 90 s)")]
     static void QuickAblation() => Run("quick");
 
-    [MenuItem("Karoshi/Eval/Run Full Ablation (2 careers, 4 shifts, 150 s)")]
+    [MenuItem("Kehai/Eval/Run Full Ablation (2 careers, 4 shifts, 150 s)")]
     static void FullAblation() => Run("full");
 
-    [MenuItem("Karoshi/Eval/Watch One Bot Shift (rung F, efficient)")]
+    [MenuItem("Kehai/Eval/Watch One Bot Shift (rung F, efficient)")]
     static void WatchBot() => Run("watch");
 
-    [MenuItem("Karoshi/Eval/Open Eval Folder")]
+    [MenuItem("Kehai/Eval/Open Eval Folder")]
     static void OpenFolder()
     {
-        Directory.CreateDirectory(KaroshiEnv.EvalDirectory);
-        EditorUtility.RevealInFinder(KaroshiEnv.EvalDirectory);
+        Directory.CreateDirectory(KehaiEnv.EvalDirectory);
+        EditorUtility.RevealInFinder(KehaiEnv.EvalDirectory);
     }
 
     static void Run(string what)
@@ -63,13 +63,13 @@ public static class EvalMenu
                 Report(AblationRunner.Run(new AblationPlan { careers = 2, shiftsPerCareer = 4, shiftSeconds = 150f }));
                 break;
             case "watch":
-                KaroshiEnv env = KaroshiEnv.Ensure();
+                KehaiEnv env = KehaiEnv.Ensure();
                 env.StartCoroutine(WatchOne(env));
                 break;
         }
     }
 
-    static System.Collections.IEnumerator WatchOne(KaroshiEnv env)
+    static System.Collections.IEnumerator WatchOne(KehaiEnv env)
     {
         yield return env.ResetEpisode(new EnvConfig { seed = 1, rung = "F", shiftSeconds = 120f, fps = 30, render = true, agent = "efficient" });
         yield return new SimulatedPlayer(env, PlayerProfile.Efficient, 1).PlayShift();
@@ -79,10 +79,10 @@ public static class EvalMenu
     static void Report(AblationRunner runner)
     {
         runner.Completed = r => Debug.Log($"Ablation finished — {r.Progress}\n{r.MarkdownPath}\n\n{r.Summarise()}");
-        Debug.Log("Ablation running. Progress: Karoshi/Eval/Log Ablation Progress");
+        Debug.Log("Ablation running. Progress: Kehai/Eval/Log Ablation Progress");
     }
 
-    [MenuItem("Karoshi/Eval/Log Ablation Progress")]
+    [MenuItem("Kehai/Eval/Log Ablation Progress")]
     static void Progress()
     {
         AblationRunner runner = Object.FindAnyObjectByType<AblationRunner>();
@@ -90,8 +90,8 @@ public static class EvalMenu
     }
 
     // A player build that the headless commands run against:
-    //   Builds/KaroshiEval/Karoshi.app/Contents/MacOS/Karoshi -batchmode -nographics -karoshi-env 5555
-    [MenuItem("Karoshi/Eval/Build Eval Player (macOS)")]
+    //   Builds/KehaiEval/Kehai.app/Contents/MacOS/Kehai -batchmode -nographics -kehai-env 5555
+    [MenuItem("Kehai/Eval/Build Eval Player (macOS)")]
     static void Build()
     {
         string[] scenes = EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray();
@@ -99,7 +99,7 @@ public static class EvalMenu
         var options = new BuildPlayerOptions
         {
             scenes = scenes,
-            locationPathName = "Builds/KaroshiEval/Karoshi.app",
+            locationPathName = "Builds/KehaiEval/Kehai.app",
             target = BuildTarget.StandaloneOSX,
             options = BuildOptions.None
         };

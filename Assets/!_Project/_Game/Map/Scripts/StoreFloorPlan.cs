@@ -6,13 +6,13 @@ using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.SceneManagement;
 
-namespace Karoshi.Store
+namespace Kehai.Store
 {
     // A drawing of the store as it really is, for people to look at: the walkable floor
     // (straight from the NavMesh), every wall, shelf, counter and door (from their
     // colliders, at their true size and angle), the rooms' names and the landmarks.
     //
-    // StoreMap is the store as Karen reasons about it — 1.5 m cells and a graph. This is the
+    // StoreMap is the store as Aiko reasons about it — 1.5 m cells and a graph. This is the
     // store as it looks from above, for the F1 map, the replay and the shift report.
     // Coordinates are world X (right) and world Z (up the page: north).
     public sealed class StoreFloorPlan

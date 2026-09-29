@@ -4,7 +4,7 @@ using System.IO;
 using System.Text;
 using UnityEngine;
 
-namespace Karoshi.Karen
+namespace Kehai.Aiko
 {
     // One scored alternative in a decision.
     public struct ThoughtOption
@@ -21,7 +21,7 @@ namespace Karoshi.Karen
         public float T;
         public int Shift;
         public string Kind;              // BELIEF GOAL PLAN SENSE DIRECTOR CHECK TELL EFFECT CAUGHT ...
-        public string Text;              // the human-readable line (karen.md §6.6)
+        public string Text;              // the human-readable line (aiko.md §6.6)
 
         public string Peak;
         public float Confidence;
@@ -42,7 +42,7 @@ namespace Karoshi.Karen
         // in memory only; the JSONL file stays small.
         public float[] BeliefSnapshot;
         public Vector3 BodyPosition;
-        public Vector3 PlayerPosition;   // debug only — the Director's truth, never Karen's
+        public Vector3 PlayerPosition;   // debug only — the Director's truth, never Aiko's
 
         public void WriteJson(JsonWriter w)
         {
@@ -78,7 +78,7 @@ namespace Karoshi.Karen
         }
     }
 
-    // Karen's running account of her own reasoning (karen.md §6.6). A ring buffer in memory,
+    // Aiko's running account of her own reasoning (aiko.md §6.6). A ring buffer in memory,
     // flushed to JSONL at the end of each shift; the debug overlay tails it, the replay
     // scrubber scrubs it, and the post-shift performance review quotes it back at you.
     public sealed class ThoughtLog
@@ -107,7 +107,7 @@ namespace Karoshi.Karen
             ring[head] = record;
             head = (head + 1) % Capacity;
             count = Mathf.Min(count + 1, Capacity);
-            if (EchoToConsole) Debug.Log("[Karen] " + record.Text);
+            if (EchoToConsole) Debug.Log("[" + GameNames.Antagonist + "] " + record.Text);
             Written?.Invoke(record);
             return record;
         }
@@ -122,10 +122,10 @@ namespace Karoshi.Karen
             for (int i = Mathf.Max(0, count - n); i < count; i++) yield return this[i];
         }
 
-        // Writes this shift's records to <persistent>/karen_logs/shift_<n>_<seed>.jsonl.
+        // Writes this shift's records to <persistent>/aiko_logs/shift_<n>_<seed>.jsonl.
         public string Flush(int shift, int seed)
         {
-            string folder = Path.Combine(Application.persistentDataPath, "karen_logs");
+            string folder = Path.Combine(Application.persistentDataPath, "aiko_logs");
             Directory.CreateDirectory(folder);
             string path = Path.Combine(folder, $"shift_{shift:D3}_{seed}.jsonl");
 

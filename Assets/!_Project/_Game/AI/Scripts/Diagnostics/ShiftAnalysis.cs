@@ -2,13 +2,13 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-using Karoshi.Store;
+using Kehai.Store;
 using UnityEngine;
 
-namespace Karoshi.Karen
+namespace Kehai.Aiko
 {
     // Reads a shift recording and says what happened, in numbers and in sentences: how the
-    // work went, where you spent your time, how often Karen found you and how close she got,
+    // work went, where you spent your time, how often Aiko found you and how close she got,
     // what she tried, and what made noise.
     public sealed class ShiftAnalysis
     {
@@ -53,21 +53,21 @@ namespace Karoshi.Karen
                 if (f.PlayerMotion == (byte)MotionState.Sprinting) Sprinted += dt;
                 if (f.PlayerMotion == (byte)MotionState.Crouching) Crouched += dt;
                 if (f.PlayerHeld) Lectured += dt;
-                if (f.KarenSees) SeenSeconds += dt;
+                if (f.AikoSees) SeenSeconds += dt;
                 LowestEnergy = Mathf.Min(LowestEnergy, f.Energy);
 
                 string area = StoreMap.AreaAt(new Vector3(f.Player.x, 0f, f.Player.y));
                 TimeIn.TryGetValue(area, out float t);
                 TimeIn[area] = t + dt;
 
-                if (f.KarenPresent)
+                if (f.AikoPresent)
                 {
-                    float d = Vector2.Distance(f.Player, f.Karen);
+                    float d = Vector2.Distance(f.Player, f.Aiko);
                     if (d < ClosestDistance)
                     {
                         ClosestDistance = d;
                         ClosestAt = f.T;
-                        ClosestWhere = KarenNarrator.Place(new Vector3(f.Player.x, 0f, f.Player.y));
+                        ClosestWhere = AikoNarrator.Place(new Vector3(f.Player.x, 0f, f.Player.y));
                     }
                 }
                 foreach (PersonState c in f.Customers)
@@ -109,8 +109,9 @@ namespace Karoshi.Karen
                     case nameof(StoryKind.Warning): Warnings++; break;
                     case nameof(StoryKind.Heard): Heard++; break;
                     case nameof(StoryKind.Plan):
-                        // "Karen is emptying a shelf you've already filled — Aisle 3." → the middle part.
-                        string trick = e.Text.StartsWith("Karen is ") ? e.Text.Substring(9) : e.Text;
+                        // "Aiko is emptying a shelf you've already filled — Aisle 3." → the middle part.
+                        const string plan = GameNames.Antagonist + " is ";
+                        string trick = e.Text.StartsWith(plan) ? e.Text.Substring(plan.Length) : e.Text;
                         int dash = trick.IndexOf(" — ", System.StringComparison.Ordinal);
                         if (dash > 0) trick = trick.Substring(0, dash);
                         trick = trick.TrimEnd('.', '!');
@@ -129,7 +130,7 @@ namespace Karoshi.Karen
 
         void Write()
         {
-            string Clock(float s) => KarenNarrator.Clock(s);
+            string Clock(float s) => AikoNarrator.Clock(s);
 
             Findings.Add(ClockedOut
                 ? $"You clocked out after {Clock(Length)}."
@@ -153,11 +154,11 @@ namespace Karoshi.Karen
             if (top.Count > 0 && Length > 0f)
                 Findings.Add("Where you spent the shift: " + string.Join(", ", top.Select(p => $"{p.Key} {100f * p.Value / Length:0}%")) + ".");
 
-            if (Spotted == 0) Findings.Add("Karen never spotted you.");
+            if (Spotted == 0) Findings.Add(GameNames.Antagonist + " never spotted you.");
             else
             {
                 string where = SpottedIn.Count > 0 ? ", most often " + InArea(SpottedIn.OrderByDescending(p => p.Value).First().Key) : "";
-                Findings.Add($"Karen spotted you {Spotted} time{(Spotted == 1 ? "" : "s")}{where}; the first time was at {Clock(FirstSpotted)}. You were in her sight for {Clock(SeenSeconds)} in total.");
+                Findings.Add($"{GameNames.Antagonist} spotted you {Spotted} time{(Spotted == 1 ? "" : "s")}{where}; the first time was at {Clock(FirstSpotted)}. You were in her sight for {Clock(SeenSeconds)} in total.");
             }
             if (ClosestAt >= 0f)
                 Findings.Add($"The closest she got was {ClosestDistance:0.0} m, at {Clock(ClosestAt)}" + (ClosestWhere == "somewhere" ? "." : $", near {ClosestWhere}."));
@@ -188,7 +189,7 @@ namespace Karoshi.Karen
             var numbers = new (string, float)[]
             {
                 ("Shift length (s)", Length), ("Walked (m)", Walked), ("Sprinting (s)", Sprinted), ("Crouching (s)", Crouched),
-                ("Times Karen spotted you", Spotted), ("Seconds in her sight", SeenSeconds), ("Closest she got (m)", ClosestAt >= 0f ? ClosestDistance : -1f),
+                ("Times " + GameNames.Antagonist + " spotted you", Spotted), ("Seconds in her sight", SeenSeconds), ("Closest she got (m)", ClosestAt >= 0f ? ClosestDistance : -1f),
                 ("Chases", Chases), ("Catches", Catches), ("Warning sounds", Warnings), ("Customers served", CustomersServed),
                 ("Directions given", DirectionsGiven), ("Gave up asking", GaveUpAsking), ("Gave up at the till", GaveUpAtTill),
                 ("Longest till wait (s)", LongestTillWait), ("Lowest energy (%)", LowestEnergy * 100f)

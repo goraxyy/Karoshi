@@ -1,5 +1,5 @@
 using System.IO;
-using Karoshi.Store;
+using Kehai.Store;
 using UnityEditor;
 using UnityEngine;
 
@@ -9,14 +9,14 @@ public static class StoreMapMenu
 {
     const string MarkdownPath = "STORE_MAP.md";
 
-    [MenuItem("Karoshi/Map/Export STORE_MAP.md")]
+    [MenuItem("Kehai/Map/Export STORE_MAP.md")]
     public static void ExportMarkdown()
     {
         string summary = Export();
         Debug.Log($"Wrote {MarkdownPath}: {summary}");
     }
 
-    [MenuItem("Karoshi/Map/Log Map Summary")]
+    [MenuItem("Kehai/Map/Log Map Summary")]
     public static void LogSummary()
     {
         StoreMap map = StoreMap.Rebuild();

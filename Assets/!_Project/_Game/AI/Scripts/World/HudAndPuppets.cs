@@ -1,16 +1,16 @@
 using System.Collections;
 using System.Collections.Generic;
-using Karoshi.Store;
+using Kehai.Store;
 using UnityEngine;
 using UnityEngine.AI;
 
-namespace Karoshi.Karen
+namespace Kehai.Aiko
 {
     // ---- task falsification (§8.2) ------------------------------------------------------
 
     public enum Falsification { None, FakeTask, ShowDoneAsUndone, ShowUndoneAsDone, RealTaskEarly }
 
-    // The layer between the task list and your HUD. Normally a pass-through; while Karen is
+    // The layer between the task list and your HUD. Normally a pass-through; while Aiko is
     // falsifying it, the checklist on screen and the truth disagree. The tell is mandatory:
     // a CRT tick first, then the list blinks out for a single frame when a line changes.
     public static class HudFeed
@@ -43,7 +43,7 @@ namespace Karoshi.Karen
             TaskManager.NotifyWorldChanged();
         }
 
-        // What the HUD shows. The real list goes in; what Karen wants you to see comes out.
+        // What the HUD shows. The real list goes in; what Aiko wants you to see comes out.
         public static IEnumerable<TaskManager.ShiftTask> Shown(IEnumerable<TaskManager.ShiftTask> real)
         {
             Falsification m = Mode;
@@ -66,7 +66,7 @@ namespace Karoshi.Karen
 
     // ---- mimicry (§8.5) -----------------------------------------------------------------
 
-    // Karen takes a shopper over. It stops shopping and never queues; it walks at your pace
+    // Aiko takes a shopper over. It stops shopping and never queues; it walks at your pace
     // one aisle over and turns to face you whenever you look at it. Everyone else in the
     // store is a real customer — that is what makes it work. The tell: a possessed shopper
     // has no place in the till queue, and a player paying attention can prove it.
@@ -134,11 +134,11 @@ namespace Karoshi.Karen
             if (Time.time > until) Release();
         }
 
-        // One aisle over: a point about five metres to the side of where Karen believes you
+        // One aisle over: a point about five metres to the side of where Aiko believes you
         // are, on the far side of whatever shelving is between.
         Vector3 Shadow()
         {
-            KarenBrain brain = KarenBrain.Instance;
+            AikoBrain brain = AikoBrain.Instance;
             Vector3 centre = brain != null && brain.Belief != null ? brain.Belief.PeakPosition : transform.position;
             Vector3 side = Vector3.Cross(Vector3.up, (centre - transform.position).normalized);
             if (side.sqrMagnitude < 0.01f) side = Vector3.right;
@@ -166,7 +166,7 @@ namespace Karoshi.Karen
         float retarget, nextLine;
         static readonly string[] lines =
         {
-            "I'm learning so much!", "Is this how you always do it?", "Karen says you're very efficient.",
+            "I'm learning so much!", "Is this how you always do it?", GameNames.Antagonist + " says you're very efficient.",
             "Should I write that down?", "Sorry — right behind you!", "Oh, is this where you take your breaks?"
         };
 
@@ -205,7 +205,7 @@ namespace Karoshi.Karen
             {
                 retarget = 0.8f;
                 Vector3 goal = eye.Time_SinceSeen() < 6f ? eye.LastSeenPosition
-                             : KarenBrain.Instance != null ? KarenBrain.Instance.Belief.PeakPosition : transform.position;
+                             : AikoBrain.Instance != null ? AikoBrain.Instance.Belief.PeakPosition : transform.position;
                 agent.stoppingDistance = 2.2f;
                 agent.SetDestination(goal);
             }

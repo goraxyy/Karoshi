@@ -1,19 +1,19 @@
-# Karoshi — Research & Systems Ideas
+# Kehai — Research & Systems Ideas
 
-Working notes for the route we picked: **Karoshi as an agent-eval environment (1)**,
-**Karen with ablations (2)**, and an **interpretable thought log (4)** — plus the infinite
+Working notes for the route we picked: **Kehai as an agent-eval environment (1)**,
+**Aiko with ablations (2)**, and an **interpretable thought log (4)** — plus the infinite
 maze and the blink mechanic that feed into them.
 
-Companion documents: [`karen.md`](karen.md) is the antagonist design spec,
+Companion documents: [`aiko.md`](aiko.md) is the antagonist design spec,
 [`RELEASE_PLAN.md`](RELEASE_PLAN.md) is the production route. This file is the part
 aimed at a research audience.
 
 > **Status.** Everything here except the infinite maze is built: the eval environment and
-> its clients ([`tools/eval/`](tools/eval/README.md)), all six Karen rungs and the ablation
-> runner (results in [`KAREN_RESULTS.md`](KAREN_RESULTS.md)), the thought log with its
+> its clients ([`tools/eval/`](tools/eval/README.md)), all six Aiko rungs and the ablation
+> runner (results in [`AIKO_RESULTS.md`](AIKO_RESULTS.md)), the thought log with its
 > overlay and replay scrubber, and the blink pipeline from keyboard to webcam
 > ([`tools/blink/`](tools/blink/README.md)). The store itself is exported for people and
-> agents in [`STORE_MAP.md`](STORE_MAP.md). Where each piece lives: `karen.md` §15.
+> agents in [`STORE_MAP.md`](STORE_MAP.md). Where each piece lives: `aiko.md` §15.
 
 ---
 
@@ -26,13 +26,13 @@ These three are not separate projects. They compose:
                                               │  (stops agents memorising layouts)
                                               ▼
    ┌──────────────────────────────────────────────────────┐
-   │   1. Karoshi as an eval environment                   │
+   │   1. Kehai as an eval environment                   │
    │      observation · action space · task metrics        │
    └────────────────────┬─────────────────────────────────┘
                         │  the same interface
                         ▼
    ┌──────────────────────────────────────────────────────┐
-   │   2. Karen  ──► ablations ──► results table            │
+   │   2. Aiko  ──► ablations ──► results table            │
    └────────────────────┬─────────────────────────────────┘
                         │  emits, every decision
                         ▼
@@ -43,17 +43,17 @@ These three are not separate projects. They compose:
         blink mechanic ─┘  asymmetric information channel
 ```
 
-The eval interface is the keystone. Build it first and Karen gets a measurement harness
+The eval interface is the keystone. Build it first and Aiko gets a measurement harness
 for free; build it last and you will retrofit everything.
 
 ---
 
-## 1. Karoshi as an agent-eval environment
+## 1. Kehai as an agent-eval environment
 
 ### Why this one is worth the most
 
 Labs are short of long-horizon, multi-objective, *embodied* eval environments. Most
-agent benchmarks are text or single-task. Karoshi's structure is unusually well suited:
+agent benchmarks are text or single-task. Kehai's structure is unusually well suited:
 tasks **interfere** with each other. A spill happens while you are restocking. The queue
 builds while you mop. The shift clock runs through all of it. Current agents fail
 specifically at interleaving under time pressure, and this environment produces that
@@ -66,19 +66,19 @@ failure naturally rather than artificially.
       position, facing, held items, visible shelves and their fill state, spills, queue
       length and wait times, bin fullness, burnout, time remaining, task list
       → `EnvWorld.Observe`: JSON plus a prose rendering; the HUD as the player sees it
-      (lies included), Karen only when in view, her footsteps only when close
+      (lies included), Aiko only when in view, her footsteps only when close
 - [x] **Action space** — a discrete verb set matching what the player can do:
       `move_to(target)`, `pick_up(item)`, `place_on(slot)`, `mop(spill)`, `serve(customer)`,
       `bag_trash(bin)`, `dispose(bag)`, `drink_coffee()`, `clock_out()`
-      → 17 verbs in `KaroshiEnv.Act`, each run through the real body (`AgentDriver` drives
+      → 17 verbs in `KehaiEnv.Act`, each run through the real body (`AgentDriver` drives
       `PlayerMotor` and `PlayerInteract`, so walls, doors, stamina and noise are the player's)
 - [x] **Step/reset** — run a shift headless, deterministically, from a seed
-      → `KaroshiEnv.ResetEpisode`/`Act`, over a local socket via `EnvServer`
+      → `KehaiEnv.ResetEpisode`/`Act`, over a local socket via `EnvServer`
 - [x] **Metrics** — shift completion, tasks completed, customers lost, spills left
       standing, average customer wait, burnout at clock-out, wall-clock and step count
-      → `EpisodeMetrics`, plus Karen's side and the failure taxonomy below
+      → `EpisodeMetrics`, plus Aiko's side and the failure taxonomy below
 - [~] **Determinism** — same seed produces the same shift. Non-negotiable for ablations
-      → one seed fixes `UnityEngine.Random` and Karen's RNG, `Time.captureDeltaTime` fixes every
+      → one seed fixes `UnityEngine.Random` and Aiko's RNG, `Time.captureDeltaTime` fixes every
       frame, scene reloads are synchronous and the planner has no wall-clock cut-off in eval runs.
       Verified: the first shift after launch replays identically for the same seed. Not yet:
       later shifts in the same process drift (engine-side — NavMesh carving and crowd updates run
@@ -121,9 +121,9 @@ is a scripted floor; `tools/eval/llm_agent.py` has Claude play a shift through o
 
 ---
 
-## 2. Karen with ablations
+## 2. Aiko with ablations
 
-Full design in [`karen.md`](karen.md). The research contribution is not the antagonist —
+Full design in [`aiko.md`](aiko.md). The research contribution is not the antagonist —
 it is **evidence that the adaptation does something**.
 
 ### The ablation ladder
@@ -146,24 +146,24 @@ Pick before running, not after:
 - Time-to-first-detection
 - Shift completion rate (the player's, under each config)
 - Tactic diversity (entropy over the tactic distribution — catches degenerate camping)
-- Panic Index trace (from `karen.md`) — the intended reward signal
+- Panic Index trace (from `aiko.md`) — the intended reward signal
 - Player-reported tension, 1–5, if you run humans
 
 ### The trap to avoid
 
-It is very easy to spend three months building Karen and have zero numbers. **Commit to
+It is very easy to spend three months building Aiko and have zero numbers. **Commit to
 producing the table at rung C** — belief grid vs scripted — before building D and E.
 A two-rung ablation that exists beats a six-rung one that does not.
 
 ### Scope decision, unresolved
 
-`karen.md` is more ambitious than everything shipped so far combined, and is currently
+`aiko.md` is more ambitious than everything shipped so far combined, and is currently
 zero lines of code. Decide explicitly which slice ships. My suggestion: rungs B–D are a
 complete, defensible story on their own.
 
-→ **Resolved: all six rungs ship**, switched by `KarenRung` (`-karen-rung A..F`). The ladder is
+→ **Resolved: all six rungs ship**, switched by `AikoRung` (`-aiko-rung A..F`). The ladder is
 run end to end by `AblationRunner` against three simulated players (efficient, skittish,
-reckless), paired by seed so rungs see the same shifts; the table is in `KAREN_RESULTS.md`.
+reckless), paired by seed so rungs see the same shifts; the table is in `AIKO_RESULTS.md`.
 
 ---
 
@@ -192,7 +192,7 @@ One structured record per decision, not prose:
 ### Why it is worth building early
 
 - It makes the ablations **legible** — you can see *why* rung D beats rung C, not just that it does
-- It is the debugging tool for Karen; you will want it regardless
+- It is the debugging tool for Aiko; you will want it regardless
 - It doubles as a player-facing feature: scrub the shift, watch what it was thinking
 - Interpretability framing lands well with the audience we are aiming at
 
@@ -203,7 +203,7 @@ One structured record per decision, not prose:
 - `because` is the one free-text field, and it should name the *mechanism*, not narrate
 - A replay scrubber over the log is a weekend of UI and enormously worth it
 
-→ Built as specified: `ThoughtLog` (ring buffer, JSONL per shift in `karen_logs/`), F1 for the
+→ Built as specified: `ThoughtLog` (ring buffer, JSONL per shift in `aiko_logs/`), F1 for the
 live overlay, F2 for the replay scrubber (with belief snapshots and where the player really
 was), and the post-shift performance review that reads from it.
 
@@ -238,7 +238,7 @@ existing 5 m squares = 25×25 m). Each chunk's layout is generated from
 
 **Braid the maze.** Whatever generates it, remove most dead ends by knocking through
 walls to create loops. A chase with no escape route is frustrating rather than tense, and
-Karen's herding tactics need loops to be interesting.
+Aiko's herding tactics need loops to be interesting.
 
 ### The hard parts, in order
 
@@ -258,11 +258,11 @@ Karen's herding tactics need loops to be interesting.
 
 ### Conflict worth flagging
 
-`karen.md`'s herding relies on an **aisle graph with articulation points and min-cuts** —
-that needs a *bounded* graph. On an infinite map, Karen must operate on a bounded window:
+`aiko.md`'s herding relies on an **aisle graph with articulation points and min-cuts** —
+that needs a *bounded* graph. On an infinite map, Aiko must operate on a bounded window:
 the current shift's store footprint. Practical resolution: **the store is finite per
 shift; the maze is infinite across shifts.** Each shift generates a bounded store from a
-seed. That keeps Karen's graph analysis valid, gives the eval its procedural variation,
+seed. That keeps Aiko's graph analysis valid, gives the eval its procedural variation,
 and sidesteps most of the streaming work above.
 
 I would take that resolution. It gets nearly all the benefit for a fraction of the cost.
@@ -341,11 +341,11 @@ IBlinkSource ─┬─ KeyboardBlinkSource   (dev + accessibility fallback)
                       │
           ┌───────────┴────────────┐
           ▼                        ▼
-   Eyelids.Closed01        OnBlinkStart / OnEyesClosedFor(t) → Karen
+   Eyelids.Closed01        OnBlinkStart / OnEyesClosedFor(t) → Aiko
 ```
 
-Build the keyboard source first — it proves the whole chain including Karen's reactions.
-Then replay traces, so Karen's blink behaviour can be tested without sitting in front of a
+Build the keyboard source first — it proves the whole chain including Aiko's reactions.
+Then replay traces, so Aiko's blink behaviour can be tested without sitting in front of a
 camera blinking on cue. The webcam goes in last; it is the least certain part and the
 easiest to swap in once everything above it works.
 
@@ -366,7 +366,7 @@ rung F's `blink_advance` tactic moves inside what's left of the closure.
   processing and a real trust barrier
 - **Exploit the window, do not chase the latency.** Blinks are stereotyped at roughly
   300 ms, so on detecting one ~120 ms in you can *predict* the reopening and schedule
-  Karen's move inside the remaining closure. Far more robust than trying to react faster
+  Aiko's move inside the remaining closure. Far more robust than trying to react faster
 
 ---
 
@@ -374,7 +374,7 @@ rung F's `blink_advance` tactic moves inside what's left of the closure.
 
 1. ~~**Eval interface** (observation, action, metrics, determinism, headless) — unlocks everything~~ done
 2. ~~**Thought log** schema — trivial now, painful to retrofit~~ done
-3. ~~**Karen rungs B–D** + the ablation table~~ done, A–F
+3. ~~**Aiko rungs B–D** + the ablation table~~ done, A–F
 4. **Seeded finite store per shift** — procedural variation without the streaming cost
    (partly: `MazeMutation` moves bays between shifts from shift 7, validated for reachability)
 5. ~~**Blink**: keyboard → replay → webcam~~ done

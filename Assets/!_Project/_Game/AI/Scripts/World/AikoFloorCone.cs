@@ -2,15 +2,15 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
-namespace Karoshi.Karen
+namespace Kehai.Aiko
 {
-    // Where Karen is looking, painted on the floor: her field of view out to her sight
+    // Where Aiko is looking, painted on the floor: her field of view out to her sight
     // range, cut short by shelves and walls the way her eyes are, brightest where she sees
     // best (close and straight ahead) and fading where she'd barely notice you. Its colour
     // is her mood, and it pulses red while she can see you. Her spotlight shows the same
     // thing, but a spotlight is hard to read in a lit store. Esc → Settings turns it off.
-    [RequireComponent(typeof(KarenBody))]
-    public sealed class KarenFloorCone : MonoBehaviour
+    [RequireComponent(typeof(AikoBody))]
+    public sealed class AikoFloorCone : MonoBehaviour
     {
         const int Rays = 48;
         const float EyeHeight = 1.3f;   // over counters, not over shelves
@@ -20,11 +20,11 @@ namespace Karoshi.Karen
 
         public static bool Enabled
         {
-            get => PlayerPrefs.GetInt("Karoshi.KarenCone", 1) == 1;
-            set => PlayerPrefs.SetInt("Karoshi.KarenCone", value ? 1 : 0);
+            get => PlayerPrefs.GetInt("Kehai.AikoCone", 1) == 1;
+            set => PlayerPrefs.SetInt("Kehai.AikoCone", value ? 1 : 0);
         }
 
-        KarenBody body;
+        AikoBody body;
         Mesh mesh;
         MeshRenderer view;
         readonly List<Vector3> vertices = new List<Vector3>();
@@ -38,12 +38,12 @@ namespace Karoshi.Karen
 
         void Start()
         {
-            body = GetComponent<KarenBody>();
+            body = GetComponent<AikoBody>();
             if (Application.isBatchMode) { enabled = false; return; }   // nothing to see headless
 
             var cone = new GameObject("Floor cone");
             cone.transform.SetParent(transform, false);
-            mesh = new Mesh { name = "Karen floor cone" };
+            mesh = new Mesh { name = GameNames.Antagonist + " floor cone" };
             mesh.MarkDynamic();
             cone.AddComponent<MeshFilter>().sharedMesh = mesh;
             view = cone.AddComponent<MeshRenderer>();
@@ -155,13 +155,13 @@ namespace Karoshi.Karen
             return best;
         }
 
-        static Color Tint(KarenBody.Mood mood)
+        static Color Tint(AikoBody.Mood mood)
         {
             switch (mood)
             {
-                case KarenBody.Mood.Alert: return new Color(1f, 0.62f, 0.1f);
-                case KarenBody.Mood.Hunt: return new Color(1f, 0.15f, 0.1f);
-                case KarenBody.Mood.Kind: return new Color(0.35f, 0.95f, 0.55f);
+                case AikoBody.Mood.Alert: return new Color(1f, 0.62f, 0.1f);
+                case AikoBody.Mood.Hunt: return new Color(1f, 0.15f, 0.1f);
+                case AikoBody.Mood.Kind: return new Color(0.35f, 0.95f, 0.55f);
                 default: return new Color(0.15f, 0.5f, 1f);
             }
         }
@@ -175,7 +175,7 @@ namespace Karoshi.Karen
             {
                 if (material != null) return material;
                 Shader shader = Shader.Find("Sprites/Default") ?? Shader.Find("Universal Render Pipeline/Particles/Unlit");
-                material = new Material(shader) { name = "Karen floor cone", renderQueue = 3000 };
+                material = new Material(shader) { name = GameNames.Antagonist + " floor cone", renderQueue = 3000 };
                 return material;
             }
         }
