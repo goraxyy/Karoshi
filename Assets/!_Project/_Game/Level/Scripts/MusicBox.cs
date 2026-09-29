@@ -102,7 +102,7 @@ public class MusicBox : HighlightInteractable
     {
         // Dragging a slider in the Inspector should be audible straight away, but
         // writing to 60-odd AudioSources every frame is pointless — only push on change.
-        if (!Mathf.Approximately(volume, appliedVolume)
+        if (!Mathf.Approximately(volume * SoundSettings.Get(SoundKind.Music), appliedVolume)
             || !Mathf.Approximately(audibleRange, appliedRange)
             || !Mathf.Approximately(spread, appliedSpread))
             ApplyMix();
@@ -279,7 +279,7 @@ public class MusicBox : HighlightInteractable
 
     void ApplyMix()
     {
-        appliedVolume = volume;
+        appliedVolume = volume * SoundSettings.Get(SoundKind.Music);   // the Esc menu's music slider
         appliedRange = audibleRange;
         appliedSpread = spread;
 
@@ -292,7 +292,7 @@ public class MusicBox : HighlightInteractable
             AudioSource source = speakers[i];
             if (source == null) continue;
 
-            source.volume = volume;
+            source.volume = appliedVolume;
             source.spatialBlend = 1f;              // fully positional, or it never fades
             source.spread = spread;
             source.dopplerLevel = 0f;

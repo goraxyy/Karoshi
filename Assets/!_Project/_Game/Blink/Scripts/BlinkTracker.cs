@@ -33,8 +33,8 @@ namespace Karoshi.Blink
         public KeyCode calibrateKey = KeyCode.F9;
 
         [Header("Signal")]
-        [Range(0f, 1f)] public float closeThreshold = 0.6f;
-        [Range(0f, 1f)] public float openThreshold = 0.35f;
+        [Range(0f, 1f)] public float closeThreshold = 0.5f;
+        [Range(0f, 1f)] public float openThreshold = 0.3f;
         [Tooltip("Mirror the player's real eyes onto the on-screen eyelids.")]
         public bool mirrorToEyelids = true;
 
@@ -51,12 +51,15 @@ namespace Karoshi.Blink
         // For the F10 test panel.
         public bool WebcamListening => webcam != null;
         public bool WebcamLive => webcam != null && webcam.IsLive;
+        public bool UsingWebcam => source != null && source == webcam;
         public int Packets => webcam != null ? webcam.Packets : 0;
         public float SidecarFps => webcam != null ? webcam.SidecarFps : 0f;
+        public float EyeRatio => webcam != null ? webcam.Ratio : 0f;
+        public float UsualEyeRatio => webcam != null ? webcam.OpenRatio : 0f;
         public float RawClosed { get; private set; }
         public bool Calibrated { get; private set; }
-        public bool IsCalibrating => calibrating;
-        public float CalibrationLeft => calibrating ? Mathf.Max(0f, calibrationEnds - Time.unscaledTime) : 0f;
+        // The consent question is up, or was answered this frame (its Esc isn't the menu's).
+        public bool ConsentBusy => askingConsent || consentAnsweredFrame == Time.frameCount;
         public float OpenLevel => openLevel;
         public float ClosedLevel => closedLevel;
         public float LastBlinkSeconds { get; private set; }
@@ -88,16 +91,32 @@ namespace Karoshi.Blink
         int nextMark;
         Eyelids lids;
 
-        // Calibration (ideas.md "Per-player calibration"): 10 seconds, look at the camera,
-        // blink a few times. The player's own open and closed levels normalise everything.
+        // Calibration (ideas.md "Per-player calibration"), guided so nobody has to guess what
+        // "blink normally" means: eyes open for a few seconds, then shut until a beep, then
+        // three ordinary blinks to check the result. The player's own open and shut readings
+        // normalise everything after, and are remembered for each camera helper.
+        public enum CalibrationStep { None, Open, Shut, Blinks }
+        public CalibrationStep Calibrating { get; private set; }
+        public bool IsCalibrating => Calibrating != CalibrationStep.None;
+        public float CalibrationLeft => IsCalibrating ? Mathf.Max(0f, stepEnds - Time.unscaledTime) : 0f;
+        public string CalibrationText { get; private set; } = "";
+        public string CalibrationResult { get; private set; } = "";
+
+        const float OpenSeconds = 3f, ShutSeconds = 3.5f, ShutSettle = 1f, BlinkSeconds = 6f;
         float openLevel = 0f, closedLevel = 1f;
-        bool calibrating;
-        float calibrationEnds;
-        readonly List<float> calibrationSamples = new List<float>();
+        float stepStarted, stepEnds;
+        readonly List<float> openSamples = new List<float>(), shutSamples = new List<float>();
+        int blinksAtCheck;
+        float oldOpen, oldClosed;
+        bool oldCalibrated;
+        string loadedFor = "";
+        AudioSource beeper;
+        readonly Dictionary<float, AudioClip> tones = new Dictionary<float, AudioClip>();
 
         public const string ConsentKey = "karen.blink.consent";
         public static bool Consented => PlayerPrefs.GetInt(ConsentKey, 0) == 1;
         bool askingConsent;
+        int consentAnsweredFrame = -1;
 
         void Awake()
         {
@@ -144,18 +163,28 @@ namespace Karoshi.Blink
 
         void Update()
         {
-            HandleKeys();
+            if (!GamePause.Paused) HandleKeys();
 
             // Prefer the camera whenever the sidecar is actually sending; fall back to the
             // keyboard the moment it stops. Never a requirement.
             if (webcam != null && webcam.IsLive && !(source is ReplayBlinkSource)) source = webcam;
             else if (source == webcam && (webcam == null || !webcam.IsLive)) source = keyboard;
+            if (source == webcam && loadedFor != webcam.Src) LoadCalibration();
 
-            if (source.TryRead(out BlinkSample s))
+            bool got = source.TryRead(out BlinkSample s);
+            // The keyboard still works with the camera on: holding B always shuts your eyes.
+            BlinkSample k = default;
+            bool keyShut = source != keyboard && keyboard.TryRead(out k) && k.Closed > 0.5f;
+            if (keyShut) { s = k; got = true; }
+
+            if (got)
             {
-                RawClosed = s.Closed;
-                float normalised = Mathf.InverseLerp(openLevel, closedLevel, s.Closed);
-                if (calibrating) calibrationSamples.Add(s.Closed);
+                if (!keyShut)
+                {
+                    RawClosed = s.Closed;
+                    if (IsCalibrating && source == webcam) CalibrationSample(s.Closed);
+                }
+                float normalised = keyShut ? 1f : Mathf.InverseLerp(openLevel, closedLevel, s.Closed);
 
                 // Light smoothing on the way down, none on the way up: a closing eye should
                 // register the instant it's seen.
@@ -164,7 +193,7 @@ namespace Karoshi.Blink
                 Step(s);
             }
 
-            if (calibrating && Time.unscaledTime > calibrationEnds) FinishCalibration();
+            AdvanceCalibration();
 
             if (mirrorToEyelids && lids != null && Live && Confidence > 0.3f && !(source is ReplayBlinkSource))
                 lids.SetClosed(Closed01);
@@ -183,7 +212,8 @@ namespace Karoshi.Blink
                 Blinks++;
                 recentBlinks.Enqueue(Time.unscaledTime);
                 OnBlinkStart?.Invoke(blinkStartedAt);
-                KarenBrain.Instance?.OnBlinkStarted();
+                // Closing your eyes because the calibration asked you to isn't a chance for Karen.
+                if (!IsCalibrating && !GamePause.Paused) KarenBrain.Instance?.OnBlinkStarted();
             }
             else if (EyesClosed && Closed01 <= openThreshold)
             {
@@ -214,7 +244,7 @@ namespace Karoshi.Blink
             // camera — but only a real (or recorded) pair of eyes says anything about stress.
             brain.BlinkLive = Live;
             brain.BlinkPhysiological = Live && !(source is KeyboardBlinkSource);
-            brain.EyesClosed = EyesClosed;
+            brain.EyesClosed = EyesClosed && !IsCalibrating;
             brain.PredictedReopenIn = PredictedReopenIn;
         }
 
@@ -224,13 +254,8 @@ namespace Karoshi.Blink
         {
             if (Input.GetKeyDown(consentKey))
             {
-                if (Consented)
-                {
-                    PlayerPrefs.SetInt(ConsentKey, 0);
-                    StopWebcam();
-                    KarenScreen.Ensure().Subtitle("Webcam blink tracking off. The camera helper has been stopped.", 3f);
-                }
-                else askingConsent = true;
+                if (Consented) RevokeConsent();
+                else AskConsent();
             }
 
             if (askingConsent)
@@ -238,6 +263,7 @@ namespace Karoshi.Blink
                 if (Input.GetKeyDown(KeyCode.Y))
                 {
                     askingConsent = false;
+                    consentAnsweredFrame = Time.frameCount;
                     PlayerPrefs.SetInt(ConsentKey, 1);
                     StartWebcam();
                     KarenScreen.Ensure().Subtitle(BlinkSidecar.Running
@@ -247,37 +273,163 @@ namespace Karoshi.Blink
                 else if (Input.GetKeyDown(KeyCode.N) || Input.GetKeyDown(KeyCode.Escape))
                 {
                     askingConsent = false;
+                    consentAnsweredFrame = Time.frameCount;
                 }
             }
 
-            if (Input.GetKeyDown(calibrateKey) && !calibrating) BeginCalibration();
+            if (Input.GetKeyDown(calibrateKey) && !IsCalibrating) BeginCalibration();
+        }
+
+        public void AskConsent() => askingConsent = true;
+
+        public void RevokeConsent()
+        {
+            PlayerPrefs.SetInt(ConsentKey, 0);
+            StopWebcam();
+            KarenScreen.Ensure().Subtitle("Webcam blink tracking off. The camera helper has been stopped.", 3f);
         }
 
         public void BeginCalibration()
         {
-            calibrating = true;
-            calibrationEnds = Time.unscaledTime + 10f;
-            calibrationSamples.Clear();
-            openLevel = 0f;
-            closedLevel = 1f;
-            KarenScreen.Ensure().Subtitle("Calibrating: look at the camera, and blink normally a few times.", 10f);
-        }
-
-        void FinishCalibration()
-        {
-            calibrating = false;
-            if (calibrationSamples.Count < 20)
+            if (!WebcamLive)
             {
-                KarenScreen.Ensure().Subtitle("Calibration needs a live blink signal — nothing was received.", 4f);
+                CalibrationResult = "Calibration needs the webcam. Press F8 to turn it on, and wait for step 3 in the F10 panel to turn green.";
+                KarenScreen.Ensure().Subtitle(CalibrationResult, 5f);
                 return;
             }
-            calibrationSamples.Sort();
-            // Open is what the eyes do most of the time; closed is the top of the blinks.
-            openLevel = calibrationSamples[calibrationSamples.Count / 2];
-            closedLevel = calibrationSamples[Mathf.Min(calibrationSamples.Count - 1, (int)(calibrationSamples.Count * 0.98f))];
-            if (closedLevel - openLevel < 0.15f) closedLevel = Mathf.Min(1f, openLevel + 0.3f);
+            oldOpen = openLevel;
+            oldClosed = closedLevel;
+            oldCalibrated = Calibrated;
+            openSamples.Clear();
+            shutSamples.Clear();
+            CalibrationResult = "";
+            Enter(CalibrationStep.Open, OpenSeconds, "Keep your eyes open and look at the screen.");
+        }
+
+        void Enter(CalibrationStep step, float seconds, string text)
+        {
+            Calibrating = step;
+            stepStarted = Time.unscaledTime;
+            stepEnds = stepStarted + seconds;
+            CalibrationText = text;
+            if (step != CalibrationStep.None) KarenScreen.Ensure().Subtitle(text, seconds);
+        }
+
+        void CalibrationSample(float raw)
+        {
+            float into = Time.unscaledTime - stepStarted;
+            // Skip the first moments of each step: that's you reading the instruction.
+            if (Calibrating == CalibrationStep.Open && into > 0.5f) openSamples.Add(raw);
+            else if (Calibrating == CalibrationStep.Shut && into > ShutSettle) shutSamples.Add(raw);
+        }
+
+        void AdvanceCalibration()
+        {
+            if (!IsCalibrating || Time.unscaledTime < stepEnds) return;
+            switch (Calibrating)
+            {
+                case CalibrationStep.Open:
+                    Enter(CalibrationStep.Shut, ShutSeconds, "Now close your eyes, and keep them closed until you hear the beep.");
+                    break;
+                case CalibrationStep.Shut:
+                    Beep(880f);
+                    if (!Fit()) return;
+                    blinksAtCheck = Blinks;
+                    Enter(CalibrationStep.Blinks, BlinkSeconds, "Open your eyes. Now blink 3 times, the way you usually do.");
+                    break;
+                case CalibrationStep.Blinks:
+                    int seen = Blinks - blinksAtCheck;
+                    CalibrationResult = seen >= 3 ? $"Calibrated. It caught all {seen} of your blinks."
+                        : seen > 0 ? $"Calibrated, but it only caught {seen} of your 3 blinks. Blink a bit more fully, or press F9 to try again."
+                        : "Calibrated, but it didn't catch your blinks. Try more light on your face, or press F9 to try again.";
+                    Enter(CalibrationStep.None, 0f, "");
+                    KarenScreen.Ensure().Subtitle(CalibrationResult, 5f);
+                    break;
+            }
+        }
+
+        // Open is the middle of the open readings, shut the middle of the shut ones.
+        bool Fit()
+        {
+            if (openSamples.Count < 10 || shutSamples.Count < 10)
+                return Fail("Calibration didn't get enough readings from the camera. Check the F10 panel shows a signal, then press F9 again.");
+            float open = Median(openSamples), shut = Median(shutSamples);
+            if (shut - open < 0.12f)
+                return Fail($"Your eyes read almost the same open ({open:0.00}) as closed ({shut:0.00}). Face the camera with some light on your face, then press F9 again.");
+            openLevel = open;
+            closedLevel = shut;
             Calibrated = true;
-            KarenScreen.Ensure().Subtitle($"Calibrated: open {openLevel:0.00}, closed {closedLevel:0.00}.", 4f);
+            SaveCalibration();
+            return true;
+        }
+
+        bool Fail(string why)
+        {
+            openLevel = oldOpen;
+            closedLevel = oldClosed;
+            Calibrated = oldCalibrated;
+            CalibrationResult = why;
+            Enter(CalibrationStep.None, 0f, "");
+            KarenScreen.Ensure().Subtitle(why, 6f);
+            return false;
+        }
+
+        static float Median(List<float> values)
+        {
+            values.Sort();
+            return values[values.Count / 2];
+        }
+
+        // Remembered per helper: Apple Vision and MediaPipe read the same eyes differently.
+        string CalibrationKey => "karen.blink.cal." + (webcam != null ? webcam.Src : "none");
+
+        void SaveCalibration()
+        {
+            PlayerPrefs.SetFloat(CalibrationKey + ".open", openLevel);
+            PlayerPrefs.SetFloat(CalibrationKey + ".closed", closedLevel);
+            PlayerPrefs.Save();
+        }
+
+        void LoadCalibration()
+        {
+            loadedFor = webcam.Src;
+            if (!PlayerPrefs.HasKey(CalibrationKey + ".open"))
+            {
+                openLevel = 0f;
+                closedLevel = 1f;
+                Calibrated = false;
+                return;
+            }
+            openLevel = PlayerPrefs.GetFloat(CalibrationKey + ".open");
+            closedLevel = PlayerPrefs.GetFloat(CalibrationKey + ".closed");
+            Calibrated = true;
+        }
+
+        // A short tone, so you know when to open your eyes without looking.
+        void Beep(float hz)
+        {
+            if (beeper == null)
+            {
+                beeper = gameObject.AddComponent<AudioSource>();
+                beeper.spatialBlend = 0f;
+                beeper.playOnAwake = false;
+                beeper.ignoreListenerPause = true;
+            }
+            if (!tones.TryGetValue(hz, out AudioClip clip))
+            {
+                const int rate = 44100;
+                int n = rate / 4;
+                var data = new float[n];
+                for (int i = 0; i < n; i++)
+                {
+                    float envelope = Mathf.Min(1f, i / 400f) * Mathf.Min(1f, (n - i) / 3000f);
+                    data[i] = Mathf.Sin(2f * Mathf.PI * hz * i / rate) * 0.5f * envelope;
+                }
+                clip = AudioClip.Create("Karen_CalibrationBeep", n, 1, rate, false);
+                clip.SetData(data, 0);
+                tones[hz] = clip;
+            }
+            beeper.PlayOneShot(clip, 0.7f);
         }
 
         void OnGUI()

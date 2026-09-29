@@ -76,6 +76,7 @@ public class PlayerMotor : MonoBehaviour
 
     void Update()
     {
+        if (GamePause.Paused) return;   // the Esc menu is open
         HandleLook();
         HandleMovement();
         HandleCrouch();
@@ -171,19 +172,14 @@ public class PlayerMotor : MonoBehaviour
             return;
         }
 
-        if (Input.GetKeyDown(KeyCode.LeftControl))
-        {
-            if (isCrouching)
-            {
-                if (CanStandUp())
-                    SetCrouch(false);
-            }
-            else
-            {
-                SetCrouch(true);
-            }
-        }
+        // Crouch while Left Ctrl is held; let go and you stand up again, as soon as there's
+        // headroom. Sprinting wins: Shift stands you up and runs, if you've the breath for it.
+        bool wantsCrouch = Input.GetKey(KeyCode.LeftControl) && !WantsToSprint();
+        if (wantsCrouch && !isCrouching) SetCrouch(true);
+        else if (!wantsCrouch && isCrouching && CanStandUp()) SetCrouch(false);
     }
+
+    bool WantsToSprint() => !movementLocked && Input.GetKey(KeyCode.LeftShift) && (burnout == null || burnout.CanSprint);
 
     // Every step is a noise on the bus. Sprinting is loud and frequent, crouching is
     // nearly silent — the whole stealth game is in these three numbers (karen.md §3.2).
@@ -215,7 +211,7 @@ public class PlayerMotor : MonoBehaviour
         }
         feet.pitch = 0.92f + 0.16f * (float)stepRandom.NextDouble();   // own RNG: leaves seeded runs alone
         feet.PlayOneShot(ProceduralAudio.PlayerStep(stepVariant = (stepVariant + 1) % 3),
-                         sprinting ? 0.45f : isCrouching ? 0.07f : 0.22f);
+                         (sprinting ? 0.45f : isCrouching ? 0.07f : 0.22f) * SoundSettings.Get(SoundKind.Effects));
     }
 
     AudioSource feet;

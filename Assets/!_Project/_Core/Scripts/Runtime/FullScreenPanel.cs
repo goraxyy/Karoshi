@@ -10,10 +10,17 @@ public static class FullScreenPanel
     static readonly HashSet<object> open = new HashSet<object>();
     static readonly List<Canvas> hidden = new List<Canvas>();
 
+    public static bool AnyOpen => open.Count > 0;
+    public static bool IsOpen(object owner) => open.Contains(owner);
+
+    // The frame a panel last closed on, so the Esc that closed it doesn't also open the menu.
+    public static int ClosedOnFrame { get; private set; } = -1;
+
     public static void Set(object owner, bool isOpen)
     {
         bool wasOpen = open.Count > 0;
-        if (isOpen) open.Add(owner); else open.Remove(owner);
+        if (isOpen) open.Add(owner);
+        else if (open.Remove(owner)) ClosedOnFrame = Time.frameCount;
         bool nowOpen = open.Count > 0;
         if (nowOpen == wasOpen) return;
 
@@ -39,5 +46,6 @@ public static class FullScreenPanel
     {
         open.Clear();
         hidden.Clear();
+        ClosedOnFrame = -1;
     }
 }

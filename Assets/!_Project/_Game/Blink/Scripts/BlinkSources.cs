@@ -207,15 +207,28 @@ namespace Karoshi.Blink
         volatile bool running = true;
         BlinkSample latest;
         bool fresh;
-        double lastReceived = -1;
+        long lastPacketTicks;   // Stopwatch ticks, written by the receive thread
         float pipelineMs;
         string src = "webcam";
 
         public int Port { get; }
         public int Packets { get; private set; }
         public float SidecarFps { get; private set; }
-        public string Name => $"webcam via sidecar ({src}, udp {Port})";
-        public bool IsLive => lastReceived > 0 && BlinkClock.Now - lastReceived < 1.0;
+        public string Src => src;
+        // The Mac helper also sends the eye height it measured and your usual one.
+        public float Ratio { get; private set; }
+        public float OpenRatio { get; private set; }
+        public string Name => $"webcam ({src})";
+        // Live means packets are arriving, whether or not anything has read them yet — the
+        // tracker only switches to the webcam once it's live, so this can't wait for a read.
+        public bool IsLive
+        {
+            get
+            {
+                long last = Interlocked.Read(ref lastPacketTicks);
+                return last > 0 && (System.Diagnostics.Stopwatch.GetTimestamp() - last) < System.Diagnostics.Stopwatch.Frequency;
+            }
+        }
         public float MeasuredLatencyMs => pipelineMs;
 
         public UdpBlinkSource(int port)
@@ -253,9 +266,12 @@ namespace Karoshi.Blink
                         src = latest.Source;
                         pipelineMs = Mathf.Lerp(pipelineMs <= 0 ? ms : pipelineMs, ms, 0.1f);
                         SidecarFps = (float)o.GetNumber("fps", SidecarFps);
+                        Ratio = (float)o.GetNumber("ratio", 0);
+                        OpenRatio = (float)o.GetNumber("open", 0);
                         fresh = true;
                         Packets++;
                     }
+                    Interlocked.Exchange(ref lastPacketTicks, System.Diagnostics.Stopwatch.GetTimestamp());
                 }
                 catch (SocketException) { }
                 catch (ObjectDisposedException) { return; }
@@ -272,9 +288,7 @@ namespace Karoshi.Blink
                 fresh = false;
             }
             // The frame was taken pipelineMs before the sidecar sent it.
-            double now = BlinkClock.Now;
-            sample.Captured = now - pipelineMs / 1000.0;
-            lastReceived = now;
+            sample.Captured = BlinkClock.Now - pipelineMs / 1000.0;
             return true;
         }
 

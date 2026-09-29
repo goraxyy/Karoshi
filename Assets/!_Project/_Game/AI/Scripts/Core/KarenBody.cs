@@ -132,6 +132,7 @@ namespace Karoshi.Karen
             body.hand.localPosition = new Vector3(0.35f, 1.1f, 0.35f);
 
             body.SetMood(Mood.Calm);
+            root.AddComponent<KarenFloorCone>();   // her gaze, painted on the floor
             if (NavMesh.SamplePosition(at, out NavMeshHit hit, 5f, NavMesh.AllAreas)) body.Agent.Warp(hit.position);
             return body;
         }
@@ -279,7 +280,7 @@ namespace Karoshi.Karen
             if (stepTimer < interval) return;
             stepTimer = 0f;
             float volume = CurrentPace == Pace.Sneak ? 0.25f : CurrentPace == Pace.Run ? 1f : 0.6f;
-            feet.PlayOneShot(ProceduralAudio.KarenStep(), volume);
+            feet.PlayOneShot(ProceduralAudio.KarenStep(), volume * SoundSettings.Get(SoundKind.Karen));
             NoiseBus.Emit(transform.position, volume * 0.8f, NoiseKind.KarenStep, NoiseAuthor.Karen);
         }
 

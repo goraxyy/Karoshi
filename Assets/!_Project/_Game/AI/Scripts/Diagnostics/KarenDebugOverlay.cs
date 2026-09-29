@@ -40,6 +40,12 @@ namespace Karoshi.Karen
 
         void Update()
         {
+            if (GamePause.Paused) return;   // the Esc menu is open
+            if (Input.GetKeyDown(KeyCode.Escape) && (showOverlay || showScrubber))
+            {
+                showOverlay = false;
+                SetReplay(false);
+            }
             if (Input.GetKeyDown(overlayKey))
             {
                 showOverlay = !showOverlay;

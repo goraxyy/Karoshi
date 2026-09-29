@@ -27,8 +27,8 @@ needs nothing beyond the Xcode command line tools.
 2. **Optional: check it sees your eyes outside the game.** Run
    `tools/blink/mac/build/BlinkVision` in Terminal. macOS asks once whether Terminal may use
    the camera; click Allow. Every two seconds it prints a line like
-   `eyes ####......  closed 0.40  30 fps`. Close your eyes and the bar should fill up. Press
-   Ctrl-C to stop it.
+   `eyes ####......  closed 0.40  (eye height 0.210, usually 0.330)  30 fps`. Close your eyes
+   and the bar should fill up. Press Ctrl-C to stop it.
 
 3. **In the game** (press Play in Unity):
    - Press **F10** to open the blink test panel. It is a checklist that ticks itself off.
@@ -36,24 +36,43 @@ needs nothing beyond the Xcode command line tools.
    - The first time, macOS asks whether **Unity** may use the camera; click **Allow**. If you
      clicked *Don't Allow* earlier, turn Unity on in **System Settings → Privacy & Security →
      Camera**, restart Unity, and press **R** in the panel to restart the helper.
-   - When step 3 of the checklist turns green (you see frames per second and a delay in ms),
-     press **F9** and look at the screen, blinking normally, for 10 seconds. That calibrates
-     the game to your eyes.
+   - When step 3 of the checklist turns green, press **F9** to calibrate. It takes about 12
+     seconds and tells you what to do, in big letters on the right of the panel:
+     1. *Keep your eyes open and look at the screen* (3 seconds).
+     2. *Close your eyes and keep them closed until you hear the beep* (about 3 seconds).
+     3. *Open your eyes and blink 3 times, the way you usually do.* It then says how many of
+        the 3 it caught.
    - Now blink. The big label flips to **EYES CLOSED**, the graph shows a red spike above the
-     yellow line, and the blink counter goes up. Most people blink 12–20 times a minute; the
-     panel shows your rate and how long your last blink lasted.
+     yellow line, and the blink counter goes up. The calibration is remembered.
 
-4. Close the panel with **F10** and play. **F8** turns the webcam off again at any time.
-   With no webcam, hold **B** to close your eyes with the keyboard; Karen reacts the same way.
+4. Close the panel with **F10** (or **Esc**) and play. **F8** turns the webcam off again, and
+   **Esc → Settings** has the same switches. Holding **B** closes your eyes with the keyboard at
+   any time, with or without the webcam.
+
+**Frame rate.** A MacBook's built-in camera tops out at 30 frames a second (1280×720); run
+`BlinkVision --list-formats` to see what yours offers. A blink lasts 100–400 ms, so 30 fps
+still sees 3 to 12 frames of it. An external 60 fps webcam catches blinks sooner: plug it in
+and press **V** in the panel to switch cameras.
 
 **If it doesn't work:** the panel shows the helper's last lines. *"can't see your face"*
 means more light on your face, or sit facing the camera. For glasses with glare, tilt the
-screen a little. With more than one camera (say, an external webcam), press **C** in the
-panel to switch; the game remembers your choice.
+screen a little. If calibration says your eyes read almost the same open and closed, the
+camera can't see your eyelids well enough: more light from the front usually fixes it.
+
+**More accurate: MediaPipe.** Apple's face landmarks are built in and need no downloads, but
+they are not made for blinks. MediaPipe's face model gives a blink score for each eye and is
+noticeably more accurate. Set it up once (about 100 MB of downloads):
+
+```bash
+tools/blink/setup_mediapipe.sh
+```
+
+After that the game uses MediaPipe by itself; **M** in the F10 panel switches between the
+two helpers, and each keeps its own calibration.
 
 ## The Python helper (any OS)
 
-The game starts it by itself when `tools/blink/.venv` exists and no Mac helper is built.
+This is the MediaPipe helper. `setup_mediapipe.sh` sets it up on a Mac; by hand, anywhere:
 
 ```bash
 cd tools/blink

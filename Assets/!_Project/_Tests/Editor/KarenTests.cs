@@ -57,6 +57,27 @@ public class KarenRuleTests
         Assert.IsEmpty(leaks, "Karen read the player directly:\n" + string.Join("\n", leaks));
     }
 
+    // ---- her speed: fast, but a sprint always gets away -------------------------------------
+
+    [Test]
+    public void Karen_NeverOutrunsASprintingEmployee()
+    {
+        var motor = new GameObject("player").AddComponent<PlayerMotor>();
+        try
+        {
+            var config = new KarenConfig();
+            foreach (float pace in new[] { config.sneakSpeed, config.walkSpeed, config.hurrySpeed, config.runSpeed })
+                Assert.Less(pace, motor.sprintSpeed, "a default pace is faster than the default sprint");
+            Assert.Greater(config.hurrySpeed, motor.walkSpeed, "hurrying, she should outpace a walking employee");
+
+            // A scene with a slower sprint pulls her paces down with it.
+            KarenBootstrap.KeepBelowSprint(config, 5f);
+            foreach (float pace in new[] { config.sneakSpeed, config.walkSpeed, config.hurrySpeed, config.runSpeed })
+                Assert.Less(pace, 5f);
+        }
+        finally { Object.DestroyImmediate(motor.gameObject); }
+    }
+
     // ---- §9: every threat is telegraphed and answerable --------------------------------------
 
     [Test]
@@ -289,6 +310,11 @@ public class KarenRuleTests
             byte[] packet = System.Text.Encoding.UTF8.GetBytes(
                 "{\"seq\": 1, \"closed\": 0.93, \"conf\": 0.88, \"src\": \"ear\", \"capture\": 1000.0, \"sent\": 1000.016, \"fps\": 30.0}");
             udp.Send(packet, packet.Length, "127.0.0.1", port);
+
+            // Live as soon as packets arrive, before anything reads one: the tracker only
+            // switches to the webcam once it's live, so waiting for a read would wait forever.
+            for (int i = 0; i < 200 && source.Packets == 0; i++) System.Threading.Thread.Sleep(5);
+            Assert.IsTrue(source.IsLive, "the webcam doesn't count as live until something reads it");
 
             Karoshi.Blink.BlinkSample sample = default;
             bool got = false;

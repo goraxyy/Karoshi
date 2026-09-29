@@ -96,19 +96,38 @@ namespace Karoshi.Blink
             }
         }
 
-        // Where a helper might be, best first.
+        // The MediaPipe helper: Python in tools/blink/.venv, set up by tools/blink/setup_mediapipe.sh.
+        static string Python => Path.Combine(ProjectRoot, Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer
+            ? "tools/blink/.venv/Scripts/python.exe" : "tools/blink/.venv/bin/python3");
+        static string Model => Path.Combine(ProjectRoot, "tools/blink/face_landmarker.task");
+        public static bool MediaPipeReady => File.Exists(Python);
+        public static bool VisionReady => MacHelper != null;
+
+        // Which helper to use when both are there. MediaPipe's blink scores are the more
+        // accurate, so once someone has set it up it's the default; M in the F10 panel switches.
+        public static bool PreferMediaPipe
+        {
+            get => PlayerPrefs.GetInt("Karoshi.BlinkMediaPipe", MediaPipeReady && File.Exists(Model) ? 1 : 0) == 1;
+            set => PlayerPrefs.SetInt("Karoshi.BlinkMediaPipe", value ? 1 : 0);
+        }
+
+        public static void SwitchHelper(int port)
+        {
+            PreferMediaPipe = !PreferMediaPipe;
+            Stop();
+            Start(port);
+        }
+
+        // Where a helper might be, in the order to try them.
         static IEnumerable<(string exe, string args, string name)> Candidates(int port)
         {
-            // On a Mac: the helper in the project, or (in a build) copied next to the .app.
-            string mac = MacHelper;
-            if (mac != null) yield return (mac, $"--port {port} --camera {CameraIndex}", "BlinkVision (Apple Vision)");
-            string venv = Path.Combine(ProjectRoot, "tools/blink/.venv");
-            string python = Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer
-                ? Path.Combine(venv, "Scripts/python.exe") : Path.Combine(venv, "bin/python3");
             string script = Path.Combine(ProjectRoot, "tools/blink/blink_server.py");
-            string model = Path.Combine(ProjectRoot, "tools/blink/face_landmarker.task");
-            string method = File.Exists(model) ? $"--method blendshapes --model \"{model}\"" : "--method ear";
-            yield return (python, $"\"{script}\" {method} --port {port}", "MediaPipe (Python)");
+            string method = File.Exists(Model) ? $"--method blendshapes --model \"{Model}\"" : "--method ear";
+            var mediaPipe = (Python, $"\"{script}\" {method} --port {port}", "MediaPipe (Python)");
+            string mac = MacHelper;
+            if (PreferMediaPipe) yield return mediaPipe;
+            if (mac != null) yield return (mac, $"--port {port} --camera {CameraIndex}", "BlinkVision (Apple Vision)");
+            if (!PreferMediaPipe) yield return mediaPipe;
         }
 
         public static bool Start(int port)
