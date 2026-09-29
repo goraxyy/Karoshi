@@ -92,6 +92,19 @@ leaves the computer.
   list, and an analysis (jobs, time per area, when and where she spotted you, the closest she got,
   what she tried most).
 
+## Settings (Esc)
+
+Esc pauses the game and opens the settings:
+
+- **Restart this shift:** the store resets, you go back to where you start, and the same shift
+  begins again. Karen still remembers earlier shifts.
+- **Volume** for everything, and separately for sound effects, Karen, the radio and the PA.
+- **Mouse sensitivity**, and **Karen's floor cone** on or off.
+- **Webcam blinking:** on or off, calibrate, and the blink test.
+- A **Keys** tab with every key in the game.
+
+Your choices are remembered between sessions.
+
 ## Evaluation harness
 
 Karen is measured, not just tuned by feel (`Assets/!_Project/_Game/Eval/`, [`tools/eval`](tools/eval)):
@@ -132,7 +145,7 @@ The essentials (the full list is in [`CONTROLS.md`](CONTROLS.md), and in the gam
 With the project closed in the editor (Unity allows one instance per project):
 
 ```bash
-# EditMode tests: AI rules, fairness, the belief map, shift records, the key list
+# 28 EditMode tests: AI rules, fairness, Karen's speed cap, the belief map, shift records, the key list
 Unity -batchmode -nographics -projectPath . -runTests -testPlatform EditMode -testResults results.xml
 
 # One simulated shift against the full Karen, which also writes a shift report
