@@ -1,10 +1,11 @@
-using Karoshi.Blink;
-using Karoshi.Karen;
+using Kehai;
+using Kehai.Aiko;
+using Kehai.Blink;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 // Esc: the settings. Restart the shift, volume for each kind of sound, mouse sensitivity,
-// Karen's floor cone, the webcam, and a Keys tab listing every key in the game. The game
+// Aiko's floor cone, the webcam, and a Keys tab listing every key in the game. The game
 // pauses while it's open, and everything chosen here is remembered.
 public sealed class SettingsMenu : MonoBehaviour
 {
@@ -22,7 +23,7 @@ public sealed class SettingsMenu : MonoBehaviour
     bool confirmingRestart, restartNow;
     AudioSource preview;
 
-    const string SensitivityKey = "Karoshi.MouseSensitivity";
+    const string SensitivityKey = "Kehai.MouseSensitivity";
     const float MinSensitivity = 0.5f, MaxSensitivity = 10f;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -131,7 +132,7 @@ public sealed class SettingsMenu : MonoBehaviour
         }
         else
         {
-            GUILayout.Label("Restart this shift? What you've done so far in it is lost; Karen remembers earlier shifts.", body);
+            GUILayout.Label("Restart this shift? What you've done so far in it is lost; " + GameNames.Antagonist + " remembers earlier shifts.", body);
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Yes, restart", button, GUILayout.Width(size * 8f))) restartNow = true;
             if (GUILayout.Button("No", button, GUILayout.Width(size * 5f))) confirmingRestart = false;
@@ -148,7 +149,7 @@ public sealed class SettingsMenu : MonoBehaviour
             if (!Mathf.Approximately(level, SoundSettings.Get(kind))) SoundSettings.Set(kind, level);
             if (done) Preview(kind);
         }
-        GUILayout.Label("Karen's warning sounds tell you a trick is coming, so keep her audible. You hear a sample when you let go of a slider.", small);
+        GUILayout.Label(GameNames.Antagonist + "'s warning sounds tell you a trick is coming, so keep her audible. You hear a sample when you let go of a slider.", small);
 
         Heading("Mouse");
         float sensitivity = Sensitivity;
@@ -156,14 +157,14 @@ public sealed class SettingsMenu : MonoBehaviour
         float value = Mathf.Round(Mathf.Lerp(MinSensitivity, MaxSensitivity, picked) * 10f) / 10f;
         if (!Mathf.Approximately(value, sensitivity)) Sensitivity = value;
 
-        Heading("Karen");
-        bool cone = GUILayout.Toggle(KarenFloorCone.Enabled, "  Show where Karen is looking, as a cone on the floor", toggle);
-        if (cone != KarenFloorCone.Enabled) KarenFloorCone.Enabled = cone;
+        Heading(GameNames.Antagonist);
+        bool cone = GUILayout.Toggle(AikoFloorCone.Enabled, "  Show where " + GameNames.Antagonist + " is looking, as a cone on the floor", toggle);
+        if (cone != AikoFloorCone.Enabled) AikoFloorCone.Enabled = cone;
         GUILayout.Label("Blue: walking her rounds. Orange: she noticed something. Red: she's hunting you, or can see you right now.", small);
 
         Heading("Webcam blinking");
         BlinkTracker tracker = BlinkTracker.Instance;
-        string status = !BlinkTracker.Consented ? "Off. Karen can react when your real eyes close; the camera never records and nothing leaves this computer."
+        string status = !BlinkTracker.Consented ? "Off. " + GameNames.Antagonist + " can react when your real eyes close; the camera never records and nothing leaves this computer."
             : tracker != null && tracker.WebcamLive ? $"On, reading your eyes through {BlinkSidecar.Which}." + (tracker.Calibrated ? " Calibrated." : " Not calibrated yet: press Calibrate.")
             : "On, but no signal from the camera yet. Open the blink test to see why.";
         GUILayout.Label(status, body);
@@ -258,7 +259,7 @@ public sealed class SettingsMenu : MonoBehaviour
 
     void Preview(SoundKind kind)
     {
-        AudioClip clip = kind == SoundKind.Karen ? ProceduralAudio.KarenStep()
+        AudioClip clip = kind == SoundKind.Aiko ? ProceduralAudio.AikoStep()
             : kind == SoundKind.Voice ? ProceduralAudio.PaChime()
             : kind == SoundKind.Effects ? ProceduralAudio.PlayerStep(0)
             : null;   // music: the radio is its own sample

@@ -1,14 +1,14 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Karoshi.Karen
+namespace Kehai.Aiko
 {
-    // karen.md §3.3.
+    // aiko.md §3.3.
     public enum TraceKind
     {
         WetFootprint,       // walked through a spill — has a heading
         ShelfGap,           // the employee took something off a shelf
-        UndoneSabotage,     // a shelf Karen stripped has been filled back up
+        UndoneSabotage,     // a shelf Aiko stripped has been filled back up
         DroppedItem,        // stock left on the floor
         MopAway,            // the mop is lying somewhere that isn't its rack
         BaggedBin,          // a bin was just emptied
@@ -36,7 +36,7 @@ namespace Karoshi.Karen
     }
 
     // Physical evidence with a decay clock. The store remembers you even when nothing is
-    // watching: Karen walks into an aisle, finds a bagged bin and wet footprints heading
+    // watching: Aiko walks into an aisle, finds a bagged bin and wet footprints heading
     // north, and has a hard prior on half the building.
     public static class TraceRegistry
     {

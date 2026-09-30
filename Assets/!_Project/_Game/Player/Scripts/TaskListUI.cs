@@ -53,7 +53,7 @@ public class TaskListUI : MonoBehaviour
         // The tell for a falsified line: the list blinks out for exactly one frame.
         if (panel != null)
         {
-            bool hide = Karoshi.Karen.HudFeed.HideForTell;
+            bool hide = Kehai.Aiko.HudFeed.HideForTell;
             float alpha = visible && !hide ? 1f : 0f;
             if (!Mathf.Approximately(panel.alpha, alpha)) panel.alpha = alpha;
         }
@@ -108,8 +108,8 @@ public class TaskListUI : MonoBehaviour
         }
         else
         {
-            // Karen can stand between the task list and your HUD (karen.md §8.2).
-            foreach (TaskManager.ShiftTask task in Karoshi.Karen.HudFeed.Shown(taskManager.Tasks))
+            // Aiko can stand between the task list and your HUD (aiko.md §8.2).
+            foreach (TaskManager.ShiftTask task in Kehai.Aiko.HudFeed.Shown(taskManager.Tasks))
             {
                 // TMP renders <s> as a strikethrough, which is how a finished task reads.
                 // Restocking and trash are live states, so they come back if a customer

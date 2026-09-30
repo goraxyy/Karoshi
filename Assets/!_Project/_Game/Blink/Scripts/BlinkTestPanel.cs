@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Karoshi.Blink
+namespace Kehai.Blink
 {
     // F10: see whether the game is actually reading your eyes.
     //
@@ -97,7 +97,7 @@ namespace Karoshi.Blink
             Step(calibrated, "4. Calibrate", calText);
 
             GUILayout.Space(size * 0.8f);
-            GUILayout.Label("No webcam? Hold <b>B</b> to close your eyes with the keyboard — Karen reacts the same way.", small);
+            GUILayout.Label("No webcam? Hold <b>B</b> to close your eyes with the keyboard — " + GameNames.Antagonist + " reacts the same way.", small);
             GUILayout.Label($"Reading from: <b>{tracker.SourceName}</b>", small);
             if (BlinkSidecar.Cameras.Count > 1)
                 GUILayout.Label($"Camera: <b>{BlinkSidecar.CameraName}</b>  ({BlinkSidecar.Cameras.Count} found, <b>V</b> switches)", small);

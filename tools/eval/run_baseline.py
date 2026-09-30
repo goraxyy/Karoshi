@@ -11,7 +11,7 @@ import argparse
 import json
 import random
 
-from karoshi_env import KaroshiEnv
+from kehai_env import KehaiEnv
 
 
 def choose(obs: dict, rng: random.Random) -> dict:
@@ -65,7 +65,7 @@ def main(argv=None) -> None:
     args = ap.parse_args(argv)
 
     rng = random.Random(args.seed)
-    with KaroshiEnv(port=args.port) as env, open(args.out, "a", encoding="utf-8") as out:
+    with KehaiEnv(port=args.port) as env, open(args.out, "a", encoding="utf-8") as out:
         for episode in range(args.episodes):
             obs = env.reset(seed=args.seed + episode, rung=args.rung, shift_seconds=args.shift_seconds,
                             fps=args.fps, agent="baseline")

@@ -10,9 +10,9 @@ cat > build/Info.plist <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-  <key>CFBundleIdentifier</key><string>com.karoshi.blinkvision</string>
+  <key>CFBundleIdentifier</key><string>com.tokenlimit.kehai.blinkvision</string>
   <key>CFBundleName</key><string>BlinkVision</string>
-  <key>NSCameraUsageDescription</key><string>Karoshi reads whether your eyes are open. Nothing is recorded or sent anywhere.</string>
+  <key>NSCameraUsageDescription</key><string>Kehai reads whether your eyes are open. Nothing is recorded or sent anywhere.</string>
 </dict></plist>
 PLIST
 

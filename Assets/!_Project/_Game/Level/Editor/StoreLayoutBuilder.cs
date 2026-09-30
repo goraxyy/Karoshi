@@ -13,13 +13,13 @@ using UnityEngine;
 // scene file that is already a megabyte — so reach for the report first.
 public static class StoreLayoutBuilder
 {
-    [MenuItem("Karoshi/Store/Report Layout")]
+    [MenuItem("Kehai/Store/Report Layout")]
     public static void ReportLayout()
     {
         Debug.Log(StoreLayout.Describe());
     }
 
-    [MenuItem("Karoshi/Store/Apply Layout")]
+    [MenuItem("Kehai/Store/Apply Layout")]
     public static void ApplyLayout()
     {
         int group = Undo.GetCurrentGroup();

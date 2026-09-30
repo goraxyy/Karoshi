@@ -1,6 +1,6 @@
-# Karoshi — Release Plan
+# Kehai — Release Plan
 
-> Working title: **Karoshi** · Studio: **TokenLimit** · Engine: Unity 6 (URP)
+> Working title: **Kehai** · Studio: **TokenLimit** · Engine: Unity 6 (URP)
 > Current version: `0.1.0` · Build target: StandaloneOSX · Plan last updated: 2026-09-20
 
 A milestone-by-milestone route from the current prototype to a Steam release. Each
@@ -29,13 +29,13 @@ units, 240 ceiling lights and 64 speakers. Plus the burnout meter, the mains/bla
 system, the store radio, the flashlight, and a first SFX pass.
 
 **The three biggest gaps.** There is no antagonist in the level (`EnemyAI.cs` exists but
-has zero scene instances, and `karen.md` is a design spec with no implementation). There
+has zero scene instances, and `aiko.md` is a design spec with no implementation). There
 are no menus of any kind — no main menu, pause, or options. And **no build has ever been
 produced**, so nothing has been tested outside the editor.
 
-*Update — the antagonist gap is closed:* Karen (`karen.md`, all of it; status in §15 there)
+*Update — the antagonist gap is closed:* Aiko (`aiko.md`, all of it; status in §15 there)
 now installs into the store when it loads and replaces `EnemyAI.cs`. She has been exercised
-headless by simulated players across every ablation rung (`KAREN_RESULTS.md`), not yet by a
+headless by simulated players across every ablation rung (`AIKO_RESULTS.md`), not yet by a
 person at the keyboard.
 
 ---
@@ -90,7 +90,7 @@ Status: **reached**.
 
 ### Pipeline
 - [x] Code-only GitHub mirror with PR workflow (#1–#6)
-- [x] `karen.md` — 1,097-line design spec for the adaptive antagonist
+- [x] `aiko.md` — 1,097-line design spec for the adaptive antagonist
 - [x] First SFX pass — door chime, till beep, door creaks, flashlight, item impacts,
       pickup, power-down
 
@@ -106,7 +106,7 @@ it is about one slice being *finished*.
 
 ### Antagonist — the biggest single gap
 - [x] Get `EnemyAI` into the scene with patrol points and a NavMesh route
-      *superseded: Karen installs herself from code; `EnemyAI.cs` is retired*
+      *superseded: Aiko installs herself from code; `EnemyAI.cs` is retired*
 - [x] Tune the existing FSM (Patrol / Sabotage / Search / Chase) until it reads as
       deliberate rather than random
       *superseded: belief grid, utility goals and a tactic library replace the FSM*
@@ -114,9 +114,9 @@ it is about one slice being *finished*.
       *graded sight, a noise bus with per-action loudness, and a tell before every tactic*
 - [x] A losing state — what actually happens when it catches you
       *a written warning: a 30 s lecture, overtime, and a recovery window; burnout ending*
-- [x] Pick the Karen scope: full `karen.md` architecture, or a cut-down version for ship
+- [x] Pick the Aiko scope: full `aiko.md` architecture, or a cut-down version for ship
       *Decided: the full architecture, every rung switchable for the ablation*
-- [ ] Play-test and tune Karen with people — so far she has only been measured against
+- [ ] Play-test and tune Aiko with people — so far she has only been measured against
       scripted players
 
 ### Feel and readability
@@ -156,7 +156,7 @@ is not live is wishlists you never get.
 - [ ] Register as a Steamworks partner — pay the $100 app deposit
 - [ ] Complete tax and bank identity forms *(this gates release; it takes real time)*
 - [ ] Reserve the app ID and the store page URL
-- [ ] Decide the final title — check "Karoshi" for trademark and store-search collisions
+- [ ] Decide the final title — check "Kehai" for trademark and store-search collisions
 
 ### Store page assets
 - [ ] Capsule art — main, small, header, library (a real artist; this is the single
@@ -337,8 +337,8 @@ Ordered by how much damage each can still do.
 2. **No build has ever been made.** Every engine has a set of problems that only appear
    outside the editor. Finding them at Milestone 7 is expensive; finding them now is not.
 3. **The antagonist is the game's hook and it is not in the level.** Everything built so
-   far is the chore loop. The chore loop is not the pitch. *(Addressed: Karen is in.)*
-4. **`karen.md` is much larger than the rest of the project.** It is a genuinely good
+   far is the chore loop. The chore loop is not the pitch. *(Addressed: Aiko is in.)*
+4. **`aiko.md` is much larger than the rest of the project.** It is a genuinely good
    design document, and implementing it fully is a bigger job than everything already
    built. Decide deliberately how much of it ships. *(Built in full; the open question is
    now tuning, which needs human play-testers.)*

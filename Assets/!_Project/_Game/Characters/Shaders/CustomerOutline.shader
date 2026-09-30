@@ -1,4 +1,4 @@
-Shader "Karoshi/CustomerOutline"
+Shader "Kehai/CustomerOutline"
 {
     Properties
     {

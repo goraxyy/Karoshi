@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
-using Karoshi.Karen;
+using Kehai.Aiko;
 using UnityEngine;
 
-namespace Karoshi.Eval
+namespace Kehai.Eval
 {
     // Everything measured about one shift (ideas.md §1 "Metrics"), plus the action trace the
     // failure taxonomy reads.
@@ -31,7 +31,7 @@ namespace Karoshi.Eval
         public float MeanWait => Waits.Count > 0 ? Waits.Average() : 0f;
         public float LongestWait { get; private set; }
 
-        // Karen's side, copied from her stats at the end.
+        // Aiko's side, copied from her stats at the end.
         public float FirstDetection = -1f;
         public int Detections, Catches, Chases, Overtimes;
         public float TacticEntropy;
@@ -158,10 +158,10 @@ namespace Karoshi.Eval
             CustomersLost += waitingSince.Count;           // still queued when it ended
             EnergyAtEnd = burnout != null ? burnout.Energy01 : 1f;
 
-            KarenBrain brain = KarenBrain.Instance;
+            AikoBrain brain = AikoBrain.Instance;
             if (brain != null)
             {
-                KarenStats s = brain.Stats;
+                AikoStats s = brain.Stats;
                 FirstDetection = s.FirstDetection;
                 Detections = s.Detections;
                 Catches = s.Catches;
@@ -194,11 +194,11 @@ namespace Karoshi.Eval
             ["coffees"] = Coffees, ["spills_left_standing"] = SpillsLeftStanding, ["customers_lost"] = CustomersLost,
             ["mean_wait_s"] = MeanWait, ["longest_wait_s"] = LongestWait, ["energy_at_end"] = EnergyAtEnd, ["min_energy"] = MinEnergy,
             ["spurious_clock_outs"] = SpuriousClockOuts,
-            ["karen_first_detection_s"] = FirstDetection, ["karen_detections"] = Detections, ["karen_catches"] = Catches,
-            ["karen_chases"] = Chases, ["karen_overtimes"] = Overtimes, ["karen_tactic_entropy_bits"] = TacticEntropy,
-            ["karen_tactics_used"] = TacticsUsed, ["karen_top_tactics"] = TopTactics,
+            ["aiko_first_detection_s"] = FirstDetection, ["aiko_detections"] = Detections, ["aiko_catches"] = Catches,
+            ["aiko_chases"] = Chases, ["aiko_overtimes"] = Overtimes, ["aiko_tactic_entropy_bits"] = TacticEntropy,
+            ["aiko_tactics_used"] = TacticsUsed, ["aiko_top_tactics"] = TopTactics,
             ["mean_panic"] = MeanPanic, ["panic_setpoint_rmse"] = PanicSetpointRmse,
-            ["karen_fairness_violations"] = FairnessViolations,
+            ["aiko_fairness_violations"] = FairnessViolations,
             ["failures"] = Failures
         };
     }

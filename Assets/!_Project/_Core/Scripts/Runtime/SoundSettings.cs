@@ -1,9 +1,10 @@
+using Kehai;
 using UnityEngine;
 
 // What the player can turn up and down (Esc → Settings). Master is the listener's own
 // volume; the others scale each kind of sound as the game plays it. Kept in PlayerPrefs,
 // so they survive a restart.
-public enum SoundKind { Effects, Karen, Music, Voice }
+public enum SoundKind { Effects, Aiko, Music, Voice }
 
 public static class SoundSettings
 {
@@ -19,7 +20,7 @@ public static class SoundSettings
         {
             master = Mathf.Clamp01(value);
             AudioListener.volume = master;
-            PlayerPrefs.SetFloat("Karoshi.Volume.Master", master);
+            PlayerPrefs.SetFloat("Kehai.Volume.Master", master);
             Changed?.Invoke();
         }
     }
@@ -29,7 +30,7 @@ public static class SoundSettings
     public static void Set(SoundKind kind, float value)
     {
         levels[(int)kind] = Mathf.Clamp01(value);
-        PlayerPrefs.SetFloat("Karoshi.Volume." + kind, levels[(int)kind]);
+        PlayerPrefs.SetFloat("Kehai.Volume." + kind, levels[(int)kind]);
         Changed?.Invoke();
     }
 
@@ -37,7 +38,7 @@ public static class SoundSettings
     {
         switch (kind)
         {
-            case SoundKind.Karen: return "Karen (her footsteps and warnings)";
+            case SoundKind.Aiko: return GameNames.Antagonist + " (her footsteps and warnings)";
             case SoundKind.Music: return "Music (the radio)";
             case SoundKind.Voice: return "Announcements (the PA)";
             default: return "Sound effects (the store, you)";
@@ -47,9 +48,9 @@ public static class SoundSettings
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void Load()
     {
-        master = PlayerPrefs.GetFloat("Karoshi.Volume.Master", 1f);
+        master = PlayerPrefs.GetFloat("Kehai.Volume.Master", 1f);
         AudioListener.volume = master;
         for (int i = 0; i < levels.Length; i++)
-            levels[i] = PlayerPrefs.GetFloat("Karoshi.Volume." + (SoundKind)i, 1f);
+            levels[i] = PlayerPrefs.GetFloat("Kehai.Volume." + (SoundKind)i, 1f);
     }
 }

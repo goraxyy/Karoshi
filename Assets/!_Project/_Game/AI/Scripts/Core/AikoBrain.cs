@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
-using Karoshi.Store;
+using Kehai.Store;
 using UnityEngine;
 
-namespace Karoshi.Karen
+namespace Kehai.Aiko
 {
-    // Karen — the orchestrator (karen.md §2, §6.1).
+    // Aiko — the orchestrator (aiko.md §2, §6.1).
     //
     // Owns the three minds and runs them at their own rates:
     //
@@ -16,13 +16,13 @@ namespace Karoshi.Karen
     //   Decide     2 Hz or event   goal by utility → tactic → plan (HTN, anytime)
     //
     // The rung (ideas.md §2) decides how much of this is switched on. A and B are the old
-    // patrol-and-chase guard, kept as the ablation floor; C and up are Karen.
+    // patrol-and-chase guard, kept as the ablation floor; C and up are Aiko.
     [DefaultExecutionOrder(100)]
-    public sealed class KarenBrain : MonoBehaviour
+    public sealed class AikoBrain : MonoBehaviour
     {
-        public static KarenBrain Instance { get; private set; }
+        public static AikoBrain Instance { get; private set; }
 
-        public KarenConfig config = new KarenConfig();
+        public AikoConfig config = new AikoConfig();
 
         [Tooltip("Every tactic regardless of the career table — for testing.")]
         public bool careerOverride;
@@ -30,18 +30,18 @@ namespace Karoshi.Karen
         // ---- the parts ----------------------------------------------------------------
         public StoreMap Map { get; private set; }
         public BeliefGrid Belief { get; private set; }
-        public KarenBody Body { get; private set; }
-        public KarenDirector Director { get; private set; }
-        public KarenLedger Ledger { get; private set; }
-        public KarenWorld World { get; private set; }
+        public AikoBody Body { get; private set; }
+        public AikoDirector Director { get; private set; }
+        public AikoLedger Ledger { get; private set; }
+        public AikoWorld World { get; private set; }
         public ThoughtLog Log { get; } = new ThoughtLog();
-        public KarenRng Rng { get; private set; }
+        public AikoRng Rng { get; private set; }
         public Sensorium Sensorium { get; private set; }
         public EnergyBelief Energy { get; } = new EnergyBelief();
         public GoalSet Goals { get; } = new GoalSet();
-        public KarenContext Ctx { get; private set; }
+        public AikoContext Ctx { get; private set; }
         public PerformanceReview Review { get; private set; }
-        public KarenStats Stats { get; } = new KarenStats();
+        public AikoStats Stats { get; } = new AikoStats();
 
         public TaskManager Tasks { get; private set; }
         public ShiftManager Shift { get; private set; }
@@ -80,21 +80,21 @@ namespace Karoshi.Karen
         void Start()
         {
             Map = StoreMap.Current;
-            Rng = new KarenRng(config.seed);
-            Ledger = new KarenLedger(config) { Persistent = config.Features.Persistent };
+            Rng = new AikoRng(config.seed);
+            Ledger = new AikoLedger(config) { Persistent = config.Features.Persistent };
             Ledger.Load();
-            Director = new KarenDirector(config, Ledger);
-            World = gameObject.GetOrAdd<KarenWorld>();
+            Director = new AikoDirector(config, Ledger);
+            World = gameObject.GetOrAdd<AikoWorld>();
             Review = new PerformanceReview(this);
 
             Landmark? home = Map.FindLandmark(LandmarkKind.StockCrateHome);
-            Body = KarenBody.Build(transform, config, home.HasValue ? home.Value.Position : transform.position);
+            Body = AikoBody.Build(transform, config, home.HasValue ? home.Value.Position : transform.position);
             Body.Touched += OnTouched;
 
             RebuildBelief();
             Log.EchoToConsole = config.logToConsole;
 
-            Ctx = new KarenContext
+            Ctx = new AikoContext
             {
                 Brain = this, Body = Body, Map = Map, Belief = Belief, Director = Director, Ledger = Ledger,
                 World = World, Log = Log, Rng = Rng, Config = config, Tasks = Tasks, Shift = Shift
@@ -120,7 +120,7 @@ namespace Karoshi.Karen
                 if (Shift.IsShiftActive) BeginShift();
             }
 
-            Note("SYSTEM", $"Karen online — rung {config.rung} ({config.Features}), seed {Rng.Seed}. Map: {Map.Summary()}");
+            Note("SYSTEM", $"{GameNames.Antagonist} online — rung {config.rung} ({config.Features}), seed {Rng.Seed}. Map: {Map.Summary()}");
         }
 
         // Routes end at a job: the Ledger learns the paths taken between them.
@@ -131,7 +131,7 @@ namespace Karoshi.Karen
         void OnClockRoute(bool accepted) => Ledger.CompleteRoute("time clock");
 
         // The events are static and outlive the scene; an eval reset reloads it, so every
-        // subscription is undone here or the old Karen would go on listening.
+        // subscription is undone here or the old Aiko would go on listening.
         void OnDestroy()
         {
             NoiseBus.Emitted -= OnNoise;
@@ -173,7 +173,7 @@ namespace Karoshi.Karen
         }
 
         // Swap rung mid-session (the ablation runner does this between episodes).
-        public void SetRung(KarenRung rung)
+        public void SetRung(AikoRung rung)
         {
             config.rung = rung;
             Ledger.Persistent = config.Features.Persistent;
@@ -233,7 +233,7 @@ namespace Karoshi.Karen
             Body.Sight.ResetAwareness();
             Landmark? home = Map.FindLandmark(LandmarkKind.StockCrateHome);
             if (home.HasValue) Body.Warp(home.Value.Position);
-            Body.SetMood(KarenBody.Mood.Calm);
+            Body.SetMood(AikoBody.Mood.Calm);
 
             ShiftActive = true;
             shiftStartedAt = Time.time;
@@ -339,14 +339,14 @@ namespace Karoshi.Karen
             {
                 Stats.Detected(Time.time - shiftStartedAt);
                 Note("SENSE", $"sight {Body.Sight.Band} ({Body.Sight.Awareness:0.00}) at {Map.Describe(Body.Sight.LastSeenPosition)}");
-                if (ShiftActive) KarenNarrator.Say(StoryKind.Seen, $"Karen spotted you in {KarenNarrator.Place(Body.Sight.LastSeenPosition)}!", Body.Sight.LastSeenPosition);
+                if (ShiftActive) AikoNarrator.Say(StoryKind.Seen, $"{GameNames.Antagonist} spotted you in {AikoNarrator.Place(Body.Sight.LastSeenPosition)}!", Body.Sight.LastSeenPosition);
                 lostSightAt = -1f;
             }
             else if (!seeing && wasSeeing) lostSightAt = Time.time;
             if (lostSightAt > 0f && Time.time - lostSightAt > 3f)
             {
                 lostSightAt = -1f;
-                if (ShiftActive) KarenNarrator.Say(StoryKind.Seen, "Karen lost sight of you.", Body.Sight.LastSeenPosition);
+                if (ShiftActive) AikoNarrator.Say(StoryKind.Seen, GameNames.Antagonist + " lost sight of you.", Body.Sight.LastSeenPosition);
             }
             wasSeeing = seeing;
             NarrateGuess();
@@ -379,17 +379,17 @@ namespace Karoshi.Karen
             switch (o.Channel)
             {
                 case SenseChannel.Hearing:
-                    KarenNarrator.Say(StoryKind.Heard, $"Karen heard {KarenNarrator.Evidence(o.Label)} near {KarenNarrator.Place(o.Position)}.", o.Position); break;
+                    AikoNarrator.Say(StoryKind.Heard, $"{GameNames.Antagonist} heard {AikoNarrator.Evidence(o.Label)} near {AikoNarrator.Place(o.Position)}.", o.Position); break;
                 case SenseChannel.Testimony:
-                    KarenNarrator.Say(StoryKind.Heard, $"A customer told Karen they saw you near {KarenNarrator.Place(o.Position)}.", o.Position); break;
+                    AikoNarrator.Say(StoryKind.Heard, $"A customer told {GameNames.Antagonist} they saw you near {AikoNarrator.Place(o.Position)}.", o.Position); break;
                 case SenseChannel.Trace:
-                    KarenNarrator.Say(StoryKind.Heard, $"Karen found a trace of you — {KarenNarrator.Evidence(o.Label)} — near {KarenNarrator.Place(o.Position)}.", o.Position); break;
+                    AikoNarrator.Say(StoryKind.Heard, $"{GameNames.Antagonist} found a trace of you — {AikoNarrator.Evidence(o.Label)} — near {AikoNarrator.Place(o.Position)}.", o.Position); break;
                 case SenseChannel.Infrastructure:
                 {
-                    string what = KarenNarrator.Evidence(o.Label), where = KarenNarrator.Place(o.Position);
-                    KarenNarrator.Say(StoryKind.Heard, what.Contains("door") && where.Contains("door")
-                        ? $"Karen's door sensors saw someone use {where}."
-                        : $"Karen's sensors picked up {what} {KarenNarrator.In(o.Position)}.", o.Position);
+                    string what = AikoNarrator.Evidence(o.Label), where = AikoNarrator.Place(o.Position);
+                    AikoNarrator.Say(StoryKind.Heard, what.Contains("door") && where.Contains("door")
+                        ? $"{GameNames.Antagonist}'s door sensors saw someone use {where}."
+                        : $"{GameNames.Antagonist}'s sensors picked up {what} {AikoNarrator.In(o.Position)}.", o.Position);
                     break;
                 }
             }
@@ -421,7 +421,7 @@ namespace Karoshi.Karen
         }
 
         // The same list the fairness guard checks — every open job and the time clock. It
-        // names objects in the store, not the employee, so Karen may use it: she wrote it.
+        // names objects in the store, not the employee, so Aiko may use it: she wrote it.
         static IEnumerable<KeyValuePair<string, Vector3>> FairnessGuardTargets() => FairnessGuard.RequiredTargets(StoreMap.Current);
 
         public int LikelyNextJobRegion
@@ -571,7 +571,7 @@ namespace Karoshi.Karen
         }
 
         // The global interrupt branch of every plan (§6.5).
-        bool Interrupt(KarenContext c)
+        bool Interrupt(AikoContext c)
         {
             if (CurrentPlan == null) return false;
             GoalId g = CurrentPlan.Goal;
@@ -631,9 +631,9 @@ namespace Karoshi.Karen
                     Ledger.Reward(tactic.Id, delta);
                     Note("LEARN", $"LEARN    {tactic.Id} Δpanic {delta:+0.00;-0.00} → Q̂ {Ledger.ExpectedPanicDelta(tactic, Ctx):+0.00;-0.00}");
                     if (Mathf.Abs(delta) >= 0.08f)
-                        KarenNarrator.Say(StoryKind.Learned, delta > 0f
-                            ? $"Karen noticed that {KarenNarrator.Tactic(tactic.Id).TrimEnd('!')} rattled you. She'll remember."
-                            : $"Karen noticed that {KarenNarrator.Tactic(tactic.Id).TrimEnd('!')} didn't bother you.");
+                        AikoNarrator.Say(StoryKind.Learned, delta > 0f
+                            ? $"{GameNames.Antagonist} noticed that {AikoNarrator.Tactic(tactic.Id).TrimEnd('!')} rattled you. She'll remember."
+                            : $"{GameNames.Antagonist} noticed that {AikoNarrator.Tactic(tactic.Id).TrimEnd('!')} didn't bother you.");
                 }
                 Stats.Rewarded(tactic, delta);
             }
@@ -653,7 +653,7 @@ namespace Karoshi.Karen
             FairnessGuard.NoteTell(kind, lead);
             if (ofPlan) planTellAt = Time.time;
             if (ShiftActive && kind != TellKind.PaChime && kind != TellKind.Footsteps)
-                KarenNarrator.Say(StoryKind.Warning, $"Warning: {KarenNarrator.Tell(kind)} near {KarenNarrator.Place(at)} — something's about to happen.", at);
+                AikoNarrator.Say(StoryKind.Warning, $"Warning: {AikoNarrator.Tell(kind)} near {AikoNarrator.Place(at)} — something's about to happen.", at);
             Note("TELL", $"TELL     {kind} at {Map.Describe(at)} ({lead:0.0}s lead)");
         }
 
@@ -677,7 +677,7 @@ namespace Karoshi.Karen
         void OnPaSpeech(PaAnnouncement a)
         {
             RecordToldEffect("PA: " + a.Text, "chime", a.Started);
-            KarenNarrator.Say(StoryKind.Store, $"Karen over the speakers: \"{a.Text}\"");
+            AikoNarrator.Say(StoryKind.Store, $"{GameNames.Antagonist} over the speakers: \"{a.Text}\"");
         }
 
         // ---- the simple guard (rungs A and B) ---------------------------------------------
@@ -705,21 +705,21 @@ namespace Karoshi.Karen
             if (sees)
             {
                 if (!chasing) SetChasing(true);
-                Body.MoveTo(sight.LastSeenPosition, KarenBody.Pace.Run);
+                Body.MoveTo(sight.LastSeenPosition, AikoBody.Pace.Run);
                 searchUntil = Time.time + 6f;
                 return;
             }
 
             if (chasing && Time.time - sight.LastSeenTime > 4f) SetChasing(false);
 
-            if (config.rung == KarenRung.B_ScriptedPatrol && Time.time < searchUntil)
+            if (config.rung == AikoRung.B_ScriptedPatrol && Time.time < searchUntil)
             {
                 if (!Body.Arrived(1f)) return;
                 Body.SweepHead(Mathf.Sin(Time.time * 2f) * 60f);
                 return;
             }
 
-            if (config.rung == KarenRung.B_ScriptedPatrol && Rng.Value < 0.002f)
+            if (config.rung == AikoRung.B_ScriptedPatrol && Rng.Value < 0.002f)
             {
                 // The old random sabotage.
                 ShelfSlot slot = ShelfSlot.All.Where(s => s.isFilled)
@@ -729,9 +729,9 @@ namespace Karoshi.Karen
 
             if (!guardHasTarget || Body.Arrived(1.5f))
             {
-                guardTarget = config.rung == KarenRung.A_RandomPatrol ? RandomFloor() : NextOnTour();
+                guardTarget = config.rung == AikoRung.A_RandomPatrol ? RandomFloor() : NextOnTour();
                 guardHasTarget = true;
-                Body.MoveTo(guardTarget, KarenBody.Pace.Walk);
+                Body.MoveTo(guardTarget, AikoBody.Pace.Walk);
             }
         }
 
@@ -779,13 +779,13 @@ namespace Karoshi.Karen
             Ledger.Data.warnings++;
             AbortPlan();
             Body.Stop();
-            Body.SetMood(KarenBody.Mood.Calm);
+            Body.SetMood(AikoBody.Mood.Calm);
             SetChasing(false);
 
             Log.Write(Record("CAUGHT", $"CAUGHT   written warning #{Ledger.Data.warnings} at {Map.Describe(Body.Position)}", null, null,
                                 "caught during a chase — lecture, overtime, then a guaranteed recovery window"));
             StartCoroutine(Consequences.Lecture(this, Ledger.Data.warnings, config.lectureSeconds, config.overtimePerCatch));
-            KarenNarrator.Say(StoryKind.Chase, $"Karen caught you! Written warning #{Ledger.Data.warnings}: a {config.lectureSeconds:0}-second lecture and {config.overtimePerCatch:0} seconds of overtime. After it, she has to leave you alone for a while.", Body.Position);
+            AikoNarrator.Say(StoryKind.Chase, $"{GameNames.Antagonist} caught you! Written warning #{Ledger.Data.warnings}: a {config.lectureSeconds:0}-second lecture and {config.overtimePerCatch:0} seconds of overtime. After it, she has to leave you alone for a while.", Body.Position);
             releasedUntil = Time.time + config.lectureSeconds + 15f;   // no second catch until you've had a chance to walk away
             if (config.Features.Goals) Director.StartRecovery(Mathf.Max(config.recoverySeconds, config.lectureSeconds + 15f), Ctx, "caught");
             CustomerMemory.MakeNearbyJumpy(Body.Position, 20f, 90f);
@@ -796,8 +796,8 @@ namespace Karoshi.Karen
             if (chasing == on) return;
             chasing = on;
             Burnout?.SetChaseState(on);
-            if (ShiftActive) KarenNarrator.Say(StoryKind.Chase, on ? "Karen is chasing you — run!" : "Karen gave up the chase.", Body.Position);
-            Body.SetMood(on ? KarenBody.Mood.Hunt : KarenBody.Mood.Calm);
+            if (ShiftActive) AikoNarrator.Say(StoryKind.Chase, on ? GameNames.Antagonist + " is chasing you — run!" : GameNames.Antagonist + " gave up the chase.", Body.Position);
+            Body.SetMood(on ? AikoBody.Mood.Hunt : AikoBody.Mood.Calm);
             if (on) Stats.Chased();
             else if (config.Features.Goals && ShiftActive) Director.StartRecovery(config.recoverySeconds, Ctx, "after a chase");
         }
@@ -840,7 +840,7 @@ namespace Karoshi.Karen
         public void ServeCoffee(Vector3 at, bool last)
         {
             CoffeeCup cup = World.Coffee(at, last);
-            if (last) cup.Drunk += () => StartCoroutine(Consequences.KaroshiEnding(this));
+            if (last) cup.Drunk += () => StartCoroutine(Consequences.KehaiEnding(this));
         }
 
         // ---- closures, visits, sabotage -------------------------------------------------------
@@ -925,7 +925,7 @@ namespace Karoshi.Karen
             if (!config.Features.Blink || !ShiftActive) return;
             Stats.BlinkSeen();
             if (CurrentPlan != null && CurrentPlan.Tactic != null && CurrentPlan.Tactic.Id == "blink_advance")
-                KarenNarrator.Say(StoryKind.Blink, "You blinked — and Karen moved.", Body.Position);
+                AikoNarrator.Say(StoryKind.Blink, "You blinked — and " + GameNames.Antagonist + " moved.", Body.Position);
         }
 
         // ---- telling the player what she's doing ---------------------------------------------
@@ -935,12 +935,12 @@ namespace Karoshi.Karen
         {
             get
             {
-                if (!ShiftActive) return "Karen is off duty until you clock in.";
-                if (Consequences.LectureRunning) return "Karen is lecturing you.";
-                if (chasing) return "Karen is chasing you!";
-                if (CurrentPlan == null) return "Karen is thinking.";
-                string doing = CurrentPlan.Tactic != null ? KarenNarrator.Tactic(CurrentPlan.Tactic.Id) : KarenNarrator.Goal(CurrentPlan.Goal);
-                return "Karen is " + doing.TrimEnd('!') + ".";
+                if (!ShiftActive) return GameNames.Antagonist + " is off duty until you clock in.";
+                if (Consequences.LectureRunning) return GameNames.Antagonist + " is lecturing you.";
+                if (chasing) return GameNames.Antagonist + " is chasing you!";
+                if (CurrentPlan == null) return GameNames.Antagonist + " is thinking.";
+                string doing = CurrentPlan.Tactic != null ? AikoNarrator.Tactic(CurrentPlan.Tactic.Id) : AikoNarrator.Goal(CurrentPlan.Goal);
+                return GameNames.Antagonist + " is " + doing.TrimEnd('!') + ".";
             }
         }
 
@@ -955,7 +955,7 @@ namespace Karoshi.Karen
             lastNarratedTactic = id;
             lastPlanNarration = Time.time;
             string where = PlainTarget(plan.Target);
-            KarenNarrator.Say(StoryKind.Plan, $"Karen is {KarenNarrator.Tactic(id).TrimEnd('!')}{(where != null ? " — " + where : "")}.");
+            AikoNarrator.Say(StoryKind.Plan, $"{GameNames.Antagonist} is {AikoNarrator.Tactic(id).TrimEnd('!')}{(where != null ? " — " + where : "")}.");
         }
 
         string lastNarratedTactic;
@@ -964,7 +964,7 @@ namespace Karoshi.Karen
         static string PlainTarget(string target)
         {
             if (string.IsNullOrEmpty(target) || target == "close distance") return null;
-            if (target.Contains("/") || target.StartsWith("Door")) return KarenNarrator.Place(target.Split(' ')[0].Contains("/") ? target.Split(' ')[0] : target);
+            if (target.Contains("/") || target.StartsWith("Door")) return AikoNarrator.Place(target.Split(' ')[0].Contains("/") ? target.Split(' ')[0] : target);
             return target.Length <= 40 ? target : null;
         }
 
@@ -984,9 +984,9 @@ namespace Karoshi.Karen
             lastGuessRegion = region;
             lastGuessAt = Time.time;
             if (conf < 0.12f)
-                KarenNarrator.Say(StoryKind.Guess, "Karen has no idea where you are.");
+                AikoNarrator.Say(StoryKind.Guess, GameNames.Antagonist + " has no idea where you are.");
             else
-                KarenNarrator.Say(StoryKind.Guess, $"Karen thinks you're {KarenNarrator.In(Map.RegionName(region))} ({KarenNarrator.Sureness(conf)}).", Belief.PeakPosition);
+                AikoNarrator.Say(StoryKind.Guess, $"{GameNames.Antagonist} thinks you're {AikoNarrator.In(Map.RegionName(region))} ({AikoNarrator.Sureness(conf)}).", Belief.PeakPosition);
         }
 
         // ---- the thought log --------------------------------------------------------------
@@ -1030,13 +1030,13 @@ namespace Karoshi.Karen
                 Pressure = Director.Pressure,
                 BeliefSnapshot = Belief.SnapshotRegions(),
                 BodyPosition = Body.Position,
-                PlayerPosition = KarenDirector.TruePlayerPosition
+                PlayerPosition = AikoDirector.TruePlayerPosition
             };
         }
     }
 
     // What the eval harness and the ablation runner read at the end of a shift.
-    public sealed class KarenStats
+    public sealed class AikoStats
     {
         public int Shift { get; private set; }
         public float FirstDetection { get; private set; } = -1f;
@@ -1054,7 +1054,7 @@ namespace Karoshi.Karen
         float pacingSquaredError;
         int pacingSamples;
 
-        // The single healthiest metric (karen.md §13): how well panic tracks its target.
+        // The single healthiest metric (aiko.md §13): how well panic tracks its target.
         public float SetpointRmse => pacingSamples > 0 ? Mathf.Sqrt(pacingSquaredError / pacingSamples) : 0f;
 
         public void SamplePacing(float panic, float setpoint)
@@ -1099,7 +1099,7 @@ namespace Karoshi.Karen
             list.Add(delta);
         }
 
-        public void EndShift(KarenBrain brain)
+        public void EndShift(AikoBrain brain)
         {
             ShiftSeconds = brain.ShiftTime;
             foreach (var h in brain.Director.History)

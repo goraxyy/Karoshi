@@ -4,14 +4,14 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Karoshi.Karen;
+using Kehai.Aiko;
 using UnityEngine;
 
-namespace Karoshi.Eval
+namespace Kehai.Eval
 {
     public sealed class AblationPlan
     {
-        public KarenRung[] rungs = { KarenRung.A_RandomPatrol, KarenRung.B_ScriptedPatrol, KarenRung.C_BeliefGrid, KarenRung.D_Bandit, KarenRung.E_Ledger, KarenRung.F_Blink };
+        public AikoRung[] rungs = { AikoRung.A_RandomPatrol, AikoRung.B_ScriptedPatrol, AikoRung.C_BeliefGrid, AikoRung.D_Bandit, AikoRung.E_Ledger, AikoRung.F_Blink };
         public PlayerProfile[] profiles = { PlayerProfile.Efficient, PlayerProfile.Skittish, PlayerProfile.Reckless };
         public int careers = 1;
         public int shiftsPerCareer = 4;
@@ -27,7 +27,7 @@ namespace Karoshi.Eval
     // The ablation ladder (ideas.md §2), run end to end with simulated players.
     //
     // Paired design: for a given player profile and career, every rung sees the same seed —
-    // the same customers, the same spills — so a difference between rungs is Karen, not luck.
+    // the same customers, the same spills — so a difference between rungs is Aiko, not luck.
     // A career is several consecutive shifts in one session, which is what gives the
     // persistent Ledger (rung E) something to remember.
     public sealed class AblationRunner : MonoBehaviour
@@ -44,17 +44,17 @@ namespace Karoshi.Eval
 
         public static AblationRunner Run(AblationPlan plan)
         {
-            KaroshiEnv env = KaroshiEnv.Ensure();
+            KehaiEnv env = KehaiEnv.Ensure();
             var runner = env.gameObject.AddComponent<AblationRunner>();
             runner.Plan = plan;
             runner.StartCoroutine(runner.Execute(env));
             return runner;
         }
 
-        IEnumerator Execute(KaroshiEnv env)
+        IEnumerator Execute(KehaiEnv env)
         {
             startedAt = Time.realtimeSinceStartup;
-            string dir = Plan.outDirectory ?? KaroshiEnv.EvalDirectory;
+            string dir = Plan.outDirectory ?? KehaiEnv.EvalDirectory;
             Directory.CreateDirectory(dir);
             string stamp = System.DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture);
             JsonlPath = Path.Combine(dir, $"ablation_{stamp}.jsonl");
@@ -67,7 +67,7 @@ namespace Karoshi.Eval
             for (int career = 0; career < Plan.careers; career++)
             {
                 int seed = Plan.baseSeed + career * 100 + (int)profile * 10;
-                foreach (KarenRung rung in Plan.rungs)
+                foreach (AikoRung rung in Plan.rungs)
                 {
                     var config = new EnvConfig
                     {
@@ -135,7 +135,7 @@ namespace Karoshi.Eval
                 Row(sb, $"{g.Key.Rung} | {g.Key.Agent}", g.ToList());
 
             sb.AppendLine();
-            sb.AppendLine("### What Karen reached for, per profile (rungs D–F)");
+            sb.AppendLine("### What " + GameNames.Antagonist + " reached for, per profile (rungs D–F)");
             sb.AppendLine();
             sb.AppendLine("| rung | profile | most-used tactics across the career |");
             sb.AppendLine("|---|---|---|");
@@ -186,25 +186,25 @@ namespace Karoshi.Eval
 
     // Command-line entry for builds (ideas.md §1 "Headless + time-scaled"):
     //
-    //   Karoshi -batchmode -nographics -karoshi-env 5555
-    //   Karoshi -batchmode -nographics -karoshi-ablation -ablation-careers 2 -ablation-shifts 4
+    //   Kehai -batchmode -nographics -kehai-env 5555
+    //   Kehai -batchmode -nographics -kehai-ablation -ablation-careers 2 -ablation-shifts 4
     public static class EvalCommandLine
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Start()
         {
             string[] args = System.Environment.GetCommandLineArgs();
-            if (KaroshiEnv.Instance != null) return;   // already running
+            if (KehaiEnv.Instance != null) return;   // already running
 
             for (int i = 0; i < args.Length; i++)
             {
-                if (args[i] == "-karoshi-env")
+                if (args[i] == "-kehai-env")
                 {
                     int port = i + 1 < args.Length && int.TryParse(args[i + 1], out int p) ? p : 5555;
                     EnvServer.Start(port, Application.isBatchMode);
                     return;
                 }
-                if (args[i] == "-karoshi-ablation")
+                if (args[i] == "-kehai-ablation")
                 {
                     var plan = new AblationPlan
                     {
@@ -219,7 +219,7 @@ namespace Karoshi.Eval
                     };
                     string rungs = Str(args, "-ablation-rungs", null);
                     if (rungs != null)
-                        plan.rungs = rungs.Where(char.IsLetter).Select(ch => (KarenRung)(char.ToUpperInvariant(ch) - 'A')).ToArray();
+                        plan.rungs = rungs.Where(char.IsLetter).Select(ch => (AikoRung)(char.ToUpperInvariant(ch) - 'A')).ToArray();
                     string profiles = Str(args, "-ablation-profiles", null);   // e.g. "efficient,reckless"
                     if (profiles != null)
                         plan.profiles = profiles.Split(',').Select(p => (PlayerProfile)System.Enum.Parse(typeof(PlayerProfile), p.Trim(), true)).ToArray();

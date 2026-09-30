@@ -1,10 +1,10 @@
 using UnityEngine;
 
-namespace Karoshi.Karen
+namespace Kehai.Aiko
 {
     // The ablation ladder from ideas.md §2. Each rung adds exactly one mechanism to the one
     // below it, so any difference in the results table is attributable.
-    public enum KarenRung
+    public enum AikoRung
     {
         A_RandomPatrol,      // wanders at random; chases what it sees
         B_ScriptedPatrol,    // fixed tour of the store, last-seen search, random sabotage
@@ -15,7 +15,7 @@ namespace Karoshi.Karen
     }
 
     // What each rung switches on. Kept as flags rather than scattered `rung >= X` checks,
-    // so the table in KAREN_RESULTS.md can say exactly what was different.
+    // so the table in AIKO_RESULTS.md can say exactly what was different.
     public readonly struct RungFeatures
     {
         public readonly bool Belief;       // occupancy grid + all senses + negative info
@@ -24,26 +24,26 @@ namespace Karoshi.Karen
         public readonly bool Persistent;   // bandit + player model survive between shifts
         public readonly bool Blink;        // eyes-closed windows are exploited
 
-        public RungFeatures(KarenRung rung)
+        public RungFeatures(AikoRung rung)
         {
-            Belief = rung >= KarenRung.C_BeliefGrid;
-            Goals = rung >= KarenRung.C_BeliefGrid;
-            Bandit = rung >= KarenRung.D_Bandit;
-            Persistent = rung >= KarenRung.E_Ledger;
-            Blink = rung >= KarenRung.F_Blink;
+            Belief = rung >= AikoRung.C_BeliefGrid;
+            Goals = rung >= AikoRung.C_BeliefGrid;
+            Bandit = rung >= AikoRung.D_Bandit;
+            Persistent = rung >= AikoRung.E_Ledger;
+            Blink = rung >= AikoRung.F_Blink;
         }
 
         public override string ToString() =>
             $"belief={Belief} goals={Goals} bandit={Bandit} persistent={Persistent} blink={Blink}";
     }
 
-    // Every tunable in one place, with the karen.md section it comes from. Plain data so an
+    // Every tunable in one place, with the aiko.md section it comes from. Plain data so an
     // eval run can override any of it from a JSON config without touching code.
     [System.Serializable]
-    public class KarenConfig
+    public class AikoConfig
     {
         [Header("Identity")]
-        public KarenRung rung = KarenRung.F_Blink;
+        public AikoRung rung = AikoRung.F_Blink;
         [Tooltip("0 = pick from the clock. Any other value makes every decision reproducible (§9.8).")]
         public int seed = 0;
 
@@ -57,7 +57,7 @@ namespace Karoshi.Karen
 
         [Header("Body")]
         // Walking, she's a little slower than you walking; hurrying, she outpaces you unless you
-        // sprint; running, she is only just slower than a sprint. Never faster: KarenBootstrap caps every pace
+        // sprint; running, she is only just slower than a sprint. Never faster: AikoBootstrap caps every pace
         // under the player's actual sprint speed, whatever the scene sets it to.
         public float sneakSpeed = 2f;
         public float walkSpeed = 3.4f;
@@ -121,17 +121,17 @@ namespace Karoshi.Karen
 
         public RungFeatures Features => new RungFeatures(rung);
 
-        public KarenConfig Clone() => (KarenConfig)MemberwiseClone();
+        public AikoConfig Clone() => (AikoConfig)MemberwiseClone();
     }
 
-    // Seeded randomness. Everything Karen decides draws from here and nothing from
+    // Seeded randomness. Everything Aiko decides draws from here and nothing from
     // UnityEngine.Random, so a seed plus the decision log replays a shift exactly.
-    public sealed class KarenRng
+    public sealed class AikoRng
     {
         System.Random random;
         public int Seed { get; private set; }
 
-        public KarenRng(int seed) => Reseed(seed);
+        public AikoRng(int seed) => Reseed(seed);
 
         public void Reseed(int seed)
         {

@@ -1,4 +1,4 @@
-# Karoshi as an agent eval
+# Kehai as an agent eval
 
 The store is a long-horizon, interruption-heavy environment with an adversary (`ideas.md` §1).
 These tools drive it over a local socket; the environment itself lives in
@@ -6,19 +6,19 @@ These tools drive it over a local socket; the environment itself lives in
 
 ## Start the environment
 
-- **Editor:** Karoshi → Eval → Start Env Server (port 5555). Enters play mode if needed.
-- **Headless build:** Karoshi → Eval → Build Eval Player (macOS), then
+- **Editor:** Kehai → Eval → Start Env Server (port 5555). Enters play mode if needed.
+- **Headless build:** Kehai → Eval → Build Eval Player (macOS), then
   ```bash
-  Builds/KaroshiEval/Karoshi.app/Contents/MacOS/Karoshi -batchmode -nographics -karoshi-env 5555
+  Builds/KehaiEval/Kehai.app/Contents/MacOS/Kehai -batchmode -nographics -kehai-env 5555
   ```
-- **Headless editor:** `Unity -batchmode -nographics -projectPath . -executeMethod EvalBatch.Play -karoshi-env 5555`
+- **Headless editor:** `Unity -batchmode -nographics -projectPath . -executeMethod EvalBatch.Play -kehai-env 5555`
 
 Resets reload the store with a fixed seed and a fixed time step (`1/fps` per frame), and headless
 runs go faster than real time (a 150 s shift takes 5–15 s). The first shift after launch replays
 identically for the same seed and actions; later shifts in one session drift a little (engine-side
 threading in NavMesh carving and crowd updates), so compare configurations on paired seeds and
 averages, or restart the game per episode when you need an exact replay.
-Eval runs keep Karen's Ledger in `karoshi_eval/eval_ledger.json` under the game's persistent data
+Eval runs keep Aiko's Ledger in `kehai_eval/eval_ledger.json` under the game's persistent data
 folder — never the player's own.
 
 ## Clients
@@ -28,7 +28,7 @@ python3 run_baseline.py --episodes 3 --rung F        # scripted floor to beat
 python3 llm_agent.py --episodes 1 --rung F           # Claude plays (pip install anthropic)
 ```
 
-`karoshi_env.py` is the client (standard library only): `reset`, `step(verb, target, …)`,
+`kehai_env.py` is the client (standard library only): `reset`, `step(verb, target, …)`,
 `observe`, `map`, `metrics`. Observations come as data (`obs`) and as prose (`text`).
 
 | verb | target |
@@ -51,19 +51,19 @@ a message rather than burning the shift.
 
 ## What comes back
 
-Per episode: completion, work done by kind, queue waits, customers lost, energy, Karen's
+Per episode: completion, work done by kind, queue waits, customers lost, energy, Aiko's
 detections/catches/tactics, the Panic Index, and a **failure taxonomy** — starvation,
 thrashing, interference blindness, clock blindness, resource mismanagement, spurious
 completion — computed from the action trace.
 
 ## The ablation
 
-`Karoshi → Eval → Run Quick/Full Ablation`, or headless:
+`Kehai → Eval → Run Quick/Full Ablation`, or headless:
 
 ```bash
-Unity -batchmode -nographics -projectPath . -executeMethod EvalBatch.Play -karoshi-ablation \
+Unity -batchmode -nographics -projectPath . -executeMethod EvalBatch.Play -kehai-ablation \
       -ablation-careers 2 -ablation-shifts 4 -ablation-seconds 150 -eval-timeout-min 120
 ```
 
-runs the three simulated players (efficient, skittish, reckless) against Karen rungs A–F and
-writes `ablation_<time>.jsonl` and a markdown table. `KAREN_RESULTS.md` holds the latest run.
+runs the three simulated players (efficient, skittish, reckless) against Aiko rungs A–F and
+writes `ablation_<time>.jsonl` and a markdown table. `AIKO_RESULTS.md` holds the latest run.

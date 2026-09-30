@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
-using Karoshi.Store;
+using Kehai.Store;
 using UnityEngine;
 
-namespace Karoshi.Karen
+namespace Kehai.Aiko
 {
     // What a shopper is doing, as one symbol on the map.
     public enum CustomerMark : byte
@@ -35,11 +35,11 @@ namespace Karoshi.Karen
         public bool PlayerHeld;             // frozen by a lecture
         public float Energy;
 
-        public bool KarenPresent;
-        public Vector2 Karen;
-        public float KarenYaw;
-        public byte KarenMood;              // KarenBody.Mood
-        public bool KarenSees;
+        public bool AikoPresent;
+        public Vector2 Aiko;
+        public float AikoYaw;
+        public byte AikoMood;              // AikoBody.Mood
+        public bool AikoSees;
         public bool Chasing;
         public Vector2 Guess;               // where she thinks you are
         public float GuessConfidence;
@@ -62,7 +62,7 @@ namespace Karoshi.Karen
         public string Kind;             // "sound", "job", "customer", "store", or a StoryKind name
         public Vector2 At;
         public bool HasPlace;
-        public string Who;              // "you", "Karen", "a customer", "the store"
+        public string Who;              // "you", "Aiko", "a customer", "the store"
         public float Radius;            // for sounds: how far it carried, metres
         public string Text;
     }
@@ -71,7 +71,7 @@ namespace Karoshi.Karen
     {
         public int ShiftNumber;
         public string PlayerName = "";
-        public string KarenRung = "";
+        public string AikoRung = "";
         public string StartedAt = "";   // wall-clock date and time
         public float Length;
         public bool ClockedOut;
@@ -110,15 +110,15 @@ namespace Karoshi.Karen
             f.PlayerHeld = Consequences.LectureRunning;
             f.Energy = burnout != null ? burnout.Energy01 : 1f;
 
-            KarenBrain brain = KarenBrain.Instance;
-            f.KarenPresent = brain != null && brain.Body != null;
-            if (f.KarenPresent)
+            AikoBrain brain = AikoBrain.Instance;
+            f.AikoPresent = brain != null && brain.Body != null;
+            if (f.AikoPresent)
             {
-                f.Karen = StoreFloorPlan.Flat(brain.Body.Position);
+                f.Aiko = StoreFloorPlan.Flat(brain.Body.Position);
                 Vector3 fwd = brain.Body.Forward;
-                f.KarenYaw = Mathf.Atan2(fwd.x, fwd.z) * Mathf.Rad2Deg;
-                f.KarenMood = (byte)brain.Body.CurrentMood;
-                f.KarenSees = brain.Body.Sight.Awareness >= brain.Body.Sight.seeAt;
+                f.AikoYaw = Mathf.Atan2(fwd.x, fwd.z) * Mathf.Rad2Deg;
+                f.AikoMood = (byte)brain.Body.CurrentMood;
+                f.AikoSees = brain.Body.Sight.Awareness >= brain.Body.Sight.seeAt;
                 f.Chasing = brain.IsChasing;
                 if (brain.Belief != null)
                 {
@@ -201,12 +201,12 @@ namespace Karoshi.Karen
                 case CustomerMark.HeadingToTill: return "heading to the till";
                 case CustomerMark.Queueing: return "waiting at the till";
                 case CustomerMark.Leaving: return "leaving";
-                case CustomerMark.LookingAround: return "looking around (sent by Karen)";
+                case CustomerMark.LookingAround: return "looking around (sent by " + GameNames.Antagonist + ")";
                 case CustomerMark.Asking: return "needs directions";
                 case CustomerMark.Talking: return "talking to you";
                 case CustomerMark.Following: return "following you to a shelf";
                 case CustomerMark.LostTheGuide: return "lost you — waiting";
-                case CustomerMark.Possessed: return "taken over by Karen";
+                case CustomerMark.Possessed: return "taken over by " + GameNames.Antagonist;
                 case CustomerMark.Fake: return "not a real customer";
                 default: return m.ToString();
             }
@@ -219,7 +219,7 @@ namespace Karoshi.Karen
             var sb = new StringBuilder(1 << 20);
             sb.Append("{\"shift\":").Append(ShiftNumber)
               .Append(",\"player\":\"").Append(MiniJson.EscapeInner(PlayerName))
-              .Append("\",\"rung\":\"").Append(MiniJson.EscapeInner(KarenRung))
+              .Append("\",\"rung\":\"").Append(MiniJson.EscapeInner(AikoRung))
               .Append("\",\"started\":\"").Append(MiniJson.EscapeInner(StartedAt))
               .Append("\",\"length\":").Append(N(Length))
               .Append(",\"clockedOut\":").Append(ClockedOut ? "true" : "false");
@@ -237,7 +237,7 @@ namespace Karoshi.Karen
             sb.Append('}');
 
             // Frames as arrays of numbers, to keep a ten-minute shift to a few hundred KB:
-            // [t, px, pz, pyaw, motion, held, energy, karen?, kx, kz, kyaw, mood, sees, chase, gx, gz, gconf, power,
+            // [t, px, pz, pyaw, motion, held, energy, aiko?, kx, kz, kyaw, mood, sees, chase, gx, gz, gconf, power,
             //  customers[[id,x,z,yaw,state,wait,bay]], spills[[x,z]], emptyBays[i], bins[[x,z,fill,cap]], bags[[x,z]], locked[[x,z]], props[[kind,x,z,size]]]
             sb.Append(",\"frames\":[");
             for (int i = 0; i < Frames.Count; i++)
@@ -246,8 +246,8 @@ namespace Karoshi.Karen
                 ShiftFrame f = Frames[i];
                 sb.Append('[').Append(N(f.T)).Append(',').Append(N(f.Player.x)).Append(',').Append(N(f.Player.y)).Append(',').Append(Mathf.RoundToInt(f.PlayerYaw))
                   .Append(',').Append(f.PlayerMotion).Append(',').Append(f.PlayerHeld ? 1 : 0).Append(',').Append(N(f.Energy))
-                  .Append(',').Append(f.KarenPresent ? 1 : 0).Append(',').Append(N(f.Karen.x)).Append(',').Append(N(f.Karen.y)).Append(',').Append(Mathf.RoundToInt(f.KarenYaw))
-                  .Append(',').Append(f.KarenMood).Append(',').Append(f.KarenSees ? 1 : 0).Append(',').Append(f.Chasing ? 1 : 0)
+                  .Append(',').Append(f.AikoPresent ? 1 : 0).Append(',').Append(N(f.Aiko.x)).Append(',').Append(N(f.Aiko.y)).Append(',').Append(Mathf.RoundToInt(f.AikoYaw))
+                  .Append(',').Append(f.AikoMood).Append(',').Append(f.AikoSees ? 1 : 0).Append(',').Append(f.Chasing ? 1 : 0)
                   .Append(',').Append(N(f.Guess.x)).Append(',').Append(N(f.Guess.y)).Append(',').Append(N(f.GuessConfidence)).Append(',').Append(f.Power ? 1 : 0);
                 sb.Append(",[");
                 for (int j = 0; j < f.Customers.Count; j++)

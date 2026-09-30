@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Karoshi.Store
+namespace Kehai.Store
 {
     // Paints a StoreFloorPlan into a texture for the in-game map: outside dark, walkable
     // floor grey (outdoors a little greener), counters and fridges darker, shelves in their

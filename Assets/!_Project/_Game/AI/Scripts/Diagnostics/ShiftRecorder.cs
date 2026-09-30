@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using System.IO;
-using Karoshi.Store;
+using Kehai.Store;
 using UnityEngine;
 
-namespace Karoshi.Karen
+namespace Kehai.Aiko
 {
-    // Records the shift: where you, Karen and every customer were five times a second, and
+    // Records the shift: where you, Aiko and every customer were five times a second, and
     // everything that happened — sounds, her decisions, your jobs, customers asking and
     // queueing, the lights. Keeps a live picture for the F1 map, the whole shift for the F2
     // replay, and at clock-out writes it to disk with a report you can open in a browser:
@@ -52,7 +52,7 @@ namespace Karoshi.Karen
         void OnEnable()
         {
             NoiseBus.Emitted += OnNoise;
-            KarenNarrator.Said += OnStory;
+            AikoNarrator.Said += OnStory;
             GameEvents.SpillCleaned += OnSpill;
             GameEvents.ShelfRestocked += OnRestocked;
             GameEvents.BinBagged += OnBagged;
@@ -67,7 +67,7 @@ namespace Karoshi.Karen
         void OnDisable()
         {
             NoiseBus.Emitted -= OnNoise;
-            KarenNarrator.Said -= OnStory;
+            AikoNarrator.Said -= OnStory;
             GameEvents.SpillCleaned -= OnSpill;
             GameEvents.ShelfRestocked -= OnRestocked;
             GameEvents.BinBagged -= OnBagged;
@@ -102,12 +102,12 @@ namespace Karoshi.Karen
 
         void Begin()
         {
-            KarenBrain brain = KarenBrain.Instance;
+            AikoBrain brain = AikoBrain.Instance;
             Current = new ShiftRecording
             {
                 ShiftNumber = shift != null ? shift.ShiftNumber : 0,
                 PlayerName = brain != null && brain.Ledger != null ? brain.Ledger.PlayerName : "",
-                KarenRung = brain != null ? brain.config.rung.ToString() : "",
+                AikoRung = brain != null ? brain.config.rung.ToString() : "",
                 StartedAt = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm")
             };
             shiftStartedAt = Time.time;
@@ -252,7 +252,7 @@ namespace Karoshi.Karen
                 }
                 else if (c.State == CustomerMark.Possessed && known && before != CustomerMark.Possessed)
                 {
-                    Add("customer", "A customer suddenly stopped and turned towards you… Karen is watching through them.", at, true, "possessed");
+                    Add("customer", "A customer suddenly stopped and turned towards you… " + GameNames.Antagonist + " is watching through them.", at, true, "possessed");
                 }
             }
             if (lastMark.Count > seen.Count * 2 + 20)
@@ -275,7 +275,7 @@ namespace Karoshi.Karen
             StoreMap map = StoreMap.Current;
             if (bay < 0 || bay >= map.Bays.Count) return "a shelf";
             Bay b = map.Bays[bay];
-            if (string.IsNullOrEmpty(b.Section)) return "a shelf near " + KarenNarrator.Place(b.Position);
+            if (string.IsNullOrEmpty(b.Section)) return "a shelf near " + AikoNarrator.Place(b.Position);
             int dot = b.Section.IndexOf(" · ", System.StringComparison.Ordinal);
             return dot < 0 ? $"the {b.Section} shelf" : $"the {b.Section.Substring(dot + 3)} shelf ({b.Section.Substring(0, dot)})";
         }
@@ -303,17 +303,17 @@ namespace Karoshi.Karen
         void OnNoise(NoiseEvent n)
         {
             if (n.Kind == NoiseKind.Tell) return;   // the warning itself is a story line
-            Add("sound", KarenNarrator.Noise(n.Kind), n.Position, true, KarenNarrator.Who(n.Author), n.Carry);
+            Add("sound", AikoNarrator.Noise(n.Kind), n.Position, true, AikoNarrator.Who(n.Author), n.Carry);
         }
 
-        void OnStory(StoryLine line) => Add(line.Kind.ToString(), line.Text, line.At, line.HasPlace, "Karen");
+        void OnStory(StoryLine line) => Add(line.Kind.ToString(), line.Text, line.At, line.HasPlace, GameNames.Antagonist);
 
         void Job(string what, string sentence, Vector3 at) => Add("job", sentence, at, true, what);
 
         static Vector3 PlayerAt => PlayerPresence.Current != null ? PlayerPresence.Current.Position : Vector3.zero;
 
-        void OnSpill(Dirt d) => Job("mopped a spill", $"You mopped a spill in {KarenNarrator.Place(d != null ? d.transform.position : PlayerAt)}.", d != null ? d.transform.position : PlayerAt);
-        void OnRestocked(ShelfUnit u, int n) => Job("restocked a shelf", $"You restocked a shelf in {KarenNarrator.Place(u != null ? TacticHelpers.StandIn(u) : PlayerAt)}.", u != null ? TacticHelpers.StandIn(u) : PlayerAt);
+        void OnSpill(Dirt d) => Job("mopped a spill", $"You mopped a spill in {AikoNarrator.Place(d != null ? d.transform.position : PlayerAt)}.", d != null ? d.transform.position : PlayerAt);
+        void OnRestocked(ShelfUnit u, int n) => Job("restocked a shelf", $"You restocked a shelf in {AikoNarrator.Place(u != null ? TacticHelpers.StandIn(u) : PlayerAt)}.", u != null ? TacticHelpers.StandIn(u) : PlayerAt);
         void OnBagged(Trashcan t) => Job("bagged a bin", "You bagged up a full bin — now take it to the skip outside.", t != null ? t.transform.position : PlayerAt);
         void OnDisposed(TrashBag b) => Job("took a bag to the skip", "You threw a rubbish bag in the skip.", PlayerAt);
         void OnCoffee(Vector3 at) => Job("drank a coffee", "You drank a coffee. Energy restored.", at);
@@ -334,7 +334,7 @@ namespace Karoshi.Karen
         {
             if (shift == null) return;
             if (accepted) return;   // the shift change itself is recorded
-            Add("store", "The time clock refused you — there's still work to do (or Karen added overtime).", PlayerAt, true, "the store");
+            Add("store", "The time clock refused you — there's still work to do (or " + GameNames.Antagonist + " added overtime).", PlayerAt, true, "the store");
         }
     }
 }

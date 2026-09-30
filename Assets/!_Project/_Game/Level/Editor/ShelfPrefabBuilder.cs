@@ -10,7 +10,7 @@ using UnityEngine;
 // Regenerates the whole shelf pipeline:
 //   Shelves/Models/  3-platform (2 for "short") model prefabs — geometry only
 //   Shelves/Ready/   variants of those, with Slots + Items + a ShelfPoint for customers
-// Menu items are under Karoshi/Shelves so this can be re-run after tweaking the constants.
+// Menu items are under Kehai/Shelves so this can be re-run after tweaking the constants.
 public static class ShelfPrefabBuilder
 {
     // Shelf models live in Shelves/, the corner/connector pieces in Pillars/ — both carry platforms.
@@ -40,7 +40,7 @@ public static class ShelfPrefabBuilder
 
     const float ShelfPointClearance = 0.9f; // how far in front of the shelf a customer stands
 
-    [MenuItem("Karoshi/Shelves/1. Build Model Prefabs")]
+    [MenuItem("Kehai/Shelves/1. Build Model Prefabs")]
     public static void BuildModels()
     {
         EnsureFolder(ModelsFolder);
@@ -73,7 +73,7 @@ public static class ShelfPrefabBuilder
         Debug.Log(log.ToString());
     }
 
-    [MenuItem("Karoshi/Shelves/2. Build Ready Prefabs")]
+    [MenuItem("Kehai/Shelves/2. Build Ready Prefabs")]
     public static void BuildReady()
     {
         EnsureFolder(ReadyFolder);
@@ -110,7 +110,7 @@ public static class ShelfPrefabBuilder
 
     // Models_Island is the model showcase, so it gets plain models; everywhere else in the
     // level gets the stocked "Ready" variants.
-    [MenuItem("Karoshi/Shelves/3. Swap Scene Shelves")]
+    [MenuItem("Kehai/Shelves/3. Swap Scene Shelves")]
     public static void SwapSceneShelves()
     {
         const string ShowcaseRoot = "Models_Island";

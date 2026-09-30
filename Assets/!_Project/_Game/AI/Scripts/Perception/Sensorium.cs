@@ -1,11 +1,11 @@
 using System.Collections.Generic;
-using Karoshi.Store;
+using Kehai.Store;
 using UnityEngine;
 
-namespace Karoshi.Karen
+namespace Kehai.Aiko
 {
     // Where the building's own sensors report: CCTV, door sensors, the till, the breaker
-    // panel. World objects post here without holding a reference to Karen.
+    // panel. World objects post here without holding a reference to Aiko.
     public static class InfrastructureFeed
     {
         public static event System.Action<Observation> Reported;
@@ -16,10 +16,10 @@ namespace Karoshi.Karen
         public static void Report(in Observation observation) => Reported?.Invoke(observation);
     }
 
-    // What Karen believes about your energy — not the bar itself, which is yours. She
+    // What Aiko believes about your energy — not the bar itself, which is yours. She
     // knows the store's policy (how fast a shift wears people down, how much a coffee
     // gives back) and she counts what she hears: sprinting, the coffee machine. Believing
-    // you're spent shrinks the area she searches (karen.md §4.2).
+    // you're spent shrinks the area she searches (aiko.md §4.2).
     public sealed class EnergyBelief
     {
         public float Energy { get; private set; } = 1f;
@@ -51,7 +51,7 @@ namespace Karoshi.Karen
     }
 
     // Fuses every channel into one stream of Observations for the belief grid, plus the
-    // "nothing here" sweep. Owned by the brain; reads the world through Karen's eyes and
+    // "nothing here" sweep. Owned by the brain; reads the world through Aiko's eyes and
     // ears, which are wherever her body is standing.
     public sealed class Sensorium
     {
@@ -227,7 +227,7 @@ namespace Karoshi.Karen
             }
         }
 
-        // Absence (karen.md §3.6): cells in view that turned out empty. Round-robin over the
+        // Absence (aiko.md §3.6): cells in view that turned out empty. Round-robin over the
         // cone so a sweep costs a fixed number of raycasts per tick.
         void CollectSweep(SightSensor sight, Transform bodyRoot)
         {

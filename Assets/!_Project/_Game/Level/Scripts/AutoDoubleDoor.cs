@@ -1,5 +1,5 @@
 using System.Collections;
-using Karoshi.Karen;
+using Kehai.Aiko;
 using UnityEngine;
 
 public class AutoDoubleDoor : MonoBehaviour
@@ -83,7 +83,7 @@ public class AutoDoubleDoor : MonoBehaviour
         if (playersInside == 0) isOpen = false;
     }
 
-    // The phantom chime (karen.md §8.3): the doors cycle with nobody there.
+    // The phantom chime (aiko.md §8.3): the doors cycle with nobody there.
     public void PhantomCycle()
     {
         if (isOpen) return;

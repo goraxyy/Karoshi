@@ -2,9 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Karoshi.Karen
+namespace Kehai.Aiko
 {
-    // The store's lights, split into the circuits Karen can trip (karen.md §8.1).
+    // The store's lights, split into the circuits Aiko can trip (aiko.md §8.1).
     public enum LightCircuit { East, West, Back }
 
     public sealed class LightControl : MonoBehaviour
@@ -106,14 +106,14 @@ namespace Karoshi.Karen
         }
     }
 
-    // The breaker box out in the backstreet, rebuilt as a puzzle (karen.md §8.1, §3.5).
+    // The breaker box out in the backstreet, rebuilt as a puzzle (aiko.md §8.1, §3.5).
     //
     // Three light circuits, each with its own hum when you look at it. After a blackout
     // they have to go back on in rising pitch — low, middle, high — in the dark, by ear.
     // Get it wrong and everything you'd already thrown trips again.
     //
     // A fourth switch jams the PA. The panel can only carry two of the three light
-    // circuits while the jammer is drawing power, so silencing Karen costs you a wing of
+    // circuits while the jammer is drawing power, so silencing Aiko costs you a wing of
     // the store.
     public sealed class BreakerPanel : MonoBehaviour
     {
@@ -158,7 +158,7 @@ namespace Karoshi.Karen
             // Face whichever side of the box you can actually stand on.
             Vector3 centre = new Vector3(bounds.center.x, 0f, bounds.center.z);
             Vector3 facing = box.transform.forward;
-            var map = Karoshi.Store.StoreMap.Current;
+            var map = Kehai.Store.StoreMap.Current;
             int cell = map.CellAt(centre, 4f);
             if (cell >= 0)
             {
@@ -185,9 +185,9 @@ namespace Karoshi.Karen
             RefreshVisuals();
         }
 
-        // ---- Karen's side ------------------------------------------------------
+        // ---- Aiko's side ------------------------------------------------------
 
-        public void TripAll(KarenRng rng)
+        public void TripAll(AikoRng rng)
         {
             for (int i = 0; i < 3; i++) on[i] = false;
             Shuffle(rng);
@@ -204,7 +204,7 @@ namespace Karoshi.Karen
             RefreshVisuals();
         }
 
-        void Shuffle(KarenRng rng)
+        void Shuffle(AikoRng rng)
         {
             for (int i = 2; i > 0; i--)
             {
@@ -274,8 +274,8 @@ namespace Karoshi.Karen
                 if (live > 2)
                     for (int i = 2; i >= 0; i--)
                         if (on[i]) { on[i] = false; break; }
-                KarenWorld.Instance?.Pa.Clear();
-                KarenBrain.Instance?.Ledger.RecordCounterplay("pa_jammed");
+                AikoWorld.Instance?.Pa.Clear();
+                AikoBrain.Instance?.Ledger.RecordCounterplay("pa_jammed");
             }
             OneShotAudio.PlayAt(ProceduralAudio.BreakerThrow(), at);
             Settle();
@@ -349,7 +349,7 @@ namespace Karoshi.Karen
             s.index = index;
             s.colour = colour;
             s.lamp = go.GetComponent<Renderer>();
-            s.lamp.sharedMaterial = KarenProps.Lit(colour);
+            s.lamp.sharedMaterial = AikoProps.Lit(colour);
             return s;
         }
 

@@ -1,4 +1,4 @@
-// BlinkVision — the Mac camera helper for Karoshi's blink mechanic.
+// BlinkVision — the Mac camera helper for Kehai's blink mechanic.
 //
 // Reads the webcam, finds your eyes with Apple's Vision framework (built into macOS — no
 // downloads, no Python), works out how closed they are, and sends one small JSON packet
@@ -42,7 +42,7 @@ func parseOptions() -> Options {
         case "--quiet": o.quiet = true
         case "-h", "--help":
             print("""
-            BlinkVision — webcam blink tracking for Karoshi (macOS, Apple Vision).
+            BlinkVision — webcam blink tracking for Kehai (macOS, Apple Vision).
               --port N         UDP port the game listens on (default 5066)
               --fps N          camera frame rate to ask for (default 60)
               --camera N       which camera (see --list-cameras; default 0)

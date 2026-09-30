@@ -2,22 +2,22 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Karoshi;
-using Karoshi.Eval;
-using Karoshi.Karen;
-using Karoshi.Store;
+using Kehai;
+using Kehai.Aiko;
+using Kehai.Eval;
+using Kehai.Store;
 using NUnit.Framework;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
-// The rules in karen.md that can be checked without playing: that Karen is blind to the
+// The rules in aiko.md that can be checked without playing: that Aiko is blind to the
 // player except through her senses, that every tactic is telegraphed and leaves the player
 // something to do, that learning is reversible, that the pacing gates hold, and that the
 // harness's JSON survives a round trip.
 //
 // Run from Window → General → Test Runner (EditMode), or headless:
 //   Unity -batchmode -projectPath . -runTests -testPlatform EditMode -testResults results.xml
-public class KarenRuleTests
+public class AikoRuleTests
 {
     static string AiRoot => Path.Combine(Application.dataPath, "!_Project/_Game/AI/Scripts");
 
@@ -30,7 +30,7 @@ public class KarenRuleTests
 
     static readonly string[] AllowedLines =
     {
-        "PlayerPosition = KarenDirector.TruePlayerPosition",   // the replay record, labelled debug-only
+        "PlayerPosition = AikoDirector.TruePlayerPosition",   // the replay record, labelled debug-only
         "if (other is CharacterController) Touched?.Invoke(other);",   // touch is a sense: being caught is contact
         "hit.collider.GetComponent<CharacterController>() == null) continue;",   // vantage: a body in the way isn't a wall
     };
@@ -38,7 +38,7 @@ public class KarenRuleTests
     [Test]
     public void BodyBeliefAndDecisions_NeverReadThePlayer()
     {
-        var files = new List<string> { Path.Combine(AiRoot, "Core/KarenBody.cs"), Path.Combine(AiRoot, "Core/KarenBrain.cs") };
+        var files = new List<string> { Path.Combine(AiRoot, "Core/AikoBody.cs"), Path.Combine(AiRoot, "Core/AikoBrain.cs") };
         files.AddRange(Directory.GetFiles(Path.Combine(AiRoot, "Belief"), "*.cs", SearchOption.AllDirectories));
         files.AddRange(Directory.GetFiles(Path.Combine(AiRoot, "Decision"), "*.cs", SearchOption.AllDirectories));
 
@@ -54,24 +54,24 @@ public class KarenRuleTests
                 leaks.Add($"{Path.GetFileName(file)}:{i + 1}: {lines[i].Trim()}");
             }
         }
-        Assert.IsEmpty(leaks, "Karen read the player directly:\n" + string.Join("\n", leaks));
+        Assert.IsEmpty(leaks, GameNames.Antagonist + " read the player directly:\n" + string.Join("\n", leaks));
     }
 
     // ---- her speed: fast, but a sprint always gets away -------------------------------------
 
     [Test]
-    public void Karen_NeverOutrunsASprintingEmployee()
+    public void Aiko_NeverOutrunsASprintingEmployee()
     {
         var motor = new GameObject("player").AddComponent<PlayerMotor>();
         try
         {
-            var config = new KarenConfig();
+            var config = new AikoConfig();
             foreach (float pace in new[] { config.sneakSpeed, config.walkSpeed, config.hurrySpeed, config.runSpeed })
                 Assert.Less(pace, motor.sprintSpeed, "a default pace is faster than the default sprint");
             Assert.Greater(config.hurrySpeed, motor.walkSpeed, "hurrying, she should outpace a walking employee");
 
             // A scene with a slower sprint pulls her paces down with it.
-            KarenBootstrap.KeepBelowSprint(config, 5f);
+            AikoBootstrap.KeepBelowSprint(config, 5f);
             foreach (float pace in new[] { config.sneakSpeed, config.walkSpeed, config.hurrySpeed, config.runSpeed })
                 Assert.Less(pace, 5f);
         }
@@ -111,32 +111,32 @@ public class KarenRuleTests
 
     // ---- §7: the bandit learns, habituates, and forgets -----------------------------------------
 
-    static KarenContext Context(KarenRung rung, out KarenConfig config)
+    static AikoContext Context(AikoRung rung, out AikoConfig config)
     {
-        config = new KarenConfig { rung = rung, seed = 7 };
-        return new KarenContext { Config = config, Rng = new KarenRng(7) };
+        config = new AikoConfig { rung = rung, seed = 7 };
+        return new AikoContext { Config = config, Rng = new AikoRng(7) };
     }
 
     [Test]
     public void Bandit_LearnsFromReward()
     {
-        KarenContext c = Context(KarenRung.D_Bandit, out KarenConfig config);
-        var ledger = new KarenLedger(config);
+        AikoContext c = Context(AikoRung.D_Bandit, out AikoConfig config);
+        var ledger = new AikoLedger(config);
         Tactic t = TacticLibrary.All.First(x => x.Tier == 1);
 
         for (int i = 0; i < 12; i++) ledger.Reward(t.Id, -0.3f);
         Assert.Less(ledger.ExpectedPanicDelta(t, c), -0.2f, "Q̂ didn't move toward the observed deltas");
 
         // Below rung D, the prior stands regardless of what was observed.
-        KarenContext cc = Context(KarenRung.C_BeliefGrid, out _);
+        AikoContext cc = Context(AikoRung.C_BeliefGrid, out _);
         Assert.AreEqual(t.PanicPrior, ledger.ExpectedPanicDelta(t, cc), 1e-5f);
     }
 
     [Test]
     public void Bandit_HabituatesToWhatItJustUsed()
     {
-        KarenContext c = Context(KarenRung.D_Bandit, out KarenConfig config);
-        var ledger = new KarenLedger(config);
+        AikoContext c = Context(AikoRung.D_Bandit, out AikoConfig config);
+        var ledger = new AikoLedger(config);
         Tactic t = TacticLibrary.All.First(x => x.Tier == 2);
         ledger.Reward(t.Id, 0.2f);
 
@@ -150,8 +150,8 @@ public class KarenRuleTests
     [Test]
     public void Bandit_ExploresArmsItHasNotTried()
     {
-        KarenContext c = Context(KarenRung.D_Bandit, out KarenConfig config);
-        var ledger = new KarenLedger(config);
+        AikoContext c = Context(AikoRung.D_Bandit, out AikoConfig config);
+        var ledger = new AikoLedger(config);
         var tier2 = TacticLibrary.All.Where(x => x.Tier == 2).Take(2).ToArray();
         Tactic tried = tier2[0], untried = tier2[1];
         for (int i = 0; i < 20; i++) ledger.Reward(tried.Id, untried.PanicPrior);
@@ -166,13 +166,13 @@ public class KarenRuleTests
     [Test]
     public void Ledger_ForgetsWithinTwoShifts()
     {
-        Context(KarenRung.E_Ledger, out KarenConfig config);
+        Context(AikoRung.E_Ledger, out AikoConfig config);
         // A persistent ledger, but in a temp file: a test must never touch the player's own.
-        config.ledgerPath = Path.Combine(Path.GetTempPath(), "karen_ledger_test_" + System.Guid.NewGuid().ToString("N") + ".json");
+        config.ledgerPath = Path.Combine(Path.GetTempPath(), "aiko_ledger_test_" + System.Guid.NewGuid().ToString("N") + ".json");
         try
         {
-            var ledger = new KarenLedger(config) { Persistent = true };
-            Assert.AreNotEqual(KarenLedger.DefaultPath, ledger.SavePath);
+            var ledger = new AikoLedger(config) { Persistent = true };
+            Assert.AreNotEqual(AikoLedger.DefaultPath, ledger.SavePath);
             Tactic t = TacticLibrary.All.First(x => x.Tier == 3);
             ledger.BeginShift(1);
             for (int i = 0; i < 10; i++) ledger.Reward(t.Id, t.PanicPrior + 0.5f);
@@ -204,13 +204,13 @@ public class KarenRuleTests
     [Test]
     public void Director_GatesBigTacticsOffShiftAndWhileSettling()
     {
-        KarenContext c = Context(KarenRung.F_Blink, out KarenConfig config);
-        var director = new KarenDirector(config, new KarenLedger(config));
+        AikoContext c = Context(AikoRung.F_Blink, out AikoConfig config);
+        var director = new AikoDirector(config, new AikoLedger(config));
         Assert.IsTrue(director.PermitsTier(0, c), "movement is always allowed");
         Assert.IsFalse(director.PermitsTier(1, c), "tactics before the shift starts");
 
         director.BeginShift(3, 300f);
-        Assert.AreEqual(KarenDirector.Phase.Settle, director.CurrentPhase);
+        Assert.AreEqual(AikoDirector.Phase.Settle, director.CurrentPhase);
         Assert.IsTrue(director.PermitsTier(1, c));
         for (int tier = 2; tier <= 4; tier++) Assert.IsFalse(director.PermitsTier(tier, c), $"tier {tier} while settling");
     }
@@ -220,9 +220,9 @@ public class KarenRuleTests
     [Test]
     public void Rng_IsDeterministicPerSeed()
     {
-        var a = new KarenRng(1234);
-        var b = new KarenRng(1234);
-        var d = new KarenRng(4321);
+        var a = new AikoRng(1234);
+        var b = new AikoRng(1234);
+        var d = new AikoRng(4321);
         var sa = Enumerable.Range(0, 50).Select(_ => a.Value).ToArray();
         var sb = Enumerable.Range(0, 50).Select(_ => b.Value).ToArray();
         var sd = Enumerable.Range(0, 50).Select(_ => d.Value).ToArray();
@@ -288,13 +288,13 @@ public class KarenRuleTests
     [Test]
     public void Rungs_ParseFromLetters()
     {
-        Assert.IsTrue(KarenBootstrap.TryParseRung("a", out KarenRung r) && r == KarenRung.A_RandomPatrol);
-        Assert.IsTrue(KarenBootstrap.TryParseRung("F", out r) && r == KarenRung.F_Blink);
-        Assert.IsFalse(new RungFeatures(KarenRung.C_BeliefGrid).Bandit);
-        Assert.IsTrue(new RungFeatures(KarenRung.D_Bandit).Bandit);
-        Assert.IsFalse(new RungFeatures(KarenRung.D_Bandit).Persistent);
-        Assert.IsTrue(new RungFeatures(KarenRung.E_Ledger).Persistent);
-        Assert.IsTrue(new RungFeatures(KarenRung.F_Blink).Blink);
+        Assert.IsTrue(AikoBootstrap.TryParseRung("a", out AikoRung r) && r == AikoRung.A_RandomPatrol);
+        Assert.IsTrue(AikoBootstrap.TryParseRung("F", out r) && r == AikoRung.F_Blink);
+        Assert.IsFalse(new RungFeatures(AikoRung.C_BeliefGrid).Bandit);
+        Assert.IsTrue(new RungFeatures(AikoRung.D_Bandit).Bandit);
+        Assert.IsFalse(new RungFeatures(AikoRung.D_Bandit).Persistent);
+        Assert.IsTrue(new RungFeatures(AikoRung.E_Ledger).Persistent);
+        Assert.IsTrue(new RungFeatures(AikoRung.F_Blink).Blink);
     }
 
     // ---- the blink sidecar's packets --------------------------------------------------------------
@@ -303,7 +303,7 @@ public class KarenRuleTests
     public void UdpBlinkSource_ReadsTheSidecarPacketFormat()
     {
         const int port = 5099;
-        using (var source = new Karoshi.Blink.UdpBlinkSource(port))
+        using (var source = new Kehai.Blink.UdpBlinkSource(port))
         using (var udp = new System.Net.Sockets.UdpClient())
         {
             // Exactly what tools/blink/blink_server.py sends.
@@ -316,7 +316,7 @@ public class KarenRuleTests
             for (int i = 0; i < 200 && source.Packets == 0; i++) System.Threading.Thread.Sleep(5);
             Assert.IsTrue(source.IsLive, "the webcam doesn't count as live until something reads it");
 
-            Karoshi.Blink.BlinkSample sample = default;
+            Kehai.Blink.BlinkSample sample = default;
             bool got = false;
             for (int i = 0; i < 200 && !got; i++)
             {

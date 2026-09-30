@@ -1,18 +1,18 @@
 using System.Collections;
 using System.Collections.Generic;
-using Karoshi.Store;
+using Kehai.Store;
 using Unity.AI.Navigation;
 using UnityEngine;
 using UnityEngine.AI;
 
-namespace Karoshi.Karen
+namespace Kehai.Aiko
 {
-    // Everything Karen can do to the building, in one place. Tactics ask for effects here
+    // Everything Aiko can do to the building, in one place. Tactics ask for effects here
     // rather than reaching into gameplay scripts, so the list of what she *can* touch is
     // the list of methods on this class.
-    public sealed class KarenWorld : MonoBehaviour
+    public sealed class AikoWorld : MonoBehaviour
     {
-        public static KarenWorld Instance { get; private set; }
+        public static AikoWorld Instance { get; private set; }
 
         public PaSystem Pa { get; private set; }
         public LightControl Lights { get; private set; }
@@ -30,7 +30,7 @@ namespace Karoshi.Karen
             Pa = gameObject.AddComponent<PaSystem>();
             Lights = gameObject.AddComponent<LightControl>();
             Breakers = gameObject.AddComponent<BreakerPanel>();
-            KarenScreen.Ensure();
+            AikoScreen.Ensure();
 
             CustomerSpawner spawner = FindAnyObjectByType<CustomerSpawner>();
             if (spawner != null && spawner.customerPrefab != null)
@@ -73,13 +73,13 @@ namespace Karoshi.Karen
                 case TellKind.BallastWhine:
                     // A blackout is audible storewide and visible as a flicker everywhere.
                     Pa.PlayNear(at, clip, 1f);
-                    OneShotAudio.PlayAt(clip, ListenerPosition(), 0.6f, 5f, 40f, 0.3f, SoundKind.Karen);
+                    OneShotAudio.PlayAt(clip, ListenerPosition(), 0.6f, 5f, 40f, 0.3f, SoundKind.Aiko);
                     Lights.FlickerAll(lead);
                     break;
                 case TellKind.Flicker:
                     Light near = LightProbe.NearestOn(at);
                     if (near != null) StartCoroutine(Lights.Flicker(near, lead));
-                    OneShotAudio.PlayAt(clip, near != null ? near.transform.position : at, 0.8f, TellNear, TellFar, TellSpatial, SoundKind.Karen);
+                    OneShotAudio.PlayAt(clip, near != null ? near.transform.position : at, 0.8f, TellNear, TellFar, TellSpatial, SoundKind.Aiko);
                     break;
                 case TellKind.PaChime:
                 case TellKind.SpeakerCrackle:
@@ -88,13 +88,13 @@ namespace Karoshi.Karen
                     break;
                 case TellKind.CrtTick:
                     // The HUD tell has to reach you wherever you are.
-                    OneShotAudio.PlayAt(clip, ListenerPosition(), 0.7f, 5f, 40f, 0f, SoundKind.Karen);
+                    OneShotAudio.PlayAt(clip, ListenerPosition(), 0.7f, 5f, 40f, 0f, SoundKind.Aiko);
                     break;
                 default:
-                    OneShotAudio.PlayAt(clip, at, 1f, TellNear, TellFar, TellSpatial, SoundKind.Karen);
+                    OneShotAudio.PlayAt(clip, at, 1f, TellNear, TellFar, TellSpatial, SoundKind.Aiko);
                     break;
             }
-            NoiseBus.Emit(at, 0.4f, NoiseKind.Tell, NoiseAuthor.Karen);
+            NoiseBus.Emit(at, 0.4f, NoiseKind.Tell, NoiseAuthor.Aiko);
         }
 
         const float TellNear = 6f, TellFar = 60f, TellSpatial = 0.8f;
@@ -107,7 +107,7 @@ namespace Karoshi.Karen
 
         // ---- sight --------------------------------------------------------------------
 
-        public void Blackout(KarenRng rng)
+        public void Blackout(AikoRng rng)
         {
             Breakers.TripAll(rng);
             PowerSystem.Instance?.CutPower();
@@ -141,7 +141,7 @@ namespace Karoshi.Karen
             if (DirtPrefab == null) return null;
             Vector3 p = NavMesh.SamplePosition(at, out NavMeshHit hit, 2f, NavMesh.AllAreas) ? hit.position : at;
             GameObject go = Instantiate(DirtPrefab, p + Vector3.up * 0.02f, Quaternion.Euler(90f, Random.Range(0f, 360f), 0f));
-            go.name = "Spill (Karen)";
+            go.name = "Spill (" + GameNames.Antagonist + ")";
             return go.GetComponent<Dirt>();
         }
 
@@ -195,7 +195,7 @@ namespace Karoshi.Karen
             {
                 bay.transform.position = Vector3.Lerp(from, to, Mathf.SmoothStep(0f, 1f, t / seconds));
                 if (Mathf.Repeat(t, 0.4f) < Time.deltaTime)
-                    NoiseBus.Emit(bay.transform.position, 0.8f, NoiseKind.Environmental, NoiseAuthor.Karen);
+                    NoiseBus.Emit(bay.transform.position, 0.8f, NoiseKind.Environmental, NoiseAuthor.Aiko);
                 yield return null;
             }
             bay.transform.position = to;

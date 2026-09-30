@@ -1,20 +1,20 @@
 using System.Collections.Generic;
-using Karoshi.Store;
+using Kehai.Store;
 using UnityEngine;
 
-namespace Karoshi.Karen
+namespace Kehai.Aiko
 {
-    // The Director (karen.md §2.2, §7.3–7.4). Sees everything, controls nothing directly.
+    // The Director (aiko.md §2.2, §7.3–7.4). Sees everything, controls nothing directly.
     //
     // It measures fear by its motor consequences — the Panic Index — and runs a PI
     // controller against a *setpoint*, not a maximum: quiet is something it schedules, not
-    // something that happens when Karen fails. Its levers are the tension budget, which
+    // something that happens when Aiko fails. Its levers are the tension budget, which
     // tiers of tactic are permitted, a tightly capped hint to the belief grid, and free
     // dread that costs the body nothing: a noise with no author, a flickering light.
     //
     // It may never move the body or hand it the player's position. That boundary is the
     // whole of fairness rule 2.
-    public sealed class KarenDirector
+    public sealed class AikoDirector
     {
         public enum Phase { OffShift, Settle, Build, Spike, Recover, Crunch }
 
@@ -29,7 +29,7 @@ namespace Karoshi.Karen
         public float RawPanic { get; private set; }
         public PanicIndex Index { get; }
 
-        readonly KarenConfig config;
+        readonly AikoConfig config;
         readonly List<(float t, float panic)> history = new List<(float, float)>(4096);
         float recoveryUntil = -1f;
         float spikeStarted = -1f;
@@ -43,7 +43,7 @@ namespace Karoshi.Karen
         float shiftLength = 300f;
         int shiftNumber = 1;
 
-        public KarenDirector(KarenConfig config, KarenLedger ledger)
+        public AikoDirector(AikoConfig config, AikoLedger ledger)
         {
             this.config = config;
             Index = new PanicIndex(config, ledger);
@@ -74,7 +74,7 @@ namespace Karoshi.Karen
 
         // ---- the loop -------------------------------------------------------------------
 
-        public void Tick(float dt, KarenContext c)
+        public void Tick(float dt, AikoContext c)
         {
             if (CurrentPhase == Phase.OffShift) return;
 
@@ -99,7 +99,7 @@ namespace Karoshi.Karen
             MaybeEnvironmental(c);
         }
 
-        void UpdatePhase(KarenContext c)
+        void UpdatePhase(AikoContext c)
         {
             Phase before = CurrentPhase;
             float t = ShiftTime;
@@ -150,7 +150,7 @@ namespace Karoshi.Karen
             if (CurrentPhase != before)
             {
                 c.Think("DIRECTOR", $"phase {before.ToString().ToUpperInvariant()} → {PhaseName} (panic {Panic:0.00}, setpoint {SetpointFor(CurrentPhase):0.00}, pressure {Pressure:+0.00;-0.00})");
-                KarenNarrator.Say(StoryKind.Mood, KarenNarrator.Phase(CurrentPhase));
+                AikoNarrator.Say(StoryKind.Mood, AikoNarrator.Phase(CurrentPhase));
             }
         }
 
@@ -170,7 +170,7 @@ namespace Karoshi.Karen
 
         // ---- permissions ----------------------------------------------------------------
 
-        public bool PermitsTier(int tier, KarenContext c)
+        public bool PermitsTier(int tier, AikoContext c)
         {
             if (tier <= 0) return true;
             if (CurrentPhase == Phase.OffShift) return false;
@@ -184,7 +184,7 @@ namespace Karoshi.Karen
             }
         }
 
-        public float GoalPermission(GoalId goal, KarenContext c)
+        public float GoalPermission(GoalId goal, AikoContext c)
         {
             switch (goal)
             {
@@ -216,7 +216,7 @@ namespace Karoshi.Karen
 
         // Fairness rule 4: after a chase or a catch, at least recoverySeconds of lowered
         // setpoint with no major tactic and no ambush.
-        public void StartRecovery(float seconds, KarenContext c, string why)
+        public void StartRecovery(float seconds, AikoContext c, string why)
         {
             recoveryUntil = Mathf.Max(recoveryUntil, Time.time + seconds);
             Integral = Mathf.Min(Integral, 0f);
@@ -250,7 +250,7 @@ namespace Karoshi.Karen
         // When the employee has been unthreatened for too long, nudge belief toward the truth
         // — at most 0.15 of the mass per minute, never past half of it, and never while the
         // employee is in line of sight of the body's current path.
-        public void MaybeBias(KarenContext c, float dt)
+        public void MaybeBias(AikoContext c, float dt)
         {
             if (CurrentPhase == Phase.OffShift || InRecovery) return;
             if (c.A.Staleness < 45f || Pressure < 0.1f) return;
@@ -291,8 +291,8 @@ namespace Karoshi.Karen
         float lastThreat = -999f;
 
         // The player model is built from the truth, which is the Director's to see: where
-        // the employee spends time, where they hide, how they move (karen.md §7.1).
-        public void ObserveForLedger(KarenContext c, float dt)
+        // the employee spends time, where they hide, how they move (aiko.md §7.1).
+        public void ObserveForLedger(AikoContext c, float dt)
         {
             PlayerPresence player = PlayerPresence.Current;
             if (player == null || CurrentPhase == Phase.OffShift) return;
@@ -313,7 +313,7 @@ namespace Karoshi.Karen
 
         // ---- free dread -------------------------------------------------------------------
 
-        void MaybeEnvironmental(KarenContext c)
+        void MaybeEnvironmental(AikoContext c)
         {
             if (InRecovery || CurrentPhase == Phase.Settle) return;
             if (Pressure < 0.15f || Time.time - lastEnvironmental < 25f) return;
@@ -347,7 +347,7 @@ namespace Karoshi.Karen
         }
     }
 
-    // The Panic Index (karen.md §7.3): fear measured by what it does to your hands.
+    // The Panic Index (aiko.md §7.3): fear measured by what it does to your hands.
     public sealed class PanicIndex
     {
         public const int Features = 8;
@@ -360,8 +360,8 @@ namespace Karoshi.Karen
         public readonly float[] Value = new float[Features];
         public readonly float[] Z = new float[Features];
 
-        readonly KarenConfig config;
-        readonly KarenLedger ledger;
+        readonly AikoConfig config;
+        readonly AikoLedger ledger;
         readonly Queue<float> sprintStarts = new Queue<float>();
         readonly Queue<float> abandons = new Queue<float>();
         readonly Queue<float> drops = new Queue<float>();
@@ -377,7 +377,7 @@ namespace Karoshi.Karen
         float stillFor;
         float lastEnergy = -1f;
 
-        public PanicIndex(KarenConfig config, KarenLedger ledger)
+        public PanicIndex(AikoConfig config, AikoLedger ledger)
         {
             this.config = config;
             this.ledger = ledger;
@@ -418,7 +418,7 @@ namespace Karoshi.Karen
             lastEnergy = -1f;
         }
 
-        public float Sample(float dt, KarenContext c)
+        public float Sample(float dt, AikoContext c)
         {
             PlayerPresence player = PlayerPresence.Current;
             if (player == null) return 0f;
