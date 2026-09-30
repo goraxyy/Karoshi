@@ -10,8 +10,9 @@ namespace Kehai.Aiko
     // queueing, the lights. Keeps a live picture for the F1 map, the whole shift for the F2
     // replay, and at clock-out writes it to disk with a report you can open in a browser:
     //
-    //   <persistent data>/shift_records/shift_03_20260926_141500.json   (the data)
-    //   <persistent data>/shift_records/shift_03_20260926_141500.html   (map, replay, analysis)
+    //   <persistent data>/shift_records/shift_03_20260926_141500.json          (the data)
+    //   <persistent data>/shift_records/shift_03_20260926_141500.html          (map, replay, analysis)
+    //   <persistent data>/shift_records/shift_03_20260926_141500.markers.json  (moments worth a clip)
     public sealed class ShiftRecorder : MonoBehaviour
     {
         public const float FrameInterval = 0.2f;
@@ -41,6 +42,18 @@ namespace Kehai.Aiko
         int nextId = 1;
 
         public static string Folder => Path.Combine(Application.persistentDataPath, "shift_records");
+
+        // Every event as it's recorded, and the finished shift just before it's written —
+        // for the clip markers, which close what's still open and mark the review.
+        public static event System.Action<ShiftEvent> Recorded;
+        public static event System.Action<ShiftRecording> Finishing;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics()
+        {
+            Recorded = null;
+            Finishing = null;
+        }
 
         void Awake()
         {
@@ -90,7 +103,7 @@ namespace Kehai.Aiko
             if (shift != null && shift.IsShiftActive) Begin();
         }
 
-        float ShiftTime => Time.time - shiftStartedAt;
+        public float ShiftTime => Time.time - shiftStartedAt;
 
         // ---- the shift ------------------------------------------------------------------------
 
@@ -123,8 +136,10 @@ namespace Kehai.Aiko
             if (r == null) return;
             r.Length = Time.time - shiftStartedAt;
             r.ClockedOut = clockedOut;
+            Finishing?.Invoke(r);
             Last = r;
             LastAnalysis = ShiftAnalysis.Of(r);
+            r.Moments = ClipMoments.Build(r);
 
             if (r.Frames.Count < 5) return;
             try
@@ -135,8 +150,9 @@ namespace Kehai.Aiko
                 string json = r.ToJson(plan, LastAnalysis);
                 File.WriteAllText(stem + ".json", json);
                 File.WriteAllText(stem + ".html", ShiftReportHtml.Build(json, r.ShiftNumber));
+                File.WriteAllText(stem + ".markers.json", ClipMoments.FileJson(r, Path.GetFileName(stem), r.Moments));
                 LastReportPath = stem + ".html";
-                Debug.Log($"Shift {r.ShiftNumber} recorded: {LastReportPath}");
+                Debug.Log($"Shift {r.ShiftNumber} recorded: {LastReportPath} ({r.Markers.Count} clip markers, {r.Moments.Count} moments)");
             }
             catch (System.Exception e)
             {
@@ -155,6 +171,7 @@ namespace Kehai.Aiko
                 string path = Path.Combine(Folder, $"shift_{r.ShiftNumber:00}_{(Current != null ? "in_progress" : System.DateTime.Now.ToString("yyyyMMdd_HHmmss"))}.html");
                 if (Current != null) r.Length = ShiftTime;
                 ShiftAnalysis a = Current != null ? ShiftAnalysis.Of(r) : LastAnalysis;
+                if (Current != null || r.Moments == null) r.Moments = ClipMoments.Build(r);
                 File.WriteAllText(path, ShiftReportHtml.Build(r.ToJson(StoreFloorPlan.Current, a), r.ShiftNumber));
                 LastReportPath = path;
                 Application.OpenURL("file://" + path);
@@ -298,6 +315,7 @@ namespace Kehai.Aiko
             recent.Add(e);
             if (recent.Count > 400) recent.RemoveRange(0, recent.Count - 400);
             if (Current != null) Current.Events.Add(e);
+            Recorded?.Invoke(e);
         }
 
         void OnNoise(NoiseEvent n)

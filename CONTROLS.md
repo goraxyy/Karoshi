@@ -68,6 +68,13 @@ Keys marked *(in the replay)*, *(on the F1 map)* or *(in the blink test)* only w
 | O | Open the shift report in your browser |
 | Q | Hand in your notice (from shift 5) |
 
+## Clips
+
+| Key | What it does |
+|---|---|
+| F7 | Mark this moment for a clip; a tick shows for a second |
+| Left Shift + F7 | Mark a bug at this moment |
+
 ## For testing
 
 | Key | What it does |

@@ -92,6 +92,26 @@ namespace Kehai.Aiko
 
         static ShiftRecording Recording => ShiftRecorder.Instance != null ? ShiftRecorder.Instance.Current ?? ShiftRecorder.Instance.Last : null;
 
+        // A finished shift has its moments; one in progress gets them worked out again when a
+        // new marker arrives, and once a second as the shift grows (a moment near the end is
+        // cut off at the shift's length so far).
+        ShiftRecording momentsOf;
+        int momentsMarkers = -1, momentsFrames = -1;
+        List<ClipMoment> moments = new List<ClipMoment>();
+
+        List<ClipMoment> MomentsOf(ShiftRecording r)
+        {
+            if (r.Moments != null) return r.Moments;
+            if (r != momentsOf || r.Markers.Count != momentsMarkers || r.Frames.Count - momentsFrames >= 5)
+            {
+                momentsOf = r;
+                momentsMarkers = r.Markers.Count;
+                momentsFrames = r.Frames.Count;
+                moments = ClipMoments.Build(r);
+            }
+            return moments;
+        }
+
         int FontSize => Mathf.RoundToInt(Mathf.Clamp(Screen.height / 42f, 15f, 42f));
 
         void Styles()
@@ -289,6 +309,25 @@ namespace Kehai.Aiko
                 GUI.color = c;
                 GUI.DrawTexture(new Rect(bar.x + bar.width * e.T / Mathf.Max(1f, end) - 1f, bar.y, 3f, bar.height), Texture2D.whiteTexture);
             }
+
+            // Clip moments in gold across the bar, and the markers that made them above it:
+            // taller and brighter the better the clip; a marked bug in red.
+            List<ClipMoment> clipMoments = MomentsOf(r);
+            foreach (ClipMoment m in clipMoments)
+            {
+                GUI.color = new Color(1f, 0.84f, 0.25f, 0.22f);
+                GUI.DrawTexture(new Rect(bar.x + bar.width * m.Start / Mathf.Max(1f, end), bar.y,
+                                         Mathf.Max(2f, bar.width * (m.End - m.Start) / Mathf.Max(1f, end)), bar.height), Texture2D.whiteTexture);
+            }
+            foreach (ClipMarker m in r.Markers)
+            {
+                ClipMarkerKind k = m.Kind;
+                if (k == null) continue;
+                float strength = Mathf.Clamp01(k.Weight / 10f);
+                GUI.color = m.Id == "manual_bug" ? MapPainter.AikoRed : Color.Lerp(new Color(0.55f, 0.57f, 0.62f), new Color(1f, 0.84f, 0.25f), strength);
+                float h = size * 0.6f * (0.4f + 0.6f * strength);
+                GUI.DrawTexture(new Rect(bar.x + bar.width * m.T / Mathf.Max(1f, end) - 1f, bar.y - h - 2f, 2f, h), Texture2D.whiteTexture);
+            }
             GUI.color = Color.white;
             GUI.DrawTexture(new Rect(bar.x + bar.width * replayT / Mathf.Max(1f, end) - 2f, bar.y - 4f, 4f, bar.height + 8f), Texture2D.whiteTexture);
             if (Event.current.type == EventType.MouseDown || Event.current.type == EventType.MouseDrag)
@@ -300,13 +339,16 @@ namespace Kehai.Aiko
                 }
             GUI.Label(new Rect(bar.x, bar.yMax + 4f, bar.width, size * 1.6f),
                 $"{AikoNarrator.Clock(replayT)} / {AikoNarrator.Clock(end)}   {(playing ? "playing" : "paused")} at {speed:0}×   " +
-                "<color=#8A909C>Space play/pause · 1/2/3 speed · ←/→ 5 s · drag the bar · O open the full report · F2 close</color>", small);
+                "<color=#8A909C>Space play/pause · 1/2/3 speed · ←/→ 5 s · drag the bar · gold: clip moments (F7 marks one) · O open the full report · F2 close</color>", small);
 
             // The story around this moment.
             var panel = new Rect(mapWidth + margin, margin, Screen.width - mapWidth - margin * 2f, Screen.height - timelineH - margin * 2f);
             GUILayout.BeginArea(panel);
             GUILayout.Label($"Shift {r.ShiftNumber} — replay", heading);
             GUILayout.Label($"{GameNames.Antagonist} is {Vector2.Distance(f.Player, f.Aiko):0} m from you" + (f.AikoSees ? " and <color=#FF5454><b>can see you</b></color>." : "."), body);
+            ClipMoment here = clipMoments.FirstOrDefault(m => replayT >= m.Start && replayT <= m.End);
+            if (here != null)
+                GUILayout.Label($"<color=#FFD640>Clip moment</color> {AikoNarrator.Clock(here.Start)}–{AikoNarrator.Clock(here.End)}, score {here.Score:0}: {string.Join(", ", here.Markers.Select(m => m.Id).Distinct())}", body);
             var near = r.Events.Where(e => e.Kind != "sound" && e.T <= replayT && e.T > replayT - 90f).Reverse().Take(14);
             foreach (ShiftEvent e in near)
                 GUILayout.Label($"<color=#8A909C>{AikoNarrator.Clock(e.T)}</color>  {e.Text}", body);
