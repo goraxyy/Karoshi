@@ -66,7 +66,36 @@ Keys marked *(in the replay)*, *(on the F1 map)* or *(in the blink test)* only w
 |---|---|
 | Enter | Continue |
 | O | Open the shift report in your browser |
+| R | Watch the shift again in 3D |
 | Q | Hand in your notice (from shift 5) |
+
+## 3D replay
+
+The shift as it happened, in the store: any camera, her mind drawn in, the clip moments on the
+timeline. Open it with **R** after a shift, or in the editor with Kehai → Replay.
+
+| Key | What it does |
+|---|---|
+| Space | Play or pause |
+| Left / Right | Back or forward 5 seconds |
+| , / . | Back or forward one frame (pauses) |
+| - / = | Slower or faster, from 0.1x to 4x |
+| [ / ] | The previous or next clip moment |
+| Home / End | The start or the end of the shift |
+| 1 2 3 4 5 6 7 | Camera: your eyes, CCTV corner, chase, orbit, top down, free, your path |
+| Tab | Follow Aiko or yourself |
+| Right mouse (hold) | Free camera: look around |
+| W A S D / Q E | Free camera: move, and down or up (Left Shift: faster) |
+| Mouse wheel | Free camera: how fast it flies |
+| Z / X | Free camera: zoom in or out |
+| F | Depth of field on or off |
+| K | Add the camera as it is now to your path (saved next to the recording) |
+| Left Shift + K | Take the last keyframe off your path |
+| M | Her mind on or off |
+| B / G / V / N / T | Her belief map, her guess, her view cone, sound rings, her thought log |
+| H | Hide or show the timeline |
+| F1 | These keys |
+| Backspace | Leave the replay |
 
 ## Clips
 

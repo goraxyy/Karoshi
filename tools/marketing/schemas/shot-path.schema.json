@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/goraxyy/Kehai/tools/marketing/schemas/shot-path.schema.json",
+  "title": "Kehai replay camera path",
+  "description": "<stem>.path.json, next to a shift's .krec: keyframes saved with K in the 3D replay (ShotPath.cs), played back as one smooth camera move. Render it with render_shot.sh -shot <file> (or -shot path for the recording's own). Times are seconds into the shift; positions are world metres.",
+  "type": "object",
+  "required": ["version", "keys"],
+  "properties": {
+    "version": { "const": 1 },
+    "krec": { "type": "string", "description": "The recording the path was made in (file name)." },
+    "keys": {
+      "type": "array",
+      "minItems": 1,
+      "description": "In time order. A key within 0.05 s of another replaces it.",
+      "items": {
+        "type": "object",
+        "required": ["t", "position", "rotation", "fov"],
+        "properties": {
+          "t": { "type": "number", "minimum": 0 },
+          "position": { "$ref": "#/$defs/vector3" },
+          "rotation": {
+            "type": "object",
+            "description": "A unit quaternion (Unity: x, y, z, w).",
+            "required": ["x", "y", "z", "w"],
+            "properties": { "x": { "type": "number" }, "y": { "type": "number" }, "z": { "type": "number" }, "w": { "type": "number" } }
+          },
+          "fov": { "type": "number", "exclusiveMinimum": 0, "maximum": 179, "description": "Vertical field of view, degrees." },
+          "focus": { "type": "number", "exclusiveMinimum": 0, "description": "Focus distance in metres, for depth of field." }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "vector3": {
+      "type": "object",
+      "required": ["x", "y", "z"],
+      "properties": { "x": { "type": "number" }, "y": { "type": "number" }, "z": { "type": "number" } }
+    }
+  }
+}

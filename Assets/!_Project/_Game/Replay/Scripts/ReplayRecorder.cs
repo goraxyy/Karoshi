@@ -19,6 +19,12 @@ namespace Kehai.Replay
     {
         public static ReplayRecorder Instance { get; private set; }
 
+        // The last recording finished this session (the review screen offers to watch it).
+        public static string LastFinished { get; private set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics() => LastFinished = null;
+
         public sealed class Tracked
         {
             public int Id;
@@ -200,6 +206,7 @@ namespace Kehai.Replay
                 }
                 if (File.Exists(finalPath)) File.Delete(finalPath);
                 File.Move(w.Path, finalPath);
+                LastFinished = finalPath;
                 long bytes = new FileInfo(finalPath).Length;
                 float perTen = length > 1f ? bytes / length * 600f / (1024f * 1024f) : 0f;
                 var kinds = new SortedDictionary<string, int>();
@@ -362,15 +369,27 @@ namespace Kehai.Replay
             foreach (Bay bay in StoreMap.Current.Bays)
                 if (bay.Unit != null) Track(bay.Unit, KrecKind.ShelfUnit, bay.Unit.transform, "Shelf", bay.Section ?? bay.Unit.name);
 
-            foreach (CrateWall w in Object.FindObjectsByType<CrateWall>()) Track(w, KrecKind.CrateWall, w.transform, "CrateWall", w.name);
-            foreach (FogCloud f in Object.FindObjectsByType<FogCloud>()) Track(f, KrecKind.Fog, f.transform, "Fog", f.name);
+            foreach (CrateWall w in Object.FindObjectsByType<CrateWall>())
+            {
+                int columns = Mathf.Max(1, w.transform.childCount / 2);   // two crates high
+                Track(w, KrecKind.CrateWall, w.transform, "CrateWall", w.name, () => columns);
+            }
+            foreach (FogCloud f in Object.FindObjectsByType<FogCloud>())
+            {
+                int radius = Mathf.RoundToInt(f.Radius * 10f);
+                Track(f, KrecKind.Fog, f.transform, "Fog", f.name, () => radius);
+            }
             foreach (CctvCamera c in CctvCamera.All)
                 if (c != null)
                 {
                     CctvCamera cam = c;
                     Track(c, KrecKind.Cctv, c.transform, c.BoltedOn ? "Cctv/bolted" : "Cctv", c.name, () => (cam.BoltedOn ? 1 : 0) | (cam.Dead ? 2 : 0));
                 }
-            foreach (CoffeeCup c in Object.FindObjectsByType<CoffeeCup>()) Track(c, KrecKind.Coffee, c.transform, "Coffee", c.name);
+            foreach (CoffeeCup c in Object.FindObjectsByType<CoffeeCup>())
+            {
+                bool last = c.IsLast;
+                Track(c, KrecKind.Coffee, c.transform, "Coffee", c.name, () => last ? 1 : 0);
+            }
             foreach (Footprint f in Object.FindObjectsByType<Footprint>()) Track(f, KrecKind.Footprint, f.transform, "Footprint", f.name);
             foreach (Dirt d in Dirt.All) if (d != null) Track(d, KrecKind.Spill, d.transform, "Spill", d.name);
             foreach (Trashcan bin in Trashcan.All)

@@ -52,6 +52,7 @@ namespace Kehai.Replay
         // with the mop), 3 on a shelf | 8 switched on (the torch)
         public const int ItemLoose = 0, ItemInHand = 1, ItemHeld = 2, ItemOnShelf = 3, ItemLit = 8;
         // Door: 1 locked. Bin: how full. Bag: 1 disposed. Cctv: 1 bolted on | 2 dead.
+        // CrateWall: crates across. Fog: radius in decimetres. Coffee: 1 the last one.
     }
 
     public static class Krec

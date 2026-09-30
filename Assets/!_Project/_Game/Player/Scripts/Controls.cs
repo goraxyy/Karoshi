@@ -19,6 +19,9 @@ public static class Controls
 
     static Entry K(string keys, string action) => new Entry(keys, action);
 
+    // The section the 3D replay shows as its help (F1 there).
+    public const string ReplaySection = "3D replay";
+
     public static readonly Section[] All =
     {
         new Section("Moving",
@@ -60,7 +63,29 @@ public static class Controls
         new Section("After a shift",
             K("Enter", "Continue"),
             K("O", "Open the shift report in your browser"),
+            K("R", "Watch the shift again in 3D"),
             K("Q", "Hand in your notice (from shift 5)")),
+        new Section(ReplaySection,
+            K("Space", "Play or pause"),
+            K("Left / Right", "Back or forward 5 seconds"),
+            K(", / .", "Back or forward one frame (pauses)"),
+            K("- / =", "Slower or faster, from 0.1x to 4x"),
+            K("[ / ]", "The previous or next clip moment"),
+            K("Home / End", "The start or the end of the shift"),
+            K("1 2 3 4 5 6 7", "Camera: your eyes, CCTV corner, chase, orbit, top down, free, your path"),
+            K("Tab", "Follow " + GameNames.Antagonist + " or yourself"),
+            K("Right mouse (hold)", "Free camera: look around"),
+            K("W A S D / Q E", "Free camera: move, and down or up (Left Shift: faster)"),
+            K("Mouse wheel", "Free camera: how fast it flies"),
+            K("Z / X", "Free camera: zoom in or out"),
+            K("F", "Depth of field on or off"),
+            K("K", "Add the camera as it is now to your path (saved next to the recording)"),
+            K("Left Shift + K", "Take the last keyframe off your path"),
+            K("M", "Her mind on or off"),
+            K("B / G / V / N / T", "Her belief map, her guess, her view cone, sound rings, her thought log"),
+            K("H", "Hide or show the timeline"),
+            K("F1", "These keys"),
+            K("Backspace", "Leave the replay")),
         new Section("Clips",
             K("F7", "Mark this moment for a clip; a tick shows for a second"),
             K("Left Shift + F7", "Mark a bug at this moment")),

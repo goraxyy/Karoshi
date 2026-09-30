@@ -118,9 +118,25 @@ namespace Kehai.Replay
 
         public BeliefFrame BeliefAt(float t)
         {
-            BeliefFrame best = null;
-            foreach (BeliefFrame b in Belief) { if (b.T <= t) best = b; else break; }
-            return best;
+            int lo = 0, hi = Belief.Count - 1, found = -1;
+            while (lo <= hi)
+            {
+                int mid = (lo + hi) / 2;
+                if (Belief[mid].T <= t) { found = mid; lo = mid + 1; } else hi = mid - 1;
+            }
+            return found >= 0 ? Belief[found] : null;
+        }
+
+        // The first event at or after t (events are written in the order they happened).
+        public int FirstEventAt(float t)
+        {
+            int lo = 0, hi = Events.Count;
+            while (lo < hi)
+            {
+                int mid = (lo + hi) / 2;
+                if (Events[mid].T < t) lo = mid + 1; else hi = mid;
+            }
+            return lo;
         }
 
         static int LastAtOrBefore(List<EntitySample> s, float t)
@@ -158,6 +174,19 @@ namespace Kehai.Replay
         {
             using (var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 return Read(file);
+        }
+
+        // Only the header: which shift, which scene (to load the right store before the rest).
+        public static KrecHeader LoadHeader(string path)
+        {
+            using (var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (var zip = new GZipStream(file, CompressionMode.Decompress))
+            using (var r = new BinaryReader(zip))
+            {
+                var data = new ReplayData();
+                ReadHeader(r, data);
+                return data.Header;
+            }
         }
 
         // Reads as much as there is: a recording cut short (the game quit) still loads.

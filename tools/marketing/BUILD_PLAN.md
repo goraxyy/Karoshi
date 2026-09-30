@@ -8,9 +8,9 @@
 
 | | |
 |---|---|
-| **Current phase** | Phase 3 (replay recorder) in progress — branch `feat/replay-recorder`, worktree `~/Developer/kehai-replay` |
-| **Next action** | Build the recorder, verify (round-trip within 1 cm), open the PR ✋ |
-| **Blocked on owner** | Answers to Q7–Q12 and Q14; the [owner setup checklist](#owner-setup-checklist) from Phase 5 on |
+| **Current phase** | Phase 4 (replay player, cameras, shot render) built and verified — branch `feat/replay-player`, worktree `~/Developer/kehai-player`, stacked on Phase 3 (PR #15, open) ✋ |
+| **Next action** | Owner: review and merge PR #15, then the Phase 4 PR (GitHub moves it onto `main` when #15's branch is deleted). Then Phase 5 |
+| **Blocked on owner** | `brew install ffmpeg` (video files; PNG frames work without it); answers to Q7–Q12 and Q14; the rest of the [owner setup checklist](#owner-setup-checklist) from Phase 5 on |
 | **Last updated** | 2026-09-30 |
 
 **How to resume (for a later session).**
@@ -19,6 +19,8 @@
    (`~/Developer/kehai-<phase>`) from `origin/main`, never in the main folder `~/Developer/Kehai`
    (it holds untracked art that `stash`/`checkout` can destroy).
 3. Continue at the first unticked box of the current phase. Stop at every ✋ and wait.
+4. A phase may be stacked on the previous one's branch while that PR waits for review (Phase 4 is);
+   once the earlier PR merges, pull `main` and rebase or merge it into the later branch.
 
 ---
 
@@ -175,7 +177,7 @@ named when it starts, so the replay can stream to `<stem>.krec.part` and be rena
       panels, 189 shelf units, 20 footprints, 5 spills, 3 bins, a bag), 1,013 noises, 35 tells,
       12 PA events, 3,069 thoughts, 301 narrator lines, 16 slot and 81 light changes, 5,501 views,
       734 belief frames.
-- [ ] PR. ✋
+- [x] PR #15, opened 2026-09-30 (not merged yet). ✋
 
 **Your player model (Q13), when it's ready:** export an FBX to
 `Assets/!_Project/_Game/Replay/Resources/ReplayBody/PlayerBody.fbx` (local art, never
@@ -186,18 +188,106 @@ the origin. No Animator Controller needed. A missing clip falls back to walk or 
 
 ## Phase 4 — Replay player, cameras, shot render (Unity) ✋
 
-- [ ] `ReplayPlayer` (`-replay <file>`, or from the shift report): rebuild the store; AI, NavMesh
-      agents, physics and gameplay scripts off; interpolated puppets; sounds replayed in 3D.
-- [ ] Timeline: play/pause, scrub, 0.1–4×, frame step, marker ticks, HUD toggle.
-- [ ] Cameras: free fly (WASD, mouse, Q/E, scroll speed, FOV, depth of field) and presets POV,
-      CCTV corner, chase-cam behind Aiko, orbit, top-down; **K** saves keyframes to a smooth
-      path (JSON).
-- [ ] "Aiko's mind" layers, renderable alone with alpha: belief heat map, her guess, view cone,
-      sound rings, thought-log text.
-- [ ] `ReplayRender` batch entry: `-krec -moment -shot <preset|path.json> -layers -size -fps 60 -out`;
-      fixed timestep; frames piped to ffmpeg; WAV from the event track. Unattended, batch mode
-      **with graphics**, refuses to start while an editor has the project open (checks
-      `Temp/UnityLockfile`).
+Branch `feat/replay-player`, worktree `~/Developer/kehai-player`, **stacked on
+`feat/replay-recorder`** (PR #15 wasn't merged when the owner said to continue). Code in
+`Replay/Scripts/` and `Replay/Editor/`, the overlay shader in `Replay/Resources/`. Changes to game
+code: `AikoBody.BuildLook`/`MoodColour` (her look without her body), `FogCloud.Build` (a cloud that
+doesn't time itself out), `ShiftRestart.Reload`, the replay branch in `AikoBootstrap`, **R** on the
+review screen, `ProceduralAudio`'s synth helpers made internal, and the recorder writes a crate
+wall's width, the fog's radius and "the last coffee" as their state.
+
+- [x] **The player** (`ReplayMode`, `ReplayPlayer`, `ReplayStage`, `ReplayPuppets`): opened with
+      `-replay <file.krec>`, **R** on the review screen after a shift, or Kehai → Replay (Open Latest
+      Shift / Open Shift… / Show Recorded Shifts). The store loads as usual; then every game script
+      is switched off (except the one that paints the shelves), and so are the NavMesh agents, the
+      player's controller, the HUD and physics (script mode). The player's camera becomes the
+      replay's. Driven from the recording:
+      - the store's own objects: shelf units (maze moves mapped back), doors, door panels, bins,
+        and the spills, bags and loose items that were there when the shift began (loose ones
+        it didn't start with are hidden);
+      - puppets: Aiko (her own look, eye colour by mood), customers and the understudy (the
+        customer prefab, stripped), items off their shelves (copies of the same product), crate
+        walls, fog (its particles on the replay's clock), CCTV (LED off when dead), coffee,
+        footprints, spills, bags, and your body (`PlayerBodySlot`);
+      - shelf slots and ceiling lights, matched by position.
+      Poses are interpolated. Sounds play in 3D (the game's own procedural sounds; stand-ins for
+      clips from the art folder). Backspace leaves, with the career where it was.
+- [x] **Timeline:** play/pause, drag to scrub, 0.1–4×, frame step, ±5 s, previous/next clip moment,
+      the moments (gold) and markers (ticks: a bug in red, F7 in blue) from `<stem>.markers.json`,
+      **H** hides the HUD, **F1** lists the keys, the narrator and the PA as subtitles, and a note
+      when the mains are off or a breaker has tripped. The keys are in `Controls.cs` and
+      `CONTROLS.md`.
+- [x] **Cameras** (`ReplayCameras`):
+      - POV: recorded, with the eyelids;
+      - CCTV corner: a high corner that can see the subject, cutting to another when it loses sight;
+      - chase; orbit;
+      - top-down: the roof cut away by the near plane;
+      - free fly: right mouse, WASD, Q/E, the scroll wheel for speed, Z/X for field of view.
+
+      The presets are worked out from the recording at t alone, so scrubbing and rendering see
+      the same picture. **Tab** follows Aiko or you; **F** turns on depth of field (URP Bokeh on the
+      subject). **K** adds a keyframe to `<stem>.path.json`; **Shift+K** removes the last. **7** plays
+      the path (`ShotPath`: Hermite positions, squad rotations, still at the ends; schema
+      `shot-path.schema.json`).
+- [x] **Aiko's mind** (`MindLayers`), on its own layer:
+      - belief heat map: her 3 m bins, red to yellow;
+      - her guess: a ring, tighter the surer she is, plus a pin;
+      - view cone: her sight range and field of view, cut by shelves, red while she sees you;
+      - sound rings: as far as each noise carries; you blue, her red, others grey;
+      - thought log: the last three thoughts, two lines each, over everything;
+      - position dots, for the picture-in-picture.
+
+      **M/B/G/V/N/T** toggle them. `-alpha` renders them alone on a transparent background.
+- [x] **Render** (`ReplayRender`, `ReplayRenderBatch`, `tools/marketing/render_shot.sh`):
+
+      `-krec -moment|-from/-to -shot -subject -layers -alpha -dof -size -fps -out -dry-run`
+
+      - fixed timestep (1/fps, `Time.captureFramerate`), 8 warm-up frames;
+      - frames go raw RGBA to ffmpeg: H.264 `.mp4`, VP9 `.webm` (with alpha), or ProRes `.mov`
+        (4444 with alpha). A folder `-out` gets PNGs instead;
+      - the WAV is mixed from the event track as heard at the camera, then muxed in;
+      - a `<out>.json` sidecar (schema `shot.schema.json`).
+
+      The script:
+      - refuses while an editor holds `Temp/UnityLockfile` (exit 3), or when a video is asked for
+        without ffmpeg (exit 3);
+      - takes the heavy-job lock `~/TokenLimit/marketing/state/heavy.lock` (busy: exit 75;
+        `KEHAI_LOCK_WAIT` to wait);
+      - runs Unity in batch mode with graphics under `caffeinate -i`, with a 60-minute timeout;
+      - logs to `~/TokenLimit/marketing/logs/`; `--dry-run` checks everything and renders nothing.
+- [x] Tests: `ReplayPlayerTests` (5: the path through its keys, smooth, saved and loaded; the shot
+      settings; the sound heard where it happened; the WAV) and `ReplayEndToEndTests`. The end-to-end
+      test records 12 s of a bot shift and opens it as a replay. It checks:
+      - the game is switched off;
+      - everyone is within 1 cm of the recording, scrubbing both ways;
+      - every camera is somewhere sensible, and POV is exact;
+      - a path goes through its keys;
+      - with graphics, the store draws and her mind draws alone with alpha;
+      - the shift is audible;
+      - Backspace gives the game back.
+- [x] Verified 2026-09-30:
+      - offline compile: 0 errors, 0 warnings;
+      - **EditMode 76/76** on a clone, with graphics. In the end-to-end test, 209 of the store's
+        own objects were driven and 6 puppets built, and all 3,399 shelf slots and all 240 lights
+        were matched;
+      - a full bot shift (6 min, 33 markers → 16 moments), rendered through `render_shot.sh` on the
+        clone: chase with her mind (1080×1920), POV, CCTV, top-down with her mind, orbit following
+        you with depth of field, her mind alone (PNG with alpha: about half the pixels
+        transparent), and a hand-made 3-key path. I looked at the frames;
+      - each render took about 1–1.5 minutes, including Unity's start. PNG frames at 1080×1920
+        render at about 5/s. The pipe ran at 82 frames/s at 640×360;
+      - the ffmpeg pipe, checked with a stand-in that counted bytes: moment 1 at 60 fps, 1,201 ×
+        640×360×4 = 1,106,841,600 bytes exactly, the mux arguments right and the temp file
+        removed; the same for the transparent WebM;
+      - the refusals: the editor open (a process holding the lockfile) exits 3; the lock busy
+        exits 75; `.mp4` without ffmpeg exits 3. The dry run works.
+- **Not yet verified:**
+  - Real encoding: ffmpeg isn't installed; the owner checklist has `brew install ffmpeg`. The
+    first real `.mp4`/`.webm` render after that confirms the codecs.
+  - The POV eyelids: bot shifts never close them. The bot's blinks feed Aiko's blink sense, not
+    the eyelids on screen, so this needs a shift played with the webcam or **B**.
+  - The interactive player's mouse and keys (scrubbing, free fly): tested only through the same
+    code paths the render uses. This needs a look in the editor.
 - [ ] PR. ✋
 
 ## Phase 5 — Editor (Remotion, `tools/marketing/editor`) ✋
@@ -303,7 +393,7 @@ Nothing here is needed before Phase 5. Put secrets **only** in `tools/marketing/
       `publish.buffer.com/settings/api` → `BUFFER_API_KEY`.
 - [ ] **Google Drive:** `brew install rclone`, then `rclone config` → new remote `gdrive`, type
       `drive`, scope per Q7, sign in in the browser. Create a Drive folder `TokenLimit Marketing`.
-- [ ] **ffmpeg:** `brew install ffmpeg`.
+- [ ] **ffmpeg:** `brew install ffmpeg` (needed now: Phase 4 renders video files through it).
 - [ ] **Node for n8n:** `brew install node@22` (keg-only; your Node 25 stays the default).
 - [ ] *(Later, for weekly_report)* a Google Cloud project with **YouTube Data API v3** enabled and
       an API key (read-only public stats) → `YOUTUBE_API_KEY`, plus your channel id.
@@ -357,6 +447,10 @@ crouch-walk, run and carry animations; a capsule until then (path as proposed, H
 | 2026-09-30 | This plan committed with the Phase 2 PR; before that it was untracked in the main folder | Phase 2 |
 | 2026-09-30 | Clip moments scoring under 5 are dropped unless they hold a manual marker; `manual_good` weighs 10, `manual_bug` 0 | Phase 2 (for review) |
 | 2026-09-30 | A clip moment is at most 45 s; a long marker stretches it at most 20 s; cooldowns for learned, PA, loud mistakes | Phase 2 (for review) |
+| 2026-09-30 | Phase 4 stacked on the open Phase 3 PR: the owner said to continue before #15 was merged | owner ("continue") |
+| 2026-09-30 | The replay drives the store's own objects where the recording matches them, and builds puppets for the rest; the game's scripts are switched off, not removed | Phase 4 (for review) |
+| 2026-09-30 | Shots: H.264 `.mp4`; alpha as VP9 `.webm` (ProRes 4444 `.mov` if asked); a folder gives PNGs; sound as a WAV beside the video, also muxed in | Phase 4 (for review) |
+| 2026-09-30 | Heavy jobs share one lock, `~/TokenLimit/marketing/state/heavy.lock` (a directory holding the owner's pid); a job that finds it held exits 75 | Phase 4 (for review) |
 
 ## Changelog
 
@@ -368,4 +462,6 @@ crouch-walk, run and carry animations; a capsule until then (path as proposed, H
   re-pointed. EditMode at the new path: 37/37 (a first run hit a one-off FMOD audio error in one
   fixture's setup and caught two capitalised name spellings in this plan; both fixed).
 - 2026-09-30 — Phase 2: clip markers built in `feat/clip-markers`; PR #14 merged.
-- 2026-09-30 — Phase 3 started (`feat/replay-recorder`).
+- 2026-09-30 — Phase 3 started (`feat/replay-recorder`); PR #15 opened.
+- 2026-09-30 — Phase 4 built on top of it (`feat/replay-player`): the 3D replay, its cameras and
+  Aiko's mind, and unattended shot renders.

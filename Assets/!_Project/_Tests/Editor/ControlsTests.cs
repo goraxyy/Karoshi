@@ -28,6 +28,7 @@ public class ControlsTests
         { "LeftShift", "Left Shift" }, { "LeftControl", "Left Ctrl" },
         { "Return", "Enter" }, { "KeypadEnter", "Enter" }, { "Escape", "Esc" },
         { "UpArrow", "Up" }, { "DownArrow", "Down" }, { "LeftArrow", "Left" }, { "RightArrow", "Right" },
+        { "Comma", "," }, { "Period", "." }, { "Minus", "-" }, { "Equals", "=" }, { "LeftBracket", "[" }, { "RightBracket", "]" },
     };
 
     [Test]

@@ -47,41 +47,7 @@ namespace Kehai.Aiko
             var root = new GameObject("AIKO_Body");
             root.transform.SetParent(parent, false);
             root.transform.position = at;
-
-            // A tall, narrow, charcoal figure: a store manager seen from the far end of an aisle.
-            var charcoal = new Color(0.16f, 0.16f, 0.18f);
-            GameObject torso = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            torso.name = "Torso";
-            torso.transform.SetParent(root.transform, false);
-            torso.transform.localPosition = new Vector3(0f, 1.05f, 0f);
-            torso.transform.localScale = new Vector3(0.62f, 1.05f, 0.45f);
-            torso.GetComponent<Renderer>().sharedMaterial = AikoProps.Lit(charcoal, 0.55f);
-            Destroy(torso.GetComponent<Collider>());
-
-            GameObject headGo = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            headGo.name = "Head";
-            headGo.transform.SetParent(root.transform, false);
-            headGo.transform.localPosition = new Vector3(0f, 2.18f, 0f);
-            headGo.transform.localScale = new Vector3(0.38f, 0.42f, 0.38f);
-            headGo.GetComponent<Renderer>().sharedMaterial = AikoProps.Lit(new Color(0.22f, 0.22f, 0.24f), 0.7f);
-            Destroy(headGo.GetComponent<Collider>());
-
-            // The badge: a lanyard card, the only friendly thing about her.
-            GameObject badge = AikoProps.Box("Badge", Vector3.zero, new Vector3(0.12f, 0.16f, 0.02f), new Color(0.95f, 0.95f, 0.9f), root.transform, collider: false);
-            badge.transform.localPosition = new Vector3(0.12f, 1.45f, 0.24f);
-
-            // The eye: a visor that glows, and a spot light that shows exactly where she is
-            // looking. Being able to see her gaze is part of being able to beat her.
-            GameObject eye = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            eye.name = "Eye";
-            eye.transform.SetParent(headGo.transform, false);
-            eye.transform.localPosition = new Vector3(0f, 0.05f, 0.42f);
-            eye.transform.localScale = new Vector3(0.7f, 0.12f, 0.1f);
-            Destroy(eye.GetComponent<Collider>());
-
-            var eyeLightGo = new GameObject("Gaze");
-            eyeLightGo.transform.SetParent(root.transform, false);
-            eyeLightGo.transform.localPosition = new Vector3(0f, 2.2f, 0.2f);
+            (Renderer eyeRenderer, Light gaze) = BuildLook(root.transform, config);
 
             var body = root.AddComponent<AikoBody>();
             body.config = config;
@@ -94,16 +60,10 @@ namespace Kehai.Aiko
             body.Agent.speed = config.walkSpeed;
             body.Agent.obstacleAvoidanceType = ObstacleAvoidanceType.MedQualityObstacleAvoidance;
 
-            body.Head = eyeLightGo.transform;
-            body.eyeRenderer = eye.GetComponent<Renderer>();
-            body.eyeLight = eyeLightGo.AddComponent<Light>();
-            body.eyeLight.type = LightType.Spot;
-            body.eyeLight.range = config.sightRange * 0.7f;
-            body.eyeLight.spotAngle = Mathf.Min(90f, config.sightFov * 0.6f);
-            body.eyeLight.intensity = 6f;
-            body.eyeLight.shadows = LightShadows.None;
-
-            body.Sight = eyeLightGo.AddComponent<SightSensor>();
+            body.Head = gaze.transform;
+            body.eyeRenderer = eyeRenderer;
+            body.eyeLight = gaze;
+            body.Sight = gaze.gameObject.AddComponent<SightSensor>();
             body.Sight.range = config.sightRange;
             body.Sight.fieldOfView = config.sightFov;
             body.Sight.ignoreRoot = root.transform;
@@ -135,6 +95,66 @@ namespace Kehai.Aiko
             root.AddComponent<AikoFloorCone>();   // her gaze, painted on the floor
             if (NavMesh.SamplePosition(at, out NavMeshHit hit, 5f, NavMesh.AllAreas)) body.Agent.Warp(hit.position);
             return body;
+        }
+
+        // How she looks, and nothing else: the figure, the badge, the visor and the spot light
+        // of her gaze, under `root`. The game gives it a body (Build); the replay dresses a
+        // puppet in it.
+        public static (Renderer eye, Light gaze) BuildLook(Transform root, AikoConfig config)
+        {
+            // A tall, narrow, charcoal figure: a store manager seen from the far end of an aisle.
+            var charcoal = new Color(0.16f, 0.16f, 0.18f);
+            GameObject torso = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            torso.name = "Torso";
+            torso.transform.SetParent(root, false);
+            torso.transform.localPosition = new Vector3(0f, 1.05f, 0f);
+            torso.transform.localScale = new Vector3(0.62f, 1.05f, 0.45f);
+            torso.GetComponent<Renderer>().sharedMaterial = AikoProps.Lit(charcoal, 0.55f);
+            Destroy(torso.GetComponent<Collider>());
+
+            GameObject headGo = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            headGo.name = "Head";
+            headGo.transform.SetParent(root, false);
+            headGo.transform.localPosition = new Vector3(0f, 2.18f, 0f);
+            headGo.transform.localScale = new Vector3(0.38f, 0.42f, 0.38f);
+            headGo.GetComponent<Renderer>().sharedMaterial = AikoProps.Lit(new Color(0.22f, 0.22f, 0.24f), 0.7f);
+            Destroy(headGo.GetComponent<Collider>());
+
+            // The badge: a lanyard card, the only friendly thing about her.
+            GameObject badge = AikoProps.Box("Badge", Vector3.zero, new Vector3(0.12f, 0.16f, 0.02f), new Color(0.95f, 0.95f, 0.9f), root, collider: false);
+            badge.transform.localPosition = new Vector3(0.12f, 1.45f, 0.24f);
+
+            // The eye: a visor that glows, and a spot light that shows exactly where she is
+            // looking. Being able to see her gaze is part of being able to beat her.
+            GameObject eye = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            eye.name = "Eye";
+            eye.transform.SetParent(headGo.transform, false);
+            eye.transform.localPosition = new Vector3(0f, 0.05f, 0.42f);
+            eye.transform.localScale = new Vector3(0.7f, 0.12f, 0.1f);
+            Destroy(eye.GetComponent<Collider>());
+
+            var gazeGo = new GameObject("Gaze");
+            gazeGo.transform.SetParent(root, false);
+            gazeGo.transform.localPosition = new Vector3(0f, 2.2f, 0.2f);
+            Light gaze = gazeGo.AddComponent<Light>();
+            gaze.type = LightType.Spot;
+            gaze.range = config.sightRange * 0.7f;
+            gaze.spotAngle = Mathf.Min(90f, config.sightFov * 0.6f);
+            gaze.intensity = 6f;
+            gaze.shadows = LightShadows.None;
+            return (eye.GetComponent<Renderer>(), gaze);
+        }
+
+        // Her eye and her light, by mood.
+        public static Color MoodColour(Mood mood)
+        {
+            switch (mood)
+            {
+                case Mood.Alert: return new Color(1f, 0.72f, 0.2f);
+                case Mood.Hunt: return new Color(1f, 0.12f, 0.08f);
+                case Mood.Kind: return new Color(0.55f, 0.9f, 0.65f);
+                default: return new Color(0.85f, 0.9f, 1f);
+            }
         }
 
         // ---- movement -----------------------------------------------------------------
@@ -227,14 +247,7 @@ namespace Kehai.Aiko
         public void SetMood(Mood mood)
         {
             CurrentMood = mood;
-            Color c;
-            switch (mood)
-            {
-                case Mood.Alert: c = new Color(1f, 0.72f, 0.2f); break;
-                case Mood.Hunt: c = new Color(1f, 0.12f, 0.08f); break;
-                case Mood.Kind: c = new Color(0.55f, 0.9f, 0.65f); break;
-                default: c = new Color(0.85f, 0.9f, 1f); break;
-            }
+            Color c = MoodColour(mood);
             if (eyeLight != null) eyeLight.color = c;
             if (eyeRenderer != null) eyeRenderer.sharedMaterial = AikoProps.Emissive(c, mood == Mood.Hunt ? 6f : 3f);
         }

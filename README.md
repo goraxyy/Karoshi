@@ -99,6 +99,12 @@ leaves the computer.
 - **Replay recordings.** Each shift is also recorded for a 3D replay as `<shift>.krec` next to the
   report: everything that moves 30 times a second (the view 60), what was heard and said, the
   lights, the shelves, and her belief map, about 1 MB per 10 minutes (`Replay/Scripts/`).
+- **3D replay.** Press **R** after a shift (or Kehai → Replay in the editor) to watch it again in
+  the store: play, scrub, 0.1–4×, the clip moments on the timeline; your eyes, a CCTV corner, a
+  chase camera, an orbit, top down, or a free camera; **K** saves camera keyframes as a smooth
+  path; her mind drawn in (belief map, her guess, view cone, sound rings, thought log). The keys
+  are in [CONTROLS.md](CONTROLS.md#3d-replay). Shots render unattended with
+  `tools/marketing/render_shot.sh` (the editor closed; ffmpeg for video files).
 
 ## Settings (Esc)
 
@@ -154,10 +160,14 @@ The essentials (the full list is in [`CONTROLS.md`](CONTROLS.md), and in the gam
 With the project closed in the editor (Unity allows one instance per project):
 
 ```bash
-# 70 EditMode tests: AI rules, fairness, Aiko's speed cap, the belief map, shift records, the key list,
-# the save migration from the game's old name, clip markers, and the replay recording (one of them
-# loads the store and plays ten seconds of a bot shift)
+# 76 EditMode tests: AI rules, fairness, Aiko's speed cap, the belief map, shift records, the key list,
+# the save migration from the game's old name, clip markers, the replay recording and the 3D replay
+# (two of them load the store and play a few seconds of a bot shift; without -nographics the
+# replay test also checks what the cameras draw)
 Unity -batchmode -nographics -projectPath . -runTests -testPlatform EditMode -testResults results.xml
+
+# One shot of a recorded shift: clip moment 1, the chase camera, her mind drawn in, vertical
+tools/marketing/render_shot.sh -krec <shift>.krec -moment 1 -shot chase -layers all -size 1080x1920 -out shot.mp4
 
 # One simulated shift against the full Aiko, which also writes a shift report
 Unity -batchmode -nographics -projectPath . -executeMethod EvalBatch.Play \

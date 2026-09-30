@@ -14,6 +14,9 @@ namespace Kehai.Replay
         public const string ResourcePath = "ReplayBody/PlayerBody";
         public const float CrossFadeSeconds = 0.2f;
 
+        // The capsule's colour: the report's blue for "you", toned down to a uniform.
+        static readonly Color Placeholder = new Color(0.36f, 0.62f, 0.74f);
+
         public enum Clip { Idle, Walk, CrouchWalk, Run, Carry }
         const int ClipCount = 5;
 
@@ -43,6 +46,7 @@ namespace Kehai.Replay
                 IsPlaceholder = true;
                 Body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
                 Body.name = "PlayerBody (placeholder)";
+                Body.GetComponent<Renderer>().sharedMaterial = Kehai.Aiko.AikoProps.Lit(Placeholder, 0.35f);
                 Remove(Body.GetComponent<Collider>());
                 Body.transform.SetParent(transform, false);
                 Stand(false);
