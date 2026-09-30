@@ -648,9 +648,13 @@ namespace Kehai.Aiko
 
         // `ofPlan`: a Tell primitive in the running plan, as opposed to a PA chime or the
         // time clock's buzz, which carry their own effects.
+        // Told each time she gives a warning: what, where, and how long before the trick.
+        public event System.Action<TellKind, Vector3, float> Told;
+
         public void RecordTell(TellKind kind, Vector3 at, float lead, bool ofPlan = false)
         {
             FairnessGuard.NoteTell(kind, lead);
+            Told?.Invoke(kind, at, lead);
             if (ofPlan) planTellAt = Time.time;
             if (ShiftActive && kind != TellKind.PaChime && kind != TellKind.Footsteps)
                 AikoNarrator.Say(StoryKind.Warning, $"Warning: {AikoNarrator.Tell(kind)} near {AikoNarrator.Place(at)} — something's about to happen.", at);

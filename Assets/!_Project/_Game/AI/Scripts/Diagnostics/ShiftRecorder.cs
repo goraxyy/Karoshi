@@ -43,6 +43,10 @@ namespace Kehai.Aiko
 
         public static string Folder => Path.Combine(Application.persistentDataPath, "shift_records");
 
+        // The shift's files, without their extensions: named when the shift starts, so the replay
+        // recorder can write <stem>.krec as it goes.
+        public string Stem { get; private set; }
+
         // Every event as it's recorded, and the finished shift just before it's written —
         // for the clip markers, which close what's still open and mark the review.
         public static event System.Action<ShiftEvent> Recorded;
@@ -124,6 +128,7 @@ namespace Kehai.Aiko
                 StartedAt = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm")
             };
             shiftStartedAt = Time.time;
+            Stem = Path.Combine(Folder, $"shift_{Current.ShiftNumber:00}_{System.DateTime.Now:yyyyMMdd_HHmmss}");
             nextFrame = 0f;
             helped.Clear(); served.Clear(); waitWarned.Clear(); lastMark.Clear();
             Add("store", "The shift started.", Vector3.zero, false, "the store");
@@ -145,7 +150,7 @@ namespace Kehai.Aiko
             try
             {
                 Directory.CreateDirectory(Folder);
-                string stem = Path.Combine(Folder, $"shift_{r.ShiftNumber:00}_{System.DateTime.Now:yyyyMMdd_HHmmss}");
+                string stem = Stem;
                 StoreFloorPlan plan = StoreFloorPlan.Current;
                 string json = r.ToJson(plan, LastAnalysis);
                 File.WriteAllText(stem + ".json", json);

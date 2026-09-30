@@ -75,8 +75,18 @@ public class Item : MonoBehaviour
     Collider[] colliders;
     float nextImpactTime;
 
+    // Every item that exists, stowed ones too (the replay recorder follows items off their shelves).
+    static readonly System.Collections.Generic.List<Item> all = new System.Collections.Generic.List<Item>();
+    public static System.Collections.Generic.IReadOnlyList<Item> All => all;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    static void ResetRegistry() => all.Clear();
+
+    void OnDestroy() => all.Remove(this);
+
     void Awake()
     {
+        all.Add(this);
         rb = GetComponent<Rigidbody>();
 
         // Every collider, not just the one on the root. The mop keeps two more on its

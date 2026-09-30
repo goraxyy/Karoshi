@@ -96,6 +96,9 @@ leaves the computer.
   At clock-out, markers close together become scored moments in `<shift>.markers.json` next to
   the report; they show in gold on the F2 timeline and in the report. **F7** marks a moment
   yourself, **Left Shift + F7** marks a bug.
+- **Replay recordings.** Each shift is also recorded for a 3D replay as `<shift>.krec` next to the
+  report: everything that moves 30 times a second (the view 60), what was heard and said, the
+  lights, the shelves, and her belief map, about 1 MB per 10 minutes (`Replay/Scripts/`).
 
 ## Settings (Esc)
 
@@ -151,8 +154,9 @@ The essentials (the full list is in [`CONTROLS.md`](CONTROLS.md), and in the gam
 With the project closed in the editor (Unity allows one instance per project):
 
 ```bash
-# 37 EditMode tests: AI rules, fairness, Aiko's speed cap, the belief map, shift records, the key list,
-# and the save migration from the game's old name
+# 70 EditMode tests: AI rules, fairness, Aiko's speed cap, the belief map, shift records, the key list,
+# the save migration from the game's old name, clip markers, and the replay recording (one of them
+# loads the store and plays ten seconds of a bot shift)
 Unity -batchmode -nographics -projectPath . -runTests -testPlatform EditMode -testResults results.xml
 
 # One simulated shift against the full Aiko, which also writes a shift report

@@ -8,9 +8,9 @@
 
 | | |
 |---|---|
-| **Current phase** | Phase 2 (clip markers): PR open, waiting at ✋ for the owner's review and merge |
-| **Next action** | After the merge: `git -C ~/Developer/Kehai pull --ff-only`, remove the worktree, then Phase 3 |
-| **Blocked on owner** | Review of Phase 2; answers to Q7–Q14 (Q13 is needed for Phase 3); the [owner setup checklist](#owner-setup-checklist) from Phase 5 on |
+| **Current phase** | Phase 3 (replay recorder) in progress — branch `feat/replay-recorder`, worktree `~/Developer/kehai-replay` |
+| **Next action** | Build the recorder, verify (round-trip within 1 cm), open the PR ✋ |
+| **Blocked on owner** | Answers to Q7–Q12 and Q14; the [owner setup checklist](#owner-setup-checklist) from Phase 5 on |
 | **Last updated** | 2026-09-30 |
 
 **How to resume (for a later session).**
@@ -134,24 +134,55 @@ only changes to game code are two events for listeners (`AikoBrain.ShelfSabotage
       with 31 markers → 16 moments (longest 26 s; best: the catch, 20 s, score 54), valid against
       the schema; the HTML report's strip and list work (no console errors); F2 and the F7 tick
       checked in a windowed run (screenshots).
-- [ ] PR. ✋
+- [x] PR #14, merged 2026-09-30 (`bdf7587`). ✋
 
 ## Phase 3 — 3D replay recorder (Unity) ✋
 
-- [ ] `ReplayRecorder`: 30 Hz (player camera 60 Hz); positions quantised (1 mm over the store's
-      bounds → 3×int32, or 16-bit per axis at 2.5 mm), rotations smallest-three compressed;
-      written only on change.
-- [ ] Tracks: player camera (FOV, held item, eyelids), player body, Aiko, customers, Understudies,
-      doors, lights/power, tactic props, spills, bins/bags, items entering/leaving shelf slots.
-- [ ] Event track: spawns, despawns, NoiseBus sounds, tells, PA lines, power, ThoughtLog entries.
-- [ ] Aiko's belief grid at 2 Hz, 3 m cells, bytes, delta + gzip.
-- [ ] Layout: the store is stocked deterministically from code (`StoreLayout`), so record the
-      decision seed and every `MazeMutation` move (bay, from, to).
-- [ ] `<stem>.krec` (gzip), < 20 MB per 10 min.
-- [ ] Player body slot: loads the owner's Blender model from a fixed path (Q13), capsule
-      placeholder until it exists.
-- [ ] Round-trip test: record 10 s of a bot shift, replay, positions within 1 cm.
+Branch `feat/replay-recorder`, worktree `~/Developer/kehai-replay`. Code in
+`Assets/!_Project/_Game/Replay/Scripts/` (namespace `Kehai.Replay`). Only listens; the game
+code gained listen-only hooks: an `Item` registry, `AutoDoubleDoor` panel accessors,
+`AikoBrain.Told`, `MazeMutation.LastMoves`, and `ShiftRecorder.Stem` (the shift's files are now
+named when it starts, so the replay can stream to `<stem>.krec.part` and be renamed at the end).
+
+- [x] `KrecFormat.cs` / `KrecWriter.cs`: one gzip stream of tagged records. Header: the shift,
+      scene, Aiko's seed and rung, the maze's moves, the belief grid (3 m bins of her 1.5 m cells),
+      every shelf slot (position, filled, product) and ceiling light (position, on). Then 30 Hz
+      ticks: spawns, poses as **millimetre deltas** (zigzag varints), rotations as three 16-bit
+      numbers (smallest three), state and visibility — **only what changed**; the view at 60 Hz
+      (position, rotation, FOV, eyelids, what's in hand); events; belief frames XOR'd with the last.
+- [x] `ReplayRecorder.cs`: the player (motion, carrying, holding a tool), the view, Aiko (mood,
+      sees you, chasing), customers (their mark), understudies, hinge doors (locked), auto-door
+      panels, every shelf unit (so relocations and the maze show), crate walls, fog, CCTV cameras
+      (bolted on, dead), coffee cups, footprints, spills, bins (how full), bags (disposed), and every
+      item off its shelf — tools included (the mop, the torch on/off) — loose, in hand, held (Aiko
+      with the mop), or back on a shelf. Events: noises, tells (kind, place, lead), PA chime and speech, mains and
+      breakers, the thought log, the narrator, shelf slots filling and emptying, ceiling lights.
+      Belief map at 2 Hz with her guess and how sure she is.
+- [x] `KrecReader.cs`: reads a file back into timelines; `TryPose` holds a still entity until the
+      tick before it moves (samples are written only on change), `TryCamera`, `BeliefAt`; a file
+      cut short (the game quit) still loads.
+- [x] `PlayerBodySlot.cs`: loads `Resources/ReplayBody/PlayerBody` (see below) and plays its clips
+      through the Playables API; a 1.8 m capsule (lower when crouching) until then.
+- [x] Tests: `KrecTests` (varints, rotations, a written file reads back as written, a still entity
+      doesn't drift, a cut file loads, ten minutes stay under 20 MB, the capsule, clips by name) and
+      `ReplayRoundTripTests` (10 s of a bot shift in the real store; every pose of the player, Aiko
+      and the customers comes back within 1 cm).
+- [x] Verified 2026-09-30: offline compile (0 errors, 0 warnings); **EditMode 70/70** on a clone
+      (the round trip: 389 poses of the player, Aiko and a customer, worst **0.72 mm**, rotations
+      exact, 151 views, 21 belief frames); a full 6-minute bot shift wrote a 380 KB `.krec`
+      (≈0.6 MB per 10 min) that reads back complete in 0.6 s: 252 entities (player, Aiko, 3
+      customers, 14 items incl. the mop, torch, crate and what customers carried, 6 doors, 8 door
+      panels, 189 shelf units, 20 footprints, 5 spills, 3 bins, a bag), 1,013 noises, 35 tells,
+      12 PA events, 3,069 thoughts, 301 narrator lines, 16 slot and 81 light changes, 5,501 views,
+      734 belief frames.
 - [ ] PR. ✋
+
+**Your player model (Q13), when it's ready:** export an FBX to
+`Assets/!_Project/_Game/Replay/Resources/ReplayBody/PlayerBody.fbx` (local art, never
+committed). In its import settings: Rig → **Humanoid**; Animation → one clip each, named so the
+name contains **idle**, **walk**, **crouch** (walking crouched), **run** (or sprint) and **carry**
+(walking with something in hand), each with **Loop Time** on; about 1.8 m tall, facing +Z, feet at
+the origin. No Animator Controller needed. A missing clip falls back to walk or idle.
 
 ## Phase 4 — Replay player, cameras, shot render (Unity) ✋
 
@@ -286,7 +317,8 @@ Nothing here is needed before Phase 5. Put secrets **only** in `tools/marketing/
 ending keeps 過労死 with **BURNED OUT** under it · Q3 settings migrated on macOS · Q4 the pitch
 rewrites, and Aiko's name meaning is **never explained** · Q5 folders renamed and the project moved
 out of `~/Desktop` · Q6 repo renamed `goraxyy/Kehai` · Q15 the migration and its test are the only
-code that names the old game.
+code that names the old game. **2026-09-30:** Q13 the player body will have idle, walk,
+crouch-walk, run and carry animations; a capsule until then (path as proposed, Humanoid rig).
 
 **Open** (each has a recommendation; answer "ok" to take it):
 
@@ -309,10 +341,6 @@ code that names the old game.
 12. **Retention and budget** as proposed above (10 GB working, 3 GB free floor)? The tools
     themselves (n8n, Remotion + its Chrome, ffmpeg, Python venv, node@22, rclone) take roughly
     2–3 GB, leaving ~14 GB free before any media.
-13. **Player body model** (needed for Phase 3): fixed path
-    `Assets/!_Project/_Game/Replay/Resources/ReplayBody/PlayerBody.fbx` (local-only, never
-    committed)? Humanoid rig? Which animations will it have (idle, walk, crouch-walk, run, carry)?
-    Until then a capsule stands in.
 14. **Posting times** for Mon/Wed/Fri: set in Buffer's queue (EDT). Any preference?
 
 ---
@@ -339,4 +367,5 @@ code that names the old game.
   `~/Developer/Kehai`, the Desktop folders renamed, Unity Hub (its `hub.db`) and Claude's memory
   re-pointed. EditMode at the new path: 37/37 (a first run hit a one-off FMOD audio error in one
   fixture's setup and caught two capitalised name spellings in this plan; both fixed).
-- 2026-09-30 — Phase 2: clip markers built in `feat/clip-markers`.
+- 2026-09-30 — Phase 2: clip markers built in `feat/clip-markers`; PR #14 merged.
+- 2026-09-30 — Phase 3 started (`feat/replay-recorder`).

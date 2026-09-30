@@ -55,6 +55,7 @@ namespace Kehai.Aiko
             KeepBelowSprint(brain.config);
             root.AddComponent<ShiftRecorder>();
             root.AddComponent<ClipMarkerRecorder>();
+            root.AddComponent<Kehai.Replay.ReplayRecorder>();
             root.AddComponent<AikoDebugOverlay>();
             root.AddComponent<ReviewScreen>();
             root.AddComponent<Kehai.Blink.BlinkTracker>();
