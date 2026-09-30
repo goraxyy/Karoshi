@@ -91,6 +91,11 @@ leaves the computer.
   saved as JSON plus a self-contained HTML report: a replay with a timeline, a clickable event
   list, and an analysis (jobs, time per area, when and where she spotted you, the closest she got,
   what she tried most).
+- **Clip moments.** While you play, the shift is watched for moments worth a clip (a blink move,
+  a catch, a near miss, a blackout, a warning and its trick…), weighted in `ClipMarkers.cs`.
+  At clock-out, markers close together become scored moments in `<shift>.markers.json` next to
+  the report; they show in gold on the F2 timeline and in the report. **F7** marks a moment
+  yourself, **Left Shift + F7** marks a bug.
 
 ## Settings (Esc)
 
@@ -139,6 +144,7 @@ The essentials (the full list is in [`CONTROLS.md`](CONTROLS.md), and in the gam
 | Esc | Settings: restart the shift, volume by kind of sound, mouse, Aiko's floor cone, webcam |
 | F1 / F2 | Live map / replay |
 | F8 / F9 / F10 / B | Webcam blink on-off / calibrate / test panel / keyboard blink |
+| F7 / Left Shift + F7 | Mark a clip moment / mark a bug |
 
 ## Running the tests and the evaluation headless
 

@@ -886,7 +886,14 @@ namespace Kehai.Aiko
             return false;
         }
 
-        public void MarkSabotaged(ShelfUnit unit) => sabotaged.Add(unit);
+        // Told when she has emptied a shelf on purpose (the clip markers listen for it).
+        public event System.Action<ShelfUnit> ShelfSabotaged;
+
+        public void MarkSabotaged(ShelfUnit unit)
+        {
+            sabotaged.Add(unit);
+            ShelfSabotaged?.Invoke(unit);
+        }
 
         void OnRestocked(ShelfUnit unit, int filled)
         {

@@ -79,6 +79,11 @@ namespace Kehai.Aiko
         public readonly List<ShiftEvent> Events = new List<ShiftEvent>();
         public readonly Dictionary<int, string> CustomerWants = new Dictionary<int, string>();
 
+        // Moments worth a clip: markers as they happen, the chases, and at the end the moments.
+        public readonly List<ClipMarker> Markers = new List<ClipMarker>();
+        public readonly List<Vector2> ChaseSpans = new List<Vector2>();     // start, end
+        public List<ClipMoment> Moments;
+
         public ShiftFrame At(float t)
         {
             if (Frames.Count == 0) return null;
@@ -293,7 +298,11 @@ namespace Kehai.Aiko
                 if (!string.IsNullOrEmpty(e.Text)) sb.Append(",\"s\":\"").Append(MiniJson.EscapeInner(e.Text)).Append('"');
                 sb.Append('}');
             }
-            sb.Append("]}");
+            sb.Append("],\"markers\":");
+            ClipMoments.WriteMarkers(sb, Markers);
+            sb.Append(",\"moments\":");
+            ClipMoments.WriteMoments(sb, Moments);
+            sb.Append('}');
             return sb.ToString();
         }
 

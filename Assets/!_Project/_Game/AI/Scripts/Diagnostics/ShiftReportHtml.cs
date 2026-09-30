@@ -1,8 +1,9 @@
 namespace Kehai.Aiko
 {
     // The shift report: one self-contained HTML file (no internet needed) with the store's
-    // floor plan, a replay of the whole shift with a timeline, a clickable list of what
-    // happened, and the analysis. Same shapes and colours as the in-game F1 map.
+    // floor plan, a replay of the whole shift with a timeline, the moments worth a clip, a
+    // clickable list of what happened, and the analysis. Same shapes and colours as the
+    // in-game F1 map.
     public static class ShiftReportHtml
     {
         public static string Build(string json, int shift) =>
@@ -48,6 +49,15 @@ input[type=range]{flex:1;min-width:160px}
 .bars div{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:14px}
 .bars .bar{height:10px;background:var(--you);border-radius:5px}
 .grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.mbar{position:relative;height:20px;margin-top:10px;background:#1c2029;border:1px solid var(--line);border-radius:6px;cursor:pointer;overflow:hidden}
+.mbar b{position:absolute;top:0;bottom:0;background:#ffd64038}
+.mbar i{position:absolute;top:3px;bottom:3px;width:3px;border-radius:2px}
+.mbar u{position:absolute;top:0;bottom:0;width:2px;background:#fff;left:0}
+#moments{max-height:260px;overflow:auto;margin-bottom:14px}
+.moment{padding:6px 8px;border-radius:6px;cursor:pointer;font-size:15px}
+.moment:hover{background:#20242e}
+.moment .sc{color:var(--guess);font-weight:600;margin-right:10px;font-variant-numeric:tabular-nums}
+.moment .ids{color:var(--dim);font-size:13px}
 </style></head><body>
 <header><h1 id='title'></h1><div class='sub' id='subtitle'></div><div class='cards' id='cards'></div></header>
 <main>
@@ -59,6 +69,7 @@ input[type=range]{flex:1;min-width:160px}
    <input id='slider' type='range' min='0' max='1000' value='0'>
    <span class='time' id='time'></span>
   </div>
+  <div class='mbar' id='mbar' title='Clip moments (gold) and the markers that made them: click to jump'><u id='mcur'></u></div>
   <div class='layers'>
    <label><input type='checkbox' id='lCone' checked> __ANTAGONIST__'s view</label>
    <label><input type='checkbox' id='lGuess' checked> Her guess</label>
@@ -71,6 +82,8 @@ input[type=range]{flex:1;min-width:160px}
   <div class='legend' id='legend'></div>
  </section>
  <section class='box'>
+  <h2>Clip moments</h2>
+  <div id='moments'></div>
   <h2>What happened</h2>
   <div class='filters' id='filters'></div>
   <div id='events'></div>
@@ -175,6 +188,7 @@ function draw(){
   label(ux+ur*1.2,uy,f[5]?'You (lectured)':'You',COL.you,fs);
   $('time').textContent = fmt(T)+' / '+fmt(END);
   $('slider').value = END? Math.round(1000*T/END) : 0;
+  $('mcur').style.left = (END ? 100*T/END : 0)+'%';
   highlightEvents();
 }
 
@@ -198,6 +212,25 @@ function renderEvents(){ const box=$('events'); box.innerHTML=''; rows=[];
     d.lastChild.textContent = e.s || ''; d.onclick=()=>{ T=Math.max(0,e.t-1.5); playing=false; $('play').textContent='Play'; draw(); };
     box.appendChild(d); rows.push([e.t,d]); } }
 function highlightEvents(){ let cur=null; for (const [t,d] of rows){ d.classList.remove('now'); if (t<=T) cur=d; } if (cur) cur.classList.add('now'); }
+
+// Clip moments: gold stretches on the strip, the markers that made them as ticks, and the list
+const MK = D.markers || [], MO = D.moments || [];
+function seek(t){ T=Math.max(0,Math.min(END,t)); playing=false; $('play').textContent='Play'; draw(); }
+if (END){
+  const bar=$('mbar');
+  for (const m of MO){ const b=document.createElement('b'); b.style.left=(100*m.start/END)+'%'; b.style.width=Math.max(0.3,100*(m.end-m.start)/END)+'%'; b.title=fmt(m.start)+'–'+fmt(m.end)+' · score '+Math.round(m.score); bar.appendChild(b); }
+  for (const k of MK){ const i=document.createElement('i'); const w=Math.min(1,(k.weight||0)/10);
+    i.style.left='calc('+(100*k.t/END)+'% - 1px)'; i.style.background = k.id==='manual_bug' ? COL.aiko : 'rgba(255,214,64,'+(0.35+0.65*w)+')';
+    i.title=fmt(k.t)+' · '+k.id+(k.text?' — '+k.text:''); bar.appendChild(i); }
+  bar.onclick = e=>{ const r=bar.getBoundingClientRect(); seek(END*(e.clientX-r.left)/r.width); };
+}
+if (!MO.length) $('moments').innerHTML='<div class=sub>No clip moments in this shift yet.</div>';
+for (const m of MO.slice(0,20)){ const d=document.createElement('div'); d.className='moment';
+  d.innerHTML='<span class=sc></span><span></span><div class=ids></div>';
+  d.children[0].textContent = Math.round(m.score) + (m.kept ? ' ★' : '');
+  d.children[1].textContent = fmt(m.start)+'–'+fmt(m.end)+'  '+((m.captionSeed && m.captionSeed[0]) || '');
+  d.children[2].textContent = [...new Set(m.markers.map(x=>x.id))].join(' · ') + (m.tags && m.tags.length ? '  —  '+m.tags.join(', ') : '');
+  d.onclick=()=>seek(m.start); $('moments').appendChild(d); }
 
 // Legend
 [['You',COL.you],['__ANTAGONIST__ (with her view cone)',COL.aiko],['Her guess of where you are',COL.guess],['Customer shopping',COL.shop],['Heading to the till',COL.till],['Waiting at the till (seconds)',COL.wait],['Wants directions (line to the shelf)',COL.ask],['Following you',COL.follow],['__ANTAGONIST__\'s puppet',COL.puppet],['Your noise (the ring shows how far it carried)',COL.you],['__ANTAGONIST__\'s noise',COL.aiko],['A customer\'s noise',COL.other],['The store\'s noise (doors, machines)',COL.store],['Warning — a trick is coming',COL.warn],['Spill',COL.spill],['Empty shelf',COL.empty]]

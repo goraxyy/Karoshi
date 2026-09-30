@@ -61,6 +61,9 @@ public static class Controls
             K("Enter", "Continue"),
             K("O", "Open the shift report in your browser"),
             K("Q", "Hand in your notice (from shift 5)")),
+        new Section("Clips",
+            K("F7", "Mark this moment for a clip; a tick shows for a second"),
+            K("Left Shift + F7", "Mark a bug at this moment")),
         new Section("For testing",
             K("L", "Cut the power to the whole store")),
     };

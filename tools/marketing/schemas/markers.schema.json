@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/goraxyy/Kehai/tools/marketing/schemas/markers.schema.json",
+  "title": "Kehai shift clip markers",
+  "description": "<stem>.markers.json, written next to each shift record at clock-out by ShiftRecorder (ClipMoments.FileJson). Times are seconds into the shift; x/y are floor-plan metres.",
+  "type": "object",
+  "required": ["version", "game", "stem", "shift", "started", "length", "clockedOut", "rung", "markers", "moments"],
+  "properties": {
+    "version": { "const": 1 },
+    "game": { "type": "string" },
+    "stem": { "type": "string", "description": "The shift record's file name without extension, e.g. shift_03_20260930_101500." },
+    "shift": { "type": "integer", "minimum": 0 },
+    "started": { "type": "string", "description": "Wall-clock start, yyyy-MM-dd HH:mm." },
+    "length": { "type": "number", "minimum": 0 },
+    "clockedOut": { "type": "boolean" },
+    "rung": { "type": "string", "description": "Aiko's ablation rung for the shift (F is the full game)." },
+    "markers": {
+      "type": "array",
+      "description": "Every marker, in the order it happened.",
+      "items": { "$ref": "#/$defs/marker" }
+    },
+    "moments": {
+      "type": "array",
+      "description": "Markers no more than 8 s apart merged into moments of at most 45 s (a long marker stretches its moment by at most 20 s), best first.",
+      "items": { "$ref": "#/$defs/moment" }
+    }
+  },
+  "$defs": {
+    "markerId": {
+      "enum": [
+        "blink_move", "catch", "near_miss", "escape", "found_blind", "blackout", "possessed", "learned",
+        "undone_work", "pa_call", "prop_trick", "clock_refused", "loud_mistake", "tell_then_trick",
+        "shift_review", "aiko_stuck", "customer_chaos", "manual_good", "manual_bug"
+      ]
+    },
+    "marker": {
+      "type": "object",
+      "required": ["id", "t", "end", "weight"],
+      "properties": {
+        "id": { "$ref": "#/$defs/markerId" },
+        "t": { "type": "number", "minimum": 0 },
+        "end": { "type": "number", "minimum": 0, "description": "Later than t for markers that last (a blackout, a warning and its trick, an escape)." },
+        "weight": { "type": "integer", "minimum": 0 },
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "value": { "type": "number", "description": "e.g. a blackout's seconds, a chase's length, seconds between your work and her undoing it." },
+        "text": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "moment": {
+      "type": "object",
+      "required": ["rank", "start", "end", "score", "chase", "kept", "markers", "subjects", "tags", "captionSeed"],
+      "properties": {
+        "rank": { "type": "integer", "minimum": 1 },
+        "start": { "type": "number", "minimum": 0 },
+        "end": { "type": "number", "minimum": 0 },
+        "score": { "type": "number", "minimum": 0, "description": "Sum of the markers' weights, times 1.5 with a chase or a catch." },
+        "chase": { "type": "boolean" },
+        "kept": { "type": "boolean", "description": "Contains a manual marker (F7 / Left Shift + F7): always kept." },
+        "markers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "t"],
+            "properties": { "id": { "$ref": "#/$defs/markerId" }, "t": { "type": "number" } },
+            "additionalProperties": false
+          }
+        },
+        "subjects": { "type": "array", "items": { "enum": ["aiko", "player", "customer", "store"] } },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "captionSeed": { "type": "array", "items": { "type": "string" }, "description": "The narrator's lines inside the moment, in order." }
+      },
+      "additionalProperties": false
+    }
+  }
+}
