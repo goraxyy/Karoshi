@@ -36,3 +36,9 @@ def now() -> dt.datetime:
 
 def day_name(when: dt.date) -> str:
     return DAYS[when.weekday()]
+
+
+def on_or_after(when: dt.date, day: str) -> bool:
+    """`when` is `day` or later in its (Monday-first) week: a pick day the Mac slept through
+    still gets its picks on the next run that week."""
+    return when.weekday() >= DAYS.index(day)

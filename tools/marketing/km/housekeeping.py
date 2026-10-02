@@ -157,8 +157,9 @@ class Keeper:
             stem, when = stem_key
             if older(when, r["krec_days"], self.today):
                 self.remove(moments.records() / f"{stem}.krec", f"archived {when[:10]}")
-        for log in [*self.root.glob("logs/jobs/*.log"), *self.root.glob("logs/render_*.log"),
-                    *self.root.glob("logs/llm_requests/*.json"), *self.root.glob("logs/buffer_requests/*.json")]:
+        for log in [*self.root.glob("logs/jobs/*.log"), *self.root.glob("logs/scheduled/*.log"),
+                    *self.root.glob("logs/render_*.log"), *self.root.glob("logs/llm_requests/*.json"),
+                    *self.root.glob("logs/buffer_requests/*.json")]:
             if dt.datetime.fromtimestamp(log.stat().st_mtime) <= self.today - dt.timedelta(days=r["logs_days"]):
                 self.remove(log, f"older than {r['logs_days']} days")
 

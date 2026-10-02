@@ -8,8 +8,8 @@
 
 | | |
 |---|---|
-| **Current phase** | Phase 7 (n8n) built and verified end to end without keys — branch `feat/n8n`, worktree `~/Developer/kehai-n8n`, stacked on Phase 6 (PR #18). All seven phases are built ✋ |
-| **Next action** | Owner: merge #15 → #16 → #17 → #18 → the Phase 7 PR; then the keys and accounts (checklist) and `tools/marketing/n8n/setup.sh --launch-agent` from `~/Developer/Kehai`; set `KEHAI_DRY_RUN=0` in `~/TokenLimit/n8n/env` |
+| **Current phase** | Phase 7 (n8n) built and verified end to end without keys — branch `feat/n8n`, worktree `~/Developer/kehai-n8n`, stacked on Phase 6 (PR #18), PR #19. All seven phases are built ✋. The schedule runs from launchd (owner, 2026-10-02), installed from the worktree, in dry runs |
+| **Next action** | Owner: merge #15 → #16 → #17 → #18 → #19; fill `tools/marketing/.env` (the checklist, step by step; the file is already there, in `~/Developer/Kehai`). Then Claude: `tools/marketing/n8n/setup.sh` from `~/Developer/Kehai` (it keeps launchd), remove the worktrees, the Telegram chat id, the voice samples, one trial short; then `KEHAI_DRY_RUN=0` in `~/TokenLimit/n8n/env` |
 | **Blocked on owner** | The keys and accounts (Anthropic, Azure, Telegram bot, Buffer, a public host for Q8, rclone/Drive); answers to Q8–Q10, Q12, Q14 and Q16 |
 | **Last updated** | 2026-10-02 |
 
@@ -539,15 +539,27 @@ told once). `tools/marketing/README.md` and `n8n/README.md` explain it.
       → **a draft short in Telegram** (the outbox) → ✏️ and a note → work revised it → v2 → ✅ →
       publish (Friday) sent it to post by hand → "Posted ✅" on four platforms → 🎉; housekeeping
       and the weekly report ran. Sample: `drafts/sample-blink.{en,ru}.mp4`.
-- **Not verified yet:** a real Telegram bot, Buffer, R2 and Drive (no accounts yet), the
-  LaunchAgent (not installed: n8n isn't running), and a real Claude or Azure answer.
-- [ ] PR. ✋
+- [x] **The schedule from launchd** (the owner chose it over n8n staying up, 2026-10-02: the Mac
+      is an 8 GB MacBook that sleeps after a minute on battery, and n8n takes ~400 MB and misses
+      whatever it sleeps through). `n8n/launchd.py` turns each workflow's Schedule node into a
+      LaunchAgent (`com.tokenlimit.kehai.job.<job>` → `job.sh <job>`), so the times still live in
+      one place; a calendar time slept through runs once on wake; the quick jobs run at background
+      priority; `job.sh` logs to `logs/scheduled/<date>.log` only when a run says something, and
+      reads `KEHAI_DRY_RUN` on every run. `setup.sh --launchd` installs them and leaves n8n's
+      workflows unpublished (n8n for looking and "Run now"); the choice is `KEHAI_SCHEDULER`, kept
+      on later runs. The pick also happens on the first run after `pick_day` that week, for a
+      Saturday slept through. Cloudflare R2 needs no rclone setup: rclone reads the
+      `RCLONE_CONFIG_R2_*` lines in `.env`. Tests: **151**. Installed 2026-10-02 from the
+      worktree; the first launchd Telegram run exited 0.
+- **Not verified yet:** a real Telegram bot, Buffer, R2 and Drive (no accounts yet), a night of
+  launchd runs across sleep and wake, and a real Claude or Azure answer.
+- [x] PR #19, opened 2026-10-02 (not merged yet). ✋
 
 ## Architecture
 
 ```
 Unity (C#)                           tools/marketing (Python 3.12 via uv)             Remotion (TS)
- ShiftRecorder ─► <stem>.json/.html   run_job.py ◄── n8n (node@24, 127.0.0.1) schedules  editor/
+ ShiftRecorder ─► <stem>.json/.html   run_job.py ◄── launchd (or n8n) schedules            editor/
  ClipMarkers   ─► <stem>.markers.json  produce · telegram · work · publish ·              edit.json ─► mp4
  ReplayRecorder─► <stem>.krec          housekeeping · report · long                        brand.json
  ReplayRender  ◄─ render_shot.sh ◄──── render_picks.py
@@ -574,33 +586,70 @@ TTS audio: kept with its draft · logs: 90 days.
 
 ## Owner setup checklist
 
-Put secrets **only** in `tools/marketing/.env` (copy `tools/marketing/.env.example`; gitignored)
-or in n8n's credential store. Phase 6's steps are waiting on the first two.
+Secrets go **only** in `tools/marketing/.env`: it's already made, in `~/Developer/Kehai` (from
+`.env.example`, readable only by you, ignored by git), and the worktree links to it. Open it with
+`open -e ~/Developer/Kehai/tools/marketing/.env`, paste each value after its `=` (no quotes, no
+spaces), save. Never paste a key into a chat. An empty value counts as not set.
 
-- [ ] **Anthropic API** (console.anthropic.com): create a workspace (e.g. `tokenlimit-marketing`),
-      set its **monthly spend limit to $15**, create an API key in it → `ANTHROPIC_API_KEY`.
-- [ ] **Azure Speech, free tier F0** (portal.azure.com): create a *Speech* resource, pricing tier
-      **Free F0** (one per subscription; ~0.5M neural characters a month), region e.g. East US or
-      West Europe → `AZURE_SPEECH_KEY`, `AZURE_SPEECH_REGION`.
-- [ ] **Telegram bot:** in Telegram, @BotFather → `/newbot` → token → `TELEGRAM_BOT_TOKEN`. Then send
-      `/start` to your bot so Claude can read your chat id (`TELEGRAM_CHAT_ID`). Don't set a webhook.
-- [ ] **Buffer:** account; connect **YouTube**, **Instagram** (a professional account: Business or
-      Creator) and **X or Bluesky** (Free plan = 3 channels, Q9); set the posting schedule to
-      Mon/Wed/Fri at your preferred times (EDT); create an API key at
-      `publish.buffer.com/settings/api` → `BUFFER_API_KEY`.
-- [ ] **Google Drive:** `brew install rclone`, then `rclone config` → new remote `gdrive`, type
-      `drive`, scope per Q7, sign in in the browser. Create a Drive folder `TokenLimit Marketing`.
+- [ ] **1. Claude API** → `ANTHROPIC_API_KEY`
+      1. https://platform.claude.com: sign in, or create an account.
+      2. Settings → Billing (https://platform.claude.com/settings/billing): add a card and buy
+         credits (about $10–15 covers a month; leave auto-reload off).
+      3. Settings → Workspaces (https://platform.claude.com/settings/workspaces) → create
+         `tokenlimit-marketing` → open it → **Limits** → Change Limit → **$15** a month.
+      4. Settings → API keys (https://platform.claude.com/settings/keys) → Create key: name
+         `kehai-pipeline`, workspace `tokenlimit-marketing`, linked to you, the longest expiration
+         offered. Copy it (`sk-ant-…`, shown once).
+- [ ] **2. Azure Speech, free tier** → `AZURE_SPEECH_KEY`, `AZURE_SPEECH_REGION`
+      1. An Azure account: https://azure.microsoft.com/pricing/purchase-options/azure-account
+         ("Try Azure for free"; it asks for a phone and a card to check who you are).
+      2. https://portal.azure.com/#create/Microsoft.CognitiveServicesSpeechServices: your
+         subscription; resource group: Create new → `kehai`; region **East US**; a name such as
+         `kehai-speech-1` (it must be unique); pricing tier **Free F0**; Review + create → Create.
+      3. Go to resource → **Keys and Endpoint**: KEY 1 → `AZURE_SPEECH_KEY`; Location/Region
+         (`eastus`) → `AZURE_SPEECH_REGION`.
+      4. When Azure asks (after 30 days) to move to pay-as-you-go to keep the subscription, accept:
+         F0 stays free (0.5M characters a month; it stops at the quota rather than charging).
+- [ ] **3. Telegram bot** → `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`
+      1. https://t.me/BotFather → `/newbot` → a name (e.g. *Kehai Studio*) → a username ending in
+         `bot`. Copy the token it gives.
+      2. Open your bot (BotFather's link) → **Start**.
+      3. Claude runs `uv run run_job.py telegram-setup` (or you, in `tools/marketing`): it prints
+         `TELEGRAM_CHAT_ID=…` for your chat. Don't set a webhook.
+- [ ] **4. Buffer** → `BUFFER_API_KEY`
+      1. https://buffer.com: the Free plan.
+      2. Connect **YouTube**, **Instagram** (a Business or Creator account: Instagram app →
+         Settings → Account type and tools) and **X or Bluesky** (Free plan = 3 channels, Q9).
+      3. Each channel's posting schedule: Mon/Wed/Fri at your times, EDT (Q14).
+      4. https://publish.buffer.com/settings/api → create a key.
+- [ ] **5. The public host for Buffer** (Q8, Cloudflare R2) → `KEHAI_PUBLIC_URL`, `RCLONE_CONFIG_R2_*`
+      1. https://dash.cloudflare.com/sign-up, then **R2 Object Storage** (it may ask for a payment
+         method; free up to 10 GB stored, downloads free).
+      2. Create bucket **`kehai-public`** (location automatic).
+      3. The bucket → Settings → **Public Development URL** → Enable → type `allow` → copy the
+         `https://pub-….r2.dev` address → `KEHAI_PUBLIC_URL`.
+      4. R2 Object Storage → API Tokens → **Manage** → Create Account API token: permission
+         **Object Read & Write**, only the `kehai-public` bucket → Create. Access Key ID →
+         `RCLONE_CONFIG_R2_ACCESS_KEY_ID`; Secret Access Key → `RCLONE_CONFIG_R2_SECRET_ACCESS_KEY`
+         (shown once); the S3 endpoint `https://<account id>.r2.cloudflarestorage.com` →
+         `RCLONE_CONFIG_R2_ENDPOINT`. Nothing to set up in rclone: it reads these lines.
+- [ ] **6. Google Drive archive** (Q7; a sign-in, no key)
+      1. `brew install rclone` (5 needs it too).
+      2. `rclone config create gdrive drive scope=drive.file` → the browser opens → sign in with the
+         Google account for the archive → Allow.
+      3. Don't make the `TokenLimit Marketing` folder yourself: with `drive.file` rclone only sees
+         what it made, so it makes the folder on the first archive.
 - [x] **ffmpeg:** not needed. `npm install` in `tools/marketing/editor` brings Remotion's own, and
       `render_shot.sh` uses it (Phase 5). `brew install ffmpeg` still works if you want it anyway.
 - [x] **Node for n8n:** `node@24` installed 2026-10-02 (keg-only; Node 25 stays the default), and
       n8n with it (`tools/marketing/n8n/setup.sh`).
-- [ ] **A public host for Buffer** (Q8): a Cloudflare account and an R2 bucket with public access,
-      added to rclone (`rclone config` → new remote `r2`, type s3, provider Cloudflare) →
-      `KEHAI_PUBLIC_REMOTE=r2:<bucket>` and `KEHAI_PUBLIC_URL=https://pub-….r2.dev`.
-- [ ] **n8n's owner account:** the first visit to http://127.0.0.1:5678 asks for one (local only).
+- [x] **n8n's owner account** (local only), made 2026-10-02.
 - [ ] *(Later, for weekly_report)* a Google Cloud project with **YouTube Data API v3** enabled and
       an API key (read-only public stats) → `YOUTUBE_API_KEY`, plus your channel id.
 - [ ] *(Optional)* ElevenLabs API key → `ELEVENLABS_API_KEY`, if you want that backend.
+
+Then Claude checks each key with a dry run, makes the voice samples (Q10) and one trial short,
+and sets `KEHAI_DRY_RUN=0` in `~/TokenLimit/n8n/env`.
 
 ---
 
@@ -640,8 +689,8 @@ handles and links still to come).
     `#4dd2ff` you, `#ffd640` her guess); fonts **Inter** (Latin + Cyrillic) and **Noto Sans JP**
     for 気配/愛子. Handle: is `@kehaigame` free where you want it? (You check; Claude can't sign up.)
 12. **Retention and budget** as proposed above (10 GB working, 3 GB free floor)? The tools
-    themselves (n8n, Remotion + its Chrome, ffmpeg, Python venv, node@22, rclone) take roughly
-    2–3 GB, leaving ~14 GB free before any media.
+    themselves (Remotion + its Chrome, ffmpeg, Python venv, rclone) take roughly 1 GB, and n8n
+    with node@24 another 2.6 GB; the disk had ~43 GB free on 2026-10-02.
 14. **Posting times** for Mon/Wed/Fri: set in Buffer's queue (EDT). Any preference?
 16. **The Russian versions.** Every short is made in English and Russian, but Buffer's channels
     get one language. *Recommend:* English to Buffer for now (`posting.languages`), the Russian
@@ -676,6 +725,7 @@ handles and links still to come).
 | 2026-10-02 | Phase 7 built without keys (owner: "go to phase 7 without them"); node@24 and n8n installed with the owner's OK | owner |
 | 2026-10-02 | n8n only schedules: every decision is in run_job.py; posting falls back to Telegram by hand while Buffer isn't ready | Phase 7 (for review) |
 | 2026-10-02 | Picks on Saturday's 1 a.m. run, so the weekend is for approving; retention only reports until Q12 is answered | Phase 7 (for review) |
+| 2026-10-02 | The schedule runs from launchd, not a running n8n; n8n stays installed for looking and "Run now" | owner ("build option B") |
 | 2026-09-30 | Heavy jobs share one lock, `~/TokenLimit/marketing/state/heavy.lock` (a directory holding the owner's pid); a job that finds it held exits 75 | Phase 4 (for review) |
 
 ## Changelog
@@ -698,3 +748,6 @@ handles and links still to come).
 - 2026-10-02 — Phase 6 PR #18 opened. Phase 7 built (`feat/n8n`): run_job.py, pipeline.json and its
   state, Telegram approvals, posting, housekeeping, the long video's gates, n8n with 7 workflows;
   verified end to end through n8n from a bot shift to a posted short.
+- 2026-10-02 — PR #19 opened. The owner made n8n's account, then chose launchd for the schedule
+  (`n8n/launchd.py`, `setup.sh --launchd`, installed); `.env` made in `~/Developer/Kehai` for the
+  keys, with step-by-step links in the checklist.

@@ -16,7 +16,7 @@
       "additionalProperties": false,
       "properties": {
         "shorts_per_week": { "type": "integer", "minimum": 1, "maximum": 7 },
-        "pick_day": { "$ref": "#/$defs/day", "description": "The day (its 1 a.m. run) the shorts are picked from the last 7 days' shifts, to be approved over the weekend and posted on the next posting days." },
+        "pick_day": { "$ref": "#/$defs/day", "description": "The day (its 1 a.m. run, or the first run after it that week if the Mac slept through it) the shorts are picked from the last 7 days' shifts, to be approved over the weekend and posted on the next posting days." },
         "min_moments": { "type": "integer", "minimum": 1, "description": "Fewer moments than this in the week: no picks, and the owner is told." },
         "retries": { "type": "integer", "minimum": 0, "maximum": 10, "description": "Times a failed step is tried again (on later runs) before it waits for the owner." }
       }

@@ -35,13 +35,13 @@ Every path above is in the working folder, `~/TokenLimit/marketing` (or `KEHAI_M
 
 ## Running it on its own (`run_job.py`, Phase 7)
 
-n8n starts `run_job.py` jobs on a schedule ([`n8n/README.md`](n8n/README.md)); each job works out
-what to do from the state in `state/pipeline.db` and the files on disk, so a run that stopped
-carries on where it was.
+macOS's launchd (or n8n, if you'd rather keep it running) starts `run_job.py` jobs on a schedule
+([`n8n/README.md`](n8n/README.md)); each job works out what to do from the state in
+`state/pipeline.db` and the files on disk, so a run that stopped carries on where it was.
 
-- **produce** (nightly): announces new shifts in Telegram; on `pick_day` picks the week's shorts;
-  takes each short along its steps (shots → write → translate → voice → render → package) and
-  sends it for approval. A step that fails is tried again on later runs; one blocked by a missing
+- **produce** (nightly): announces new shifts in Telegram; on `pick_day` (or the first run after it
+  that week, if the Mac slept through it) picks the week's shorts; takes each short along its steps
+  (shots → write → translate → voice → render → package) and sends it for approval. A step that fails is tried again on later runs; one blocked by a missing
   key or the monthly cap waits, and the owner hears once a day.
 - **telegram** (every minute): the owner's ✅ ❌ ✏️ 🇷🇺 ↩️ and replies. ✏️ asks what to change;
   the reply becomes a `revise` job. Only the owner's chat is listened to.
