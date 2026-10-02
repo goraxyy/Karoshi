@@ -1,0 +1,26 @@
+# Code and docs only: never media, voices, music, fonts or keys (BUILD_PLAN.md, ground rules).
+.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+editor/node_modules
+editor/.remotion/
+editor/out/
+editor/public/
+editor/build/
+*.mp4
+*.webm
+*.mov
+*.wav
+*.mp3
+*.m4a
+*.aiff
+*.png
+*.jpg
+*.gif
+*.ttf
+*.otf
+*.woff
+*.woff2
+.remotion/

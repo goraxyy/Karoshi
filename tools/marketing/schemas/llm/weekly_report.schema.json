@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/goraxyy/Kehai/tools/marketing/schemas/llm/weekly_report.schema.json",
+  "title": "The weekly report (what Claude writes)",
+  "description": "weekly_report.py: a short read for the owner in Telegram, from the week's numbers.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["headline", "summary", "highlights", "problems", "next_week"],
+  "properties": {
+    "headline": { "type": "string", "description": "One line." },
+    "summary": { "type": "string", "description": "Two to four sentences, plain text." },
+    "highlights": { "type": "array", "items": { "type": "string" } },
+    "problems": { "type": "array", "items": { "type": "string" } },
+    "next_week": { "type": "array", "description": "Two to four concrete suggestions.", "items": { "type": "string" } }
+  }
+}

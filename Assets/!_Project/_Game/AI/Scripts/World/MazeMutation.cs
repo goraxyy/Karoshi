@@ -27,6 +27,12 @@ namespace Kehai.Aiko
         }
 
         // Returns the moves that stuck. `report` is a line per attempt for the thought log.
+        // The moves of the last mutation, for the replay recorder's header.
+        public static IReadOnlyList<Move> LastMoves { get; private set; } = new List<Move>();
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics() => LastMoves = new List<Move>();
+
         public static List<Move> Mutate(AikoRng rng, int wanted, out string report)
         {
             var kept = new List<Move>();
@@ -103,6 +109,7 @@ namespace Kehai.Aiko
             }
 
             report = $"maze mutation: {kept.Count}/{wanted} moves kept after {attempts} attempts\n" + log;
+            LastMoves = kept;
             return kept;
         }
 

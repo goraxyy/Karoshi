@@ -7,6 +7,7 @@ namespace Kehai.Aiko
     // isn't in version control, so nothing about her may depend on it.
     //
     // Command line (for builds and the eval harness):
+    //   -replay <file.krec>  watch a recorded shift instead (ReplayMode)
     //   -noaiko              run the store without her
     //   -aiko-rung <A..F>    choose the ablation rung
     //   -aiko-seed <n>       seed every decision (0 = clock)
@@ -34,8 +35,18 @@ namespace Kehai.Aiko
         static void Install()
         {
             ReadCommandLine();
-            if (Disabled) return;
             if (Object.FindAnyObjectByType<ShiftManager>() == null) return;   // not the store
+            if (Object.FindAnyObjectByType<Kehai.Replay.ReplayPlayer>() != null) return;
+
+            // A store loaded to watch a recorded shift gets a replay instead of her.
+            string replay = Kehai.Replay.ReplayMode.TakePending();
+            if (replay != null)
+            {
+                Kehai.Replay.ReplayPlayer.Install(replay);
+                return;
+            }
+
+            if (Disabled) return;
             if (Object.FindAnyObjectByType<AikoBrain>() != null) return;
 
             GameObject player = GameObject.FindGameObjectWithTag("Player");
@@ -55,6 +66,7 @@ namespace Kehai.Aiko
             KeepBelowSprint(brain.config);
             root.AddComponent<ShiftRecorder>();
             root.AddComponent<ClipMarkerRecorder>();
+            root.AddComponent<Kehai.Replay.ReplayRecorder>();
             root.AddComponent<AikoDebugOverlay>();
             root.AddComponent<ReviewScreen>();
             root.AddComponent<Kehai.Blink.BlinkTracker>();

@@ -161,7 +161,18 @@ namespace Kehai.Aiko
     // A sabotaged freezer venting cold vapour across an aisle. Your eyes suffer; hers don't.
     public sealed class FogCloud : MonoBehaviour
     {
+        public float Radius { get; private set; }
+
         public static FogCloud Spawn(Vector3 at, float radius, float seconds)
+        {
+            FogCloud fog = Build(at, radius, seconds);
+            fog.GetComponent<ParticleSystem>().Play();
+            Destroy(fog.gameObject, seconds + 10f);
+            return fog;
+        }
+
+        // The cloud, not yet venting and never timing out: the replay runs its particles itself.
+        public static FogCloud Build(Vector3 at, float radius, float seconds)
         {
             var go = new GameObject("AIKO_Fog");
             go.transform.position = at + Vector3.up * 0.2f;
@@ -197,10 +208,9 @@ namespace Kehai.Aiko
             fade.color = gradient;
 
             go.GetComponent<ParticleSystemRenderer>().sharedMaterial = AikoProps.Particle();
-            ps.Play();
-
-            Destroy(go, seconds + 10f);
-            return go.AddComponent<FogCloud>();
+            var fog = go.AddComponent<FogCloud>();
+            fog.Radius = radius;
+            return fog;
         }
     }
 

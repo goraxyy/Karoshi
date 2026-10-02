@@ -44,7 +44,8 @@ namespace Kehai.Aiko
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics() => cache.Clear();
 
-        static AudioClip Make(string name, float seconds, System.Func<float, float> sample)
+        // Also used by the replay for the sounds it has to stand in for.
+        internal static AudioClip Make(string name, float seconds, System.Func<float, float> sample)
         {
             if (cache.TryGetValue(name, out AudioClip clip) && clip != null) return clip;
 
@@ -73,11 +74,11 @@ namespace Kehai.Aiko
         }
 
         // Deterministic noise so the clips are identical every run.
-        static float Hash(int i) { unchecked { uint x = (uint)i * 747796405u + 2891336453u; x = ((x >> ((int)(x >> 28) + 4)) ^ x) * 277803737u; return ((x >> 22) ^ x) / (float)uint.MaxValue * 2f - 1f; } }
-        static float White(float t) => Hash((int)(t * Rate));
-        static float Env(float t, float attack, float release, float length) =>
+        internal static float Hash(int i) { unchecked { uint x = (uint)i * 747796405u + 2891336453u; x = ((x >> ((int)(x >> 28) + 4)) ^ x) * 277803737u; return ((x >> 22) ^ x) / (float)uint.MaxValue * 2f - 1f; } }
+        internal static float White(float t) => Hash((int)(t * Rate));
+        internal static float Env(float t, float attack, float release, float length) =>
             Mathf.Clamp01(t / Mathf.Max(0.0001f, attack)) * Mathf.Clamp01((length - t) / Mathf.Max(0.0001f, release));
-        static float Sine(float f, float t) => Mathf.Sin(2f * Mathf.PI * f * t);
+        internal static float Sine(float f, float t) => Mathf.Sin(2f * Mathf.PI * f * t);
 
         public static AudioClip Tell(TellKind kind)
         {

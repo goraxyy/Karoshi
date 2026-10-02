@@ -1,0 +1,296 @@
+{
+ "version": 1,
+ "game": "Kehai",
+ "stem": "shift_03_20260930_055451",
+ "shift": 3,
+ "started": "2026-09-30 05:54",
+ "length": 360.0,
+ "clockedOut": true,
+ "rung": "F",
+ "markers": [
+  {
+   "id": "loud_mistake",
+   "t": 129.4,
+   "end": 129.4,
+   "weight": 4,
+   "x": 61.0,
+   "y": -12.5
+  },
+  {
+   "id": "tell_then_trick",
+   "t": 131.0,
+   "end": 134.2,
+   "weight": 5,
+   "text": "flicker → blackout"
+  },
+  {
+   "id": "catch",
+   "t": 140.2,
+   "end": 140.2,
+   "weight": 10,
+   "x": 58.2,
+   "y": -10.1
+  },
+  {
+   "id": "escape",
+   "t": 150.1,
+   "end": 163.0,
+   "weight": 7,
+   "value": 12.9
+  },
+  {
+   "id": "near_miss",
+   "t": 158.3,
+   "end": 158.3,
+   "weight": 6,
+   "x": 40.2,
+   "y": 3.3
+  },
+  {
+   "id": "blackout",
+   "t": 180.5,
+   "end": 186.5,
+   "weight": 5,
+   "value": 6.0
+  },
+  {
+   "id": "pa_call",
+   "t": 198.2,
+   "end": 201.4,
+   "weight": 3,
+   "text": "Customer announcement: an employee is in aisle 7."
+  },
+  {
+   "id": "manual_good",
+   "t": 235.0,
+   "end": 235.0,
+   "weight": 10
+  },
+  {
+   "id": "possessed",
+   "t": 233.0,
+   "end": 239.0,
+   "weight": 6
+  },
+  {
+   "id": "aiko_stuck",
+   "t": 262.0,
+   "end": 268.0,
+   "weight": 0
+  },
+  {
+   "id": "manual_bug",
+   "t": 264.0,
+   "end": 264.0,
+   "weight": 0
+  },
+  {
+   "id": "near_miss",
+   "t": 305.2,
+   "end": 305.2,
+   "weight": 6,
+   "x": 12.0,
+   "y": 44.0
+  },
+  {
+   "id": "shift_review",
+   "t": 352.0,
+   "end": 352.0,
+   "weight": 1
+  }
+ ],
+ "moments": [
+  {
+   "rank": 1,
+   "start": 126.73,
+   "end": 146.86,
+   "score": 28.5,
+   "chase": true,
+   "kept": false,
+   "markers": [
+    {
+     "id": "loud_mistake",
+     "t": 129.4
+    },
+    {
+     "id": "tell_then_trick",
+     "t": 131.0
+    },
+    {
+     "id": "catch",
+     "t": 140.2
+    }
+   ],
+   "subjects": [
+    "aiko",
+    "player"
+   ],
+   "tags": [
+    "catch",
+    "sound",
+    "blackout"
+   ],
+   "captionSeed": [
+    "Heard: a sprint near the freezers.",
+    "Plan: blackout, wing B.",
+    "Caught the employee. Writing a warning."
+   ]
+  },
+  {
+   "rank": 2,
+   "start": 148.13,
+   "end": 167.26,
+   "score": 19.5,
+   "chase": true,
+   "kept": false,
+   "markers": [
+    {
+     "id": "escape",
+     "t": 150.1
+    },
+    {
+     "id": "near_miss",
+     "t": 158.3
+    }
+   ],
+   "subjects": [
+    "aiko",
+    "player"
+   ],
+   "tags": [
+    "chase",
+    "escape"
+   ],
+   "captionSeed": [
+    "Pursuing.",
+    "Lost sight of the employee."
+   ]
+  },
+  {
+   "rank": 3,
+   "start": 228.0,
+   "end": 242.33,
+   "score": 16.0,
+   "chase": false,
+   "kept": true,
+   "markers": [
+    {
+     "id": "possessed",
+     "t": 233.0
+    },
+    {
+     "id": "manual_good",
+     "t": 235.0
+    }
+   ],
+   "subjects": [
+    "aiko",
+    "customer",
+    "player"
+   ],
+   "tags": [
+    "mimicry",
+    "manual"
+   ],
+   "captionSeed": [
+    "Borrowing a customer."
+   ]
+  },
+  {
+   "rank": 4,
+   "start": 300.0,
+   "end": 312.33,
+   "score": 6.0,
+   "chase": false,
+   "kept": false,
+   "markers": [
+    {
+     "id": "near_miss",
+     "t": 305.2
+    }
+   ],
+   "subjects": [
+    "aiko",
+    "player"
+   ],
+   "tags": [
+    "near_miss"
+   ],
+   "captionSeed": [
+    "Checking the cereal aisle."
+   ]
+  },
+  {
+   "rank": 5,
+   "start": 178.5,
+   "end": 190.83,
+   "score": 5.0,
+   "chase": false,
+   "kept": false,
+   "markers": [
+    {
+     "id": "blackout",
+     "t": 180.5
+    }
+   ],
+   "subjects": [
+    "store"
+   ],
+   "tags": [
+    "blackout"
+   ],
+   "captionSeed": [
+    "Mains off."
+   ]
+  },
+  {
+   "rank": 6,
+   "start": 195.0,
+   "end": 206.23,
+   "score": 3.0,
+   "chase": false,
+   "kept": false,
+   "markers": [
+    {
+     "id": "pa_call",
+     "t": 198.2
+    }
+   ],
+   "subjects": [
+    "aiko"
+   ],
+   "tags": [
+    "pa"
+   ],
+   "captionSeed": [
+    "PA: customer announcement."
+   ]
+  },
+  {
+   "rank": 7,
+   "start": 258.0,
+   "end": 270.0,
+   "score": 0.0,
+   "chase": false,
+   "kept": true,
+   "markers": [
+    {
+     "id": "aiko_stuck",
+     "t": 262.0
+    },
+    {
+     "id": "manual_bug",
+     "t": 264.0
+    }
+   ],
+   "subjects": [
+    "aiko"
+   ],
+   "tags": [
+    "bug",
+    "manual"
+   ],
+   "captionSeed": []
+  }
+ ]
+}

@@ -20,6 +20,8 @@ public class AutoDoubleDoor : MonoBehaviour
     private int playersInside = 0;
 
     public bool IsOpen => isOpen;
+    public Transform LeftPanel => leftDoor;     // the sliding panels, for the replay recorder
+    public Transform RightPanel => rightDoor;
 
     void Start()
     {

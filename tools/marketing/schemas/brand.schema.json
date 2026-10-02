@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/goraxyy/Kehai/tools/marketing/schemas/brand.schema.json",
+  "title": "Kehai brand",
+  "description": "tools/marketing/brand.json: the one place marketing reads names, handles, links, colours, fonts and voices from. The names must match GameNames.cs (a test checks).",
+  "type": "object",
+  "required": ["version", "studio", "game", "antagonist", "handles", "links", "colours", "fonts", "voices"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": 1 },
+    "studio": { "type": "string", "minLength": 1 },
+    "game": {
+      "type": "object",
+      "required": ["name", "japanese", "tagline"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "japanese": { "type": "string" },
+        "russian": { "type": "string", "description": "How Russian speech and text write the name (on screen the Latin name stays)." },
+        "tagline": { "$ref": "#/$defs/text" }
+      }
+    },
+    "antagonist": {
+      "type": "object",
+      "required": ["name", "japanese", "pronoun"],
+      "properties": { "name": { "type": "string" }, "japanese": { "type": "string" }, "russian": { "type": "string" }, "pronoun": { "type": "string" } }
+    },
+    "handles": {
+      "type": "object",
+      "description": "Account handles without the @; null until the account exists.",
+      "additionalProperties": { "type": ["string", "null"] }
+    },
+    "links": { "type": "object", "additionalProperties": { "type": ["string", "null"], "format": "uri" } },
+    "colours": {
+      "type": "object",
+      "required": ["crimson", "ink", "inkSoft", "paper", "mist", "game"],
+      "properties": {
+        "game": {
+          "type": "object",
+          "description": "The game's own palette (the shift report and the replay's mind layers).",
+          "required": ["aiko", "you", "guess"],
+          "additionalProperties": { "$ref": "#/$defs/colour" }
+        }
+      },
+      "additionalProperties": { "$ref": "#/$defs/colour" }
+    },
+    "fonts": {
+      "type": "object",
+      "required": ["display", "body", "japanese"],
+      "properties": {
+        "display": { "$ref": "#/$defs/font" },
+        "body": { "$ref": "#/$defs/font" },
+        "japanese": { "$ref": "#/$defs/font" },
+        "source": { "type": "string" }
+      }
+    },
+    "voices": {
+      "type": "object",
+      "description": "Who speaks, per language and role, for each text-to-speech backend (voice.py); `backend` is the one used unless --backend says otherwise.",
+      "required": ["backend", "en", "ru"],
+      "properties": {
+        "proposed": { "type": "boolean" },
+        "note": { "type": "string" },
+        "backend": { "enum": ["azure", "elevenlabs", "say"] },
+        "en": { "$ref": "#/$defs/voiceSet" },
+        "ru": { "$ref": "#/$defs/voiceSet" }
+      }
+    }
+  },
+  "$defs": {
+    "colour": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+    "text": {
+      "type": "object",
+      "required": ["en", "ru"],
+      "properties": { "en": { "type": "string" }, "ru": { "type": "string" } }
+    },
+    "font": {
+      "type": "object",
+      "required": ["family", "weight"],
+      "properties": { "family": { "type": "string" }, "weight": { "type": "integer", "minimum": 100, "maximum": 900 } }
+    },
+    "voiceSet": {
+      "type": "object",
+      "required": ["narrator", "aiko"],
+      "properties": { "narrator": { "$ref": "#/$defs/voice" }, "aiko": { "$ref": "#/$defs/voice" } }
+    },
+    "voice": {
+      "type": "object",
+      "required": ["azure", "say"],
+      "additionalProperties": false,
+      "properties": {
+        "azure": { "type": "string", "description": "An Azure neural voice, e.g. en-US-AndrewNeural." },
+        "rate": { "type": "string", "pattern": "^[+-]\\d{1,2}%$", "description": "SSML prosody rate, e.g. -6%." },
+        "pitch": { "type": "string", "pattern": "^[+-]\\d{1,2}%$", "description": "SSML prosody pitch, e.g. -3%." },
+        "style": { "type": ["string", "null"], "description": "An Azure speaking style (mstts:express-as), where the voice has it." },
+        "say": { "type": "string", "description": "The macOS voice used as a stand-in without a key." },
+        "elevenlabs": { "type": ["string", "null"], "description": "An ElevenLabs voice id." }
+      }
+    }
+  }
+}

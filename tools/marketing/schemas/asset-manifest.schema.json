@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/goraxyy/Kehai/tools/marketing/schemas/asset-manifest.schema.json",
+  "title": "Kehai asset library",
+  "description": "assets/manifest.json in the marketing working folder (and on Drive): every music track, sound effect, image, GIF, Lottie animation, video or font the editor may use, where it came from, and its licence. add_asset.py is the only way in; it refuses a file without a licence, and music not cleared for YouTube, TikTok and Instagram.",
+  "type": "object",
+  "required": ["version", "assets"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "const": 1 },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "file", "sha256", "bytes", "added", "licence", "source", "cleared", "mood", "tags", "drive"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+          "type": { "enum": ["music", "sfx", "image", "gif", "lottie", "video", "font"] },
+          "file": { "type": "string", "pattern": "^assets/", "description": "Relative to the working folder; what an edit's src says." },
+          "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "bytes": { "type": "integer", "minimum": 1 },
+          "added": { "type": "string", "description": "yyyy-mm-dd" },
+          "licence": { "type": "string", "minLength": 2, "description": "e.g. CC0 1.0, CC BY 4.0, Pixabay Content License, or our own work." },
+          "source": { "type": "string", "minLength": 2, "description": "Where it came from: a URL, or 'own' for something we made." },
+          "author": { "type": "string" },
+          "attribution": { "type": "string", "description": "The credit line to publish with it, when the licence asks for one." },
+          "cleared": {
+            "type": "object",
+            "description": "Platforms the licence covers (music must be cleared for all three).",
+            "required": ["youtube", "tiktok", "instagram"],
+            "additionalProperties": false,
+            "properties": { "youtube": { "type": "boolean" }, "tiktok": { "type": "boolean" }, "instagram": { "type": "boolean" } }
+          },
+          "mood": { "type": "array", "items": { "type": "string" } },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "notes": { "type": "string" },
+          "drive": {
+            "type": "object",
+            "required": ["status"],
+            "additionalProperties": false,
+            "properties": {
+              "status": { "enum": ["uploaded", "pending"] },
+              "path": { "type": "string" },
+              "uploaded": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

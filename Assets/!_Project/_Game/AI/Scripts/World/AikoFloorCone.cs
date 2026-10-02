@@ -155,7 +155,7 @@ namespace Kehai.Aiko
             return best;
         }
 
-        static Color Tint(AikoBody.Mood mood)
+        internal static Color Tint(AikoBody.Mood mood)
         {
             switch (mood)
             {

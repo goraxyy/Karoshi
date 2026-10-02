@@ -9,24 +9,36 @@ public static class ShiftRestart
 {
     static int completed = -1;
 
-    public static void Restart()
+    public static void Restart() => Reload(CompletedShifts());
+
+    // How many shifts count as done: the one under way doesn't.
+    public static int CompletedShifts()
     {
         ShiftManager shift = Object.FindAnyObjectByType<ShiftManager>();
-        completed = shift == null ? -1 : shift.IsShiftActive ? shift.ShiftNumber - 1 : shift.ShiftNumber;
+        return shift == null ? -1 : shift.IsShiftActive ? shift.ShiftNumber - 1 : shift.ShiftNumber;
+    }
+
+    // Loads the store again (or `scenePath`, if given), with `completedShifts` done once it's
+    // up; -1 leaves the shift count as the scene has it. The 3D replay comes and goes this way.
+    public static void Reload(int completedShifts, string scenePath = null)
+    {
+        completed = completedShifts;
         GamePause.Set(false);
 
         SceneManager.sceneLoaded -= Restore;
         SceneManager.sceneLoaded += Restore;
         Scene active = SceneManager.GetActiveScene();
+        string path = string.IsNullOrEmpty(scenePath) ? active.path : scenePath;
+        int index = path == active.path ? active.buildIndex : SceneUtility.GetBuildIndexByScenePath(path);
 #if UNITY_EDITOR
         // A scene that isn't in the build list can still be reloaded in the editor, by path.
-        if (active.buildIndex < 0)
+        if (index < 0)
         {
-            UnityEditor.SceneManagement.EditorSceneManager.LoadSceneInPlayMode(active.path, new LoadSceneParameters(LoadSceneMode.Single));
+            UnityEditor.SceneManagement.EditorSceneManager.LoadSceneInPlayMode(path, new LoadSceneParameters(LoadSceneMode.Single));
             return;
         }
 #endif
-        SceneManager.LoadScene(active.buildIndex, LoadSceneMode.Single);
+        SceneManager.LoadScene(index >= 0 ? index : active.buildIndex, LoadSceneMode.Single);
     }
 
     static void Restore(Scene scene, LoadSceneMode mode)

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/goraxyy/Kehai/tools/marketing/schemas/llm/translate.schema.json",
+  "title": "Translations (what Claude writes)",
+  "description": "translate.py: one translation for every item sent, by id.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["items"],
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "text"],
+        "properties": {
+          "id": { "type": "string" },
+          "text": { "type": "string", "description": "The translation, with the same *stars* around the same idea." }
+        }
+      }
+    }
+  }
+}

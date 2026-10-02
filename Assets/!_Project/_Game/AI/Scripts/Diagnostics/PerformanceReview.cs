@@ -135,6 +135,9 @@ namespace Kehai.Aiko
         AikoBrain brain;
         GUIStyle style;
 
+        // The shift just played was recorded for the 3D replay.
+        static bool CanWatch => Kehai.Replay.ReplayRecorder.LastFinished != null && System.IO.File.Exists(Kehai.Replay.ReplayRecorder.LastFinished);
+
         void Awake() => brain = GetComponent<AikoBrain>();
 
         void Update()
@@ -143,6 +146,11 @@ namespace Kehai.Aiko
             if (brain == null || brain.Review == null || !brain.Review.Visible) return;
             if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) brain.Review.Visible = false;
             if (Input.GetKeyDown(KeyCode.O)) ShiftRecorder.Instance?.OpenReport();
+            if (Input.GetKeyDown(KeyCode.R) && CanWatch)
+            {
+                brain.Review.Visible = false;
+                Kehai.Replay.ReplayMode.Open(Kehai.Replay.ReplayRecorder.LastFinished);
+            }
             if (brain.Review.CanQuit && Input.GetKeyDown(KeyCode.Q))
             {
                 brain.Review.Visible = false;
@@ -184,6 +192,7 @@ namespace Kehai.Aiko
                 text.AppendLine();
                 text.AppendLine("<color=#4DD2FF>[O] open the full report in your browser — map replay, timeline and analysis</color>");
             }
+            if (CanWatch) text.AppendLine("<color=#4DD2FF>[R] watch the shift again in 3D</color>");
             GUI.Label(rect, text.ToString(), style);
         }
     }

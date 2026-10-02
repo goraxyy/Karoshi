@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/goraxyy/Kehai/tools/marketing/schemas/shot.schema.json",
+  "title": "Kehai rendered replay shot",
+  "description": "<out>.json, written beside every shot render_shot.sh renders (ReplayRender.cs): what was rendered, for the editor. Times are seconds into the shift.",
+  "type": "object",
+  "required": ["version", "game", "krec", "stem", "shift", "from", "to", "moment", "shot", "subject", "layers", "alpha", "dof", "width", "height", "fps", "frames", "video", "audio", "rendered", "renderSeconds"],
+  "properties": {
+    "version": { "const": 1 },
+    "game": { "type": "string" },
+    "krec": { "type": "string", "description": "The recording's file name." },
+    "stem": { "type": "string", "description": "The shift's stem, e.g. shift_03_20260930_101500 (its .markers.json and report share it)." },
+    "shift": { "type": "integer", "minimum": 0 },
+    "from": { "type": "number", "minimum": 0 },
+    "to": { "type": "number", "minimum": 0 },
+    "moment": { "type": ["integer", "null"], "minimum": 1, "description": "The clip moment's rank in <stem>.markers.json, or null when -from/-to were given." },
+    "shot": { "type": "string", "description": "pov, cctv, chase, orbit, topdown, path, or the camera path file." },
+    "subject": { "enum": ["aiko", "you"] },
+    "layers": {
+      "type": "array",
+      "description": "Aiko's mind drawn in: empty for the store alone.",
+      "items": { "enum": ["belief", "guess", "cone", "sound", "thoughts", "actors"] }
+    },
+    "alpha": { "type": "boolean", "description": "Her mind alone on a transparent background (for picture-in-picture)." },
+    "dof": { "type": "boolean" },
+    "width": { "type": "integer", "minimum": 16 },
+    "height": { "type": "integer", "minimum": 16 },
+    "fps": { "type": "integer", "minimum": 1, "maximum": 120 },
+    "frames": { "type": "integer", "minimum": 1 },
+    "video": { "type": "string", "description": "The video's file name beside this file, or frame_%06d.png for a folder of frames." },
+    "audio": { "type": ["string", "null"], "description": "The WAV mixed at the camera (also muxed into the video); null for an alpha render." },
+    "track": {
+      "type": "object",
+      "description": "Where Aiko and you are in the picture (ShotTrack.cs), `hz` times a second from the first frame: [x, y, r] is the body's middle (0..1 from the top left) and half its width as a fraction of the frame's width; null when the body is off screen or not there. Shots rendered before Phase 6 have none.",
+      "required": ["hz", "aiko", "you"],
+      "additionalProperties": false,
+      "properties": {
+        "hz": { "type": "integer", "minimum": 1 },
+        "aiko": { "type": "array", "items": { "$ref": "#/$defs/where" } },
+        "you": { "type": "array", "items": { "$ref": "#/$defs/where" } }
+      }
+    },
+    "rendered": { "type": "string", "description": "Local time, yyyy-MM-ddTHH:mm:ss." },
+    "renderSeconds": { "type": "number", "minimum": 0 }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "where": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "array", "minItems": 3, "maxItems": 3, "items": { "type": "number", "minimum": 0 } }
+      ]
+    }
+  }
+}
