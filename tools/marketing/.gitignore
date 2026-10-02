@@ -4,7 +4,7 @@
 __pycache__/
 *.pyc
 .pytest_cache/
-editor/node_modules/
+editor/node_modules
 editor/out/
 editor/public/
 editor/build/

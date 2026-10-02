@@ -15,7 +15,8 @@ npm test && npm run typecheck
 
 Files in an edit are paths relative to the marketing working folder (`~/TokenLimit/marketing`, or
 `KEHAI_MARKETING`): `shots/…` from `render_shot.sh`, `audio/…` voice, `assets/…` from the library
-(`../add_asset.py`). Nothing media goes in the repo.
+(`../add_asset.py`). Nothing media goes in the repo. Edits are usually written by the Python steps
+(`../README.md`): Claude drafts, the code turns the draft into an edit.
 
 ## An edit
 
@@ -33,12 +34,14 @@ Files in an edit are paths relative to the marketing working folder (`~/TokenLim
   - `overlays` with `from`/`to` in scene seconds:
     - `hook`, `label`, `lowerThird`;
     - `image`, `gif`, `lottie`;
-    - `arrow`, `circle` (they draw themselves);
+    - `arrow`, `circle` (they draw themselves; with `follow` keys they move with someone, placed
+      from the shot's track by the Python steps);
     - `meme` (`pov`, `top-bottom`, `nobody`, `caption-bar`, `expectation-reality`).
   - `sfx` at scene seconds.
 - `voice` per language: clips on the video's clock with their `duration` and word timings. They
   make the word-timed captions (`captions.mode` `words` or `lines`), and the `music` ducks under
-  them.
+  them. `script` is the voice-over as written; `../voice.py` speaks it into `voice` (the renderer
+  ignores it).
 - `endCard`: the name, 気配, the tagline, a call to action, the handles from `../brand.json`.
 - Text is a string, or `{ "en": …, "ru": … }`. `*Starred words*` come out in crimson.
 

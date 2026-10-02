@@ -3,7 +3,7 @@
 // music is, which caption words are on screen. Seconds in, frames out where Remotion needs
 // frames.
 
-import type { Brand, Colour, Edit, Language, Music, Shot, SpeedKey, Text, Transition, VoiceClip, Word, ZoomKey } from './types.ts';
+import type { Brand, Colour, Edit, FollowKey, Language, Music, Shot, SpeedKey, Text, Transition, VoiceClip, Word, ZoomKey } from './types.ts';
 
 export const SIZES = { '9:16': { width: 1080, height: 1920 }, '16:9': { width: 1920, height: 1080 } } as const;
 
@@ -119,6 +119,22 @@ export function sourceSeconds(shot: Shot, duration: number): number {
   const segs = speedSegments(shot, duration);
   const last = segs[segs.length - 1];
   return last.source + (last.to - last.from) * last.rate - (shot.trim ?? 0);
+}
+
+// Where a following mark points at t (seconds since it appeared): straight lines between keys,
+// still before the first and after the last; the fixed point when there are no keys.
+export function followAt(keys: FollowKey[] | undefined, t: number, fixed: { x: number; y: number }): { x: number; y: number } {
+  if (!keys || keys.length === 0) return fixed;
+  if (t <= keys[0].at) return { x: keys[0].x, y: keys[0].y };
+  for (let i = 0; i + 1 < keys.length; i++) {
+    const a = keys[i], b = keys[i + 1];
+    if (t <= b.at) {
+      const u = (t - a.at) / Math.max(1e-6, b.at - a.at);
+      return { x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * u };
+    }
+  }
+  const last = keys[keys.length - 1];
+  return { x: last.x, y: last.y };
 }
 
 export interface Framing { scale: number; x: number; y: number }

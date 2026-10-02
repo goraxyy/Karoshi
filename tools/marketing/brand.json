@@ -5,9 +5,10 @@
   "game": {
     "name": "Kehai",
     "japanese": "気配",
+    "russian": "Кэхай",
     "tagline": { "en": "The sense that someone is there.", "ru": "Ощущение, что кто-то рядом." }
   },
-  "antagonist": { "name": "Aiko", "japanese": "愛子", "pronoun": "she" },
+  "antagonist": { "name": "Aiko", "japanese": "愛子", "russian": "Айко", "pronoun": "she" },
   "handles": { "youtube": null, "instagram": null, "tiktok": null, "x": null, "bluesky": null },
   "links": { "website": null, "steam": null, "discord": null },
   "colours": {
@@ -26,8 +27,15 @@
   },
   "voices": {
     "proposed": true,
-    "note": "Q10 is open: these are the recommended Azure neural voices until the owner picks from samples in Phase 6.",
-    "en": { "narrator": "en-US-AndrewNeural", "aiko": "en-US-AvaNeural" },
-    "ru": { "narrator": "ru-RU-DmitryNeural", "aiko": "ru-RU-SvetlanaNeural" }
+    "note": "Q10 is open: the recommended Azure neural voices until the owner picks from samples (voice_samples.py). `say` is the macOS stand-in used without a key; `elevenlabs` is a voice id for that backend.",
+    "backend": "azure",
+    "en": {
+      "narrator": { "azure": "en-US-AndrewNeural", "rate": "+0%", "pitch": "+0%", "say": "Samantha", "elevenlabs": null },
+      "aiko": { "azure": "en-US-AvaNeural", "rate": "-6%", "pitch": "-3%", "say": "Shelley", "elevenlabs": null }
+    },
+    "ru": {
+      "narrator": { "azure": "ru-RU-DmitryNeural", "rate": "+0%", "pitch": "+0%", "say": "Milena", "elevenlabs": null },
+      "aiko": { "azure": "ru-RU-SvetlanaNeural", "rate": "-6%", "pitch": "-3%", "say": "Milena", "elevenlabs": null }
+    }
   }
 }

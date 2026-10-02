@@ -31,7 +31,8 @@ namespace Kehai.Replay
     // than raw pixels because the ffmpeg that ships with the editor (Remotion's) reads PNGs from
     // a pipe but not raw video. The sound is mixed from the
     // recording's events as heard at the camera, written as a WAV beside the video and muxed
-    // in. A <out>.json beside it says what was rendered, for the editor (Phase 5).
+    // in. A <out>.json beside it says what was rendered, for the editor (Phase 5), and where
+    // Aiko and you are in the picture through it (ShotTrack, Phase 6).
     public sealed class ReplayRender
     {
         public const int WarmUpFrames = 8;
@@ -53,6 +54,7 @@ namespace Kehai.Replay
         readonly Output output;
         readonly string video, audio, sidecar, ffmpeg;
         readonly List<Pose> ears = new List<Pose>();
+        readonly ShotTrack track = new ShotTrack();
         RenderTexture target, resolved;
         Texture2D readback;
         readonly ConcurrentBag<byte[]> buffers = new ConcurrentBag<byte[]>();
@@ -355,6 +357,7 @@ namespace Kehai.Replay
                 if (frame >= 0)
                 {
                     ears.Add(new Pose(sceneCam.transform.position, sceneCam.transform.rotation));
+                    track.SampleIfDue(frame, s.Fps, sceneCam, player.Data, player.Stage, t);
                     Graphics.Blit(target, resolved);
                     RenderTexture was = RenderTexture.active;
                     RenderTexture.active = resolved;
@@ -493,6 +496,7 @@ namespace Kehai.Replay
                 ["frames"] = ears.Count,
                 ["video"] = output == Output.Frames ? "frame_%06d.png" : Path.GetFileName(video),
                 ["audio"] = audio != null ? Path.GetFileName(audio) : null,
+                ["track"] = track.ToJson(),
                 ["rendered"] = System.DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
                 ["renderSeconds"] = Round(Time.realtimeSinceStartup - wallStart)
             };

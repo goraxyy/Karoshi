@@ -19,11 +19,16 @@ public static class SoundSettings
         set
         {
             master = Mathf.Clamp01(value);
-            AudioListener.volume = master;
+            AudioListener.volume = Audible(master);
             PlayerPrefs.SetFloat("Kehai.Volume.Master", master);
             Changed?.Invoke();
         }
     }
+
+    // Unattended runs (EditMode tests, bot shifts, replay renders: all batch mode) are never
+    // heard: nobody is listening, and the developer's speakers stay quiet. Renders mix their
+    // sound offline, so they lose nothing.
+    public static float Audible(float level) => Application.isBatchMode ? 0f : level;
 
     public static float Get(SoundKind kind) => levels[(int)kind];
 
@@ -49,7 +54,7 @@ public static class SoundSettings
     static void Load()
     {
         master = PlayerPrefs.GetFloat("Kehai.Volume.Master", 1f);
-        AudioListener.volume = master;
+        AudioListener.volume = Audible(master);
         for (int i = 0; i < levels.Length; i++)
             levels[i] = PlayerPrefs.GetFloat("Kehai.Volume." + (SoundKind)i, 1f);
     }

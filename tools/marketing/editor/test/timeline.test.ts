@@ -6,7 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import Ajv2020 from 'ajv/dist/2020.js';
 import {
-  captionChunks, filesOf, gameVolume, musicVolume, sceneStarts, sourceSeconds, speedSegments, spokenWords, textFor,
+  captionChunks, filesOf, followAt, gameVolume, musicVolume, sceneStarts, sourceSeconds, speedSegments, spokenWords, textFor,
   totalFrames, transitionFrames, zoomAt,
 } from '../src/lib/timeline.ts';
 import type { Edit, Shot } from '../src/lib/types.ts';
@@ -61,6 +61,15 @@ test('zooms hold at their ends and ease between keys', () => {
   assert.equal(zoomAt(keys, 2).scale, 1.5);
   assert.ok(zoomAt(keys, 1.2).scale - 1 < 0.2 * 0.5, 'eases in');
   assert.deepEqual(zoomAt(undefined, 1), { scale: 1, x: 0.5, y: 0.5 });
+});
+
+test('a following mark moves in straight lines between its keys and holds at the ends', () => {
+  const keys = [{ at: 0, x: 0.2, y: 0.5 }, { at: 1, x: 0.4, y: 0.6 }];
+  assert.deepEqual(followAt(keys, -1, { x: 0, y: 0 }), { x: 0.2, y: 0.5 });
+  const mid = followAt(keys, 0.5, { x: 0, y: 0 });
+  assert.ok(Math.abs(mid.x - 0.3) < 1e-9 && Math.abs(mid.y - 0.55) < 1e-9);
+  assert.deepEqual(followAt(keys, 9, { x: 0, y: 0 }), { x: 0.4, y: 0.6 });
+  assert.deepEqual(followAt(undefined, 1, { x: 0.7, y: 0.1 }), { x: 0.7, y: 0.1 }, 'a fixed mark stays put');
 });
 
 test('the music ducks under the voice and fades at both ends', () => {

@@ -7,7 +7,7 @@ import { Gif } from '@remotion/gif';
 import { Lottie, type LottieAnimationData } from '@remotion/lottie';
 import { brand } from '../brand.ts';
 import { FONT } from '../fonts.ts';
-import { colour, textFor } from '../lib/timeline.ts';
+import { colour, followAt, textFor } from '../lib/timeline.ts';
 import type { Arrow, Circle, Hook, Label, Language, LowerThird, Meme, Overlay, Picture, Visual } from '../lib/types.ts';
 import { Emphasis, SAFE, outline, useUnit, useVertical } from '../style.tsx';
 
@@ -146,7 +146,10 @@ const ArrowView: React.FC<{ o: Arrow }> = ({ o }) => {
   const { width, height } = useVideoConfig();
   const unit = useUnit();
   const drawn = useDraw();
-  const x1 = o.from_x * width, y1 = o.from_y * height, x2 = o.to_x * width, y2 = o.to_y * height;
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const tip = followAt(o.follow, frame / fps, { x: o.to_x, y: o.to_y });
+  const x1 = o.from_x * width, y1 = o.from_y * height, x2 = tip.x * width, y2 = tip.y * height;
   const dx = x2 - x1, dy = y2 - y1, length = Math.hypot(dx, dy);
   const bend = (o.curve ?? 0.25) * length;
   const cx = (x1 + x2) / 2 - (dy / Math.max(1, length)) * bend, cy = (y1 + y2) / 2 + (dx / Math.max(1, length)) * bend;
@@ -179,6 +182,9 @@ const CircleView: React.FC<{ o: Circle }> = ({ o }) => {
   const { width, height } = useVideoConfig();
   const unit = useUnit();
   const drawn = useDraw();
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const at = followAt(o.follow, frame / fps, { x: o.x, y: o.y });
   const r = o.radius * width;
   // A little wider than tall and a little tilted, the way a hand draws a ring; it overshoots
   // its start so the ends overlap.
@@ -187,7 +193,7 @@ const CircleView: React.FC<{ o: Circle }> = ({ o }) => {
   return (
     <AbsoluteFill>
       <svg width={width} height={height} style={{ overflow: 'visible', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))' }}>
-        <ellipse cx={o.x * width} cy={o.y * height} rx={rx} ry={ry} transform={`rotate(-8 ${o.x * width} ${o.y * height})`}
+        <ellipse cx={at.x * width} cy={at.y * height} rx={rx} ry={ry} transform={`rotate(-8 ${at.x * width} ${at.y * height})`}
           fill="none" stroke={colour(o.color, brand, brand.colours.crimson)} strokeWidth={11 * unit} strokeLinecap="round"
           strokeDasharray={around} strokeDashoffset={around * (1 - drawn)} />
       </svg>

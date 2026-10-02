@@ -45,8 +45,10 @@ export interface LowerThird extends Span { type: 'lowerThird'; title: Text; subt
 export interface Picture extends Span {
   type: 'image' | 'gif' | 'lottie'; src: string; x: number; y: number; width: number; rotate?: number; enter?: 'none' | 'pop' | 'fade' | 'slide-up';
 }
-export interface Arrow extends Span { type: 'arrow'; from_x: number; from_y: number; to_x: number; to_y: number; color?: Colour; curve?: number }
-export interface Circle extends Span { type: 'circle'; x: number; y: number; radius: number; color?: Colour }
+// A mark that follows someone: where its point is at each moment, seconds from when it appears.
+export interface FollowKey { at: number; x: number; y: number }
+export interface Arrow extends Span { type: 'arrow'; from_x: number; from_y: number; to_x: number; to_y: number; color?: Colour; curve?: number; follow?: FollowKey[] }
+export interface Circle extends Span { type: 'circle'; x: number; y: number; radius: number; color?: Colour; follow?: FollowKey[] }
 export interface Meme extends Span {
   type: 'meme'; template: 'pov' | 'top-bottom' | 'nobody' | 'caption-bar' | 'expectation-reality';
   text?: Text; top?: Text; bottom?: Text; speaker?: Text;
@@ -69,6 +71,8 @@ export interface Word { text: string; start: number; end: number }
 export interface VoiceClip {
   src: string; at: number; duration: number; speaker?: 'narrator' | 'aiko'; volume?: number; words?: Word[];
 }
+// The voice-over as written; tools/marketing/voice.py speaks it into `voice` (the renderer ignores it).
+export interface ScriptLine { id: string; speaker: 'narrator' | 'aiko'; at: number; text: Text }
 export interface Music { src: string; offset?: number; volume?: number; duck?: number; fadeIn?: number; fadeOut?: number }
 
 export interface Edit {
@@ -81,6 +85,7 @@ export interface Edit {
   title?: Text;
   source?: { stem?: string; moments?: number[]; notes?: string };
   scenes: Scene[];
+  script?: ScriptLine[];
   voice?: Partial<Record<Language, VoiceClip[]>>;
   music?: Music;
   captions?: { mode?: 'words' | 'lines' | 'off'; position?: 'top' | 'middle' | 'bottom'; maxWords?: number };

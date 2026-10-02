@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/goraxyy/Kehai/tools/marketing/schemas/llm/pick_moments.schema.json",
+  "title": "The week's picks (what Claude writes)",
+  "description": "pick_moments.py: which clip moments become shorts, with the shots to render for each, and a decision for every moment marked kept (F7). Structured-outputs subset: every field required.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["week_theme", "shorts", "kept"],
+  "properties": {
+    "week_theme": { "type": "string", "description": "One line: what this week's footage is about." },
+    "shorts": { "type": "array", "description": "Best first.", "items": { "$ref": "#/$defs/pick" } },
+    "kept": { "type": "array", "description": "One entry for every moment marked kept, including those picked for shorts.", "items": { "$ref": "#/$defs/keptDecision" } }
+  },
+  "$defs": {
+    "pick": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "moment", "angle", "hook_idea", "why", "shots"],
+      "properties": {
+        "name": { "type": "string", "description": "Lowercase words joined by dashes, unique this week, e.g. sprint-heard." },
+        "moment": { "type": "string", "description": "The moment's ref from the digest: <stem>#<rank>." },
+        "angle": { "type": "string", "description": "The one idea the short is about." },
+        "hook_idea": { "type": "string", "description": "The first two seconds, on screen and spoken." },
+        "why": { "type": "string", "description": "Why this moment, in a sentence." },
+        "shots": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/shot" } }
+      }
+    },
+    "shot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "camera", "subject", "layers", "alpha", "start_offset", "end_offset"],
+      "properties": {
+        "name": { "type": "string", "description": "Lowercase, unique within the pick, e.g. top or mind." },
+        "camera": { "enum": ["pov", "cctv", "chase", "orbit", "topdown"] },
+        "subject": { "enum": ["aiko", "you"], "description": "Who the camera follows (pov is always yours)." },
+        "layers": { "type": "array", "description": "Her mind drawn in; [] for the store alone.", "items": { "enum": ["belief", "guess", "cone", "sound", "thoughts", "actors"] } },
+        "alpha": { "type": "boolean", "description": "Her mind alone on a transparent background, for a picture in picture (needs layers)." },
+        "start_offset": { "type": "number", "description": "Seconds added to the moment's start (negative starts earlier); 0 to start with the moment." },
+        "end_offset": { "type": "number", "description": "Seconds added to the moment's end; 0 to end with it." }
+      }
+    },
+    "keptDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["moment", "use", "reason"],
+      "properties": {
+        "moment": { "type": "string", "description": "<stem>#<rank>" },
+        "use": { "enum": ["short", "long", "bug", "skip"], "description": "short: picked above; long: save for the monthly video; bug: a bug report, not marketing; skip: not usable." },
+        "reason": { "type": "string" }
+      }
+    }
+  }
+}

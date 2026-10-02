@@ -15,13 +15,14 @@
       "properties": {
         "name": { "type": "string", "minLength": 1 },
         "japanese": { "type": "string" },
+        "russian": { "type": "string", "description": "How Russian speech and text write the name (on screen the Latin name stays)." },
         "tagline": { "$ref": "#/$defs/text" }
       }
     },
     "antagonist": {
       "type": "object",
       "required": ["name", "japanese", "pronoun"],
-      "properties": { "name": { "type": "string" }, "japanese": { "type": "string" }, "pronoun": { "type": "string" } }
+      "properties": { "name": { "type": "string" }, "japanese": { "type": "string" }, "russian": { "type": "string" }, "pronoun": { "type": "string" } }
     },
     "handles": {
       "type": "object",
@@ -54,9 +55,12 @@
     },
     "voices": {
       "type": "object",
+      "description": "Who speaks, per language and role, for each text-to-speech backend (voice.py); `backend` is the one used unless --backend says otherwise.",
+      "required": ["backend", "en", "ru"],
       "properties": {
         "proposed": { "type": "boolean" },
         "note": { "type": "string" },
+        "backend": { "enum": ["azure", "elevenlabs", "say"] },
         "en": { "$ref": "#/$defs/voiceSet" },
         "ru": { "$ref": "#/$defs/voiceSet" }
       }
@@ -77,7 +81,20 @@
     "voiceSet": {
       "type": "object",
       "required": ["narrator", "aiko"],
-      "properties": { "narrator": { "type": "string" }, "aiko": { "type": "string" } }
+      "properties": { "narrator": { "$ref": "#/$defs/voice" }, "aiko": { "$ref": "#/$defs/voice" } }
+    },
+    "voice": {
+      "type": "object",
+      "required": ["azure", "say"],
+      "additionalProperties": false,
+      "properties": {
+        "azure": { "type": "string", "description": "An Azure neural voice, e.g. en-US-AndrewNeural." },
+        "rate": { "type": "string", "pattern": "^[+-]\\d{1,2}%$", "description": "SSML prosody rate, e.g. -6%." },
+        "pitch": { "type": "string", "pattern": "^[+-]\\d{1,2}%$", "description": "SSML prosody pitch, e.g. -3%." },
+        "style": { "type": ["string", "null"], "description": "An Azure speaking style (mstts:express-as), where the voice has it." },
+        "say": { "type": "string", "description": "The macOS voice used as a stand-in without a key." },
+        "elevenlabs": { "type": ["string", "null"], "description": "An ElevenLabs voice id." }
+      }
     }
   }
 }

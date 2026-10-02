@@ -129,6 +129,21 @@ public class ReplayEndToEndTests
                 Assert.IsFalse(float.IsNaN(c.x) || float.IsInfinity(c.x), preset + " is somewhere");
                 if (preset != ShotPreset.Pov) Assert.Less(Vector3.Distance(c, her.Position), 40f, preset + " is near her");
             }
+            if (Application.isBatchMode) Assert.AreEqual(0f, AudioListener.volume, "an unattended run is never heard");
+
+            // Where she is in the picture, as a shot's track records it: in frame for the
+            // cameras that follow her.
+            foreach (ShotPreset preset in new[] { ShotPreset.Chase, ShotPreset.Orbit, ShotPreset.TopDown })
+            {
+                p.Cameras.Subject = KrecKind.Aiko;
+                p.Cameras.Use(preset);
+                p.ApplyAt(mid, 1f / 60f, false);
+                double[] seen = ShotTrack.Project(stage.Camera, her.Position + Vector3.up * ShotTrack.MiddleHeight(true));
+                Assert.IsNotNull(seen, preset + " has her in the picture");
+                Assert.That(seen[0], Is.InRange(0.05, 0.95), preset + " across");
+                Assert.That(seen[1], Is.InRange(0.05, 0.95), preset + " down");
+                Assert.Greater(seen[2], 0.005, preset + " shows her bigger than a dot");
+            }
             p.Data.TryCamera(mid, out CameraSample eyes);
             p.Cameras.Use(ShotPreset.Pov);
             p.ApplyAt(mid, 1f / 60f, false);

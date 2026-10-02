@@ -5,7 +5,7 @@ using NUnit.Framework;
 using UnityEngine;
 
 // The replay player's parts that don't need the store: the camera path, the shot settings,
-// and the sound of a rendered shot.
+// where a body lands in a shot's picture, and the sound of a rendered shot.
 public class ReplayPlayerTests
 {
     static ShotPath ThreeKeys()
@@ -106,6 +106,50 @@ public class ReplayPlayerTests
         Assert.IsTrue(ReplayCameras.TryParse("CCTV", out ShotPreset cctv));
         Assert.AreEqual(ShotPreset.Cctv, cctv);
         Assert.IsFalse(ReplayCameras.TryParse("drone", out _));
+    }
+
+    [Test]
+    public void AShotTrack_PutsABodyWhereTheCameraSeesIt()
+    {
+        var go = new GameObject("Track camera");
+        try
+        {
+            Camera cam = go.AddComponent<Camera>();
+            cam.fieldOfView = 60f;
+            cam.aspect = 9f / 16f;
+            cam.nearClipPlane = 0.1f;
+            go.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+
+            double[] ahead = ShotTrack.Project(cam, new Vector3(0f, 0f, 5f));
+            Assert.IsNotNull(ahead);
+            Assert.AreEqual(0.5, ahead[0], 1e-3, "straight ahead is the middle, across");
+            Assert.AreEqual(0.5, ahead[1], 1e-3, "and down");
+            double[] above = ShotTrack.Project(cam, new Vector3(0f, 1f, 5f));
+            Assert.Less(above[1], 0.5, "higher up is nearer the top (y runs down)");
+            double[] right = ShotTrack.Project(cam, new Vector3(0.5f, 0f, 5f));
+            Assert.Greater(right[0], 0.5, "to the right is further across");
+            double[] far = ShotTrack.Project(cam, new Vector3(0f, 0f, 20f));
+            Assert.Less(far[2], ahead[2], "further away looks smaller");
+            Assert.IsNull(ShotTrack.Project(cam, new Vector3(0f, 0f, -5f)), "behind the camera");
+            Assert.IsNull(ShotTrack.Project(cam, new Vector3(30f, 0f, 5f)), "outside the frame");
+        }
+        finally
+        {
+            Object.DestroyImmediate(go);
+        }
+    }
+
+    [Test]
+    public void AShotTrack_SamplesTenTimesASecond_AtAnyFrameRate()
+    {
+        foreach (int fps in new[] { 24, 25, 30, 60 })
+        {
+            int samples = 0;
+            for (int frame = 0; frame < fps * 3; frame++)
+                if (ShotTrack.Due(frame, fps, samples)) samples++;
+            Assert.AreEqual(3 * ShotTrack.Hz, samples, $"{fps} fps");
+        }
+        Assert.IsFalse(ShotTrack.Due(-1, 30, 0), "not during the warm-up");
     }
 
     [Test]

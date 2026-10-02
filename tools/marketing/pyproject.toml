@@ -1,9 +1,13 @@
 [project]
 name = "kehai-marketing"
 version = "0.1.0"
-description = "Kehai's marketing pipeline: schema validators and the asset library (later: voice, writing, publishing). See BUILD_PLAN.md."
+description = "Kehai's marketing pipeline: the asset library, the Claude writing steps and the voice (publishing comes in Phase 7). See README.md and BUILD_PLAN.md."
 requires-python = ">=3.12"
-dependencies = ["jsonschema>=4.23"]
+dependencies = [
+    "anthropic>=1.11.0",
+    "azure-cognitiveservices-speech>=1.52.0",
+    "jsonschema>=4.23",
+]
 
 [dependency-groups]
 dev = ["pytest>=8"]

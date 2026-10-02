@@ -8,10 +8,10 @@
 
 | | |
 |---|---|
-| **Current phase** | Phase 5 (Remotion editor) built and verified — branch `feat/editor`, worktree `~/Developer/kehai-editor`, stacked on Phase 4 (PR #16), which is stacked on Phase 3 (PR #15) ✋ |
-| **Next action** | Owner: watch the samples in `~/TokenLimit/marketing/drafts/`; review and merge #15, then #16, then the Phase 5 PR (each moves onto `main` as the one below merges). Then Phase 6 |
-| **Blocked on owner** | Answers to Q8–Q10, Q12 and Q14; the rest of the [owner setup checklist](#owner-setup-checklist) (rclone for Drive now; the rest from Phase 6) |
-| **Last updated** | 2026-09-30 |
+| **Current phase** | Phase 6 (voice and writing) built and verified without keys — branch `feat/voice-writing`, worktree `~/Developer/kehai-voice`, stacked on Phase 5 (PR #17) ✋ |
+| **Next action** | Owner: review and merge #15, #16, #17, then the Phase 6 PR; add the Anthropic and Azure keys to `tools/marketing/.env`, then `uv run voice_samples.py` for Q10. Then Phase 7 |
+| **Blocked on owner** | The keys (Anthropic with the $15 limit, Azure Speech F0); answers to Q8–Q10, Q12 and Q14; the rest of the [owner setup checklist](#owner-setup-checklist) |
+| **Last updated** | 2026-10-02 |
 
 **How to resume (for a later session).**
 1. Read this file, then the memory notes for this project.
@@ -387,29 +387,93 @@ out). `editor/README.md` explains an edit.
         estimated word timings, until Phase 6's Azure voices. The music, sound effects, Lottie,
         GIF and still are our own, entered through `add_asset.py`. They wait for Drive (rclone).
       - **Re-check:** EditMode 76/76 on the clone afterwards.
-- [ ] PR. ✋
+- [x] PR #17, opened 2026-10-02 (not merged yet). ✋
 - Licence note: Remotion is free for individuals and companies of up to 3 people.
 
 ## Phase 6 — Voice and writing (Python, `tools/marketing`) ✋
 
-- [ ] TTS interface: Azure Speech backend (neural, EN + RU, word timings via `WordBoundary`, a
-      distinct voice for Aiko's lines) and a switchable ElevenLabs backend.
-- [ ] Claude steps, one script each, prompts in `tools/marketing/prompts/*.md`, outputs validated
-      against the schemas with structured outputs (`output_config.format`), the style guide
-      prompt-cached: `pick_moments`, `write_short`, `translate`, `revise` (claude-sonnet-5-5),
-      `long_video` (claude-opus-5-5), `package`, `weekly_report`. `pick_moments` reads the
-      week's `.markers.json` files and must include every moment with `kept: true`.
-- [ ] Log tokens and cost per call to `logs/llm_costs.csv`; stop and tell the owner if a calendar
-      month passes $15 (the Console workspace limit is the hard stop behind it).
-- API notes for the implementer: Sonnet 5.5 and Opus 5.5 reject forced `tool_choice` → use
-  structured outputs; Opus 5.5's default effort is `medium` (set it explicitly); no assistant
-  prefill; handle `stop_reason: "refusal"` and include the server-side fallback beta.
-- ✋
+Branch `feat/voice-writing`, worktree `~/Developer/kehai-voice`, stacked on `feat/editor` (PR #17).
+Built without keys (the owner had none yet): every step runs for real against replayed answers
+and the macOS stand-in voice, and switches to Claude and Azure when `.env` has the keys.
+`tools/marketing/README.md` explains each script.
 
-**Budget estimate** (Sonnet 5.5 $2/$10 per M tokens, Opus 5.5 $4/$20, cache reads $0.20,
-cache writes 1.25×): weekly pick + 3 shorts + 3 translations + 3 packages + revisions + report
-≈ $0.5–0.8/week; one long video (Opus, ~60k-token context, 4–6 calls + revisions) ≈ $1.5–3.
-**≈ $4–6 a month**, well under $15.
+- [x] **The Claude steps**, one script each, all on **Claude Opus 5.5** with the effort set per
+      step (`km/llm/steps.py`: low for translate, package and the report; medium for picking and
+      revising; high for writing):
+      - `pick_moments.py`: the week's `.markers.json` → 3 shorts, 2 to 4 shots each, and a decision
+        for **every kept moment** (short, long, bug, skip; checked, and sent back once if one is
+        missing); moments used in earlier weeks are marked; writes `plans/<week>/picks.json`
+        with the `render_shot.sh` runs, which `render_picks.py` renders one at a time;
+      - `write_short.py`: a draft against the rendered shots (their events and where Aiko and
+        you are in the picture) and the asset library → `edits/<id>/` (edit, draft, context);
+      - `translate.py`: every text to Russian, spoken lines checked to fit their time, names as
+        brand.json says (Latin on screen, «Кэхай» and «Айко» in speech); remembered, so a
+        revision only translates what changed;
+      - `revise.py --note` / `--undo`: the owner's note applied to the whole draft; every earlier
+        version kept in `versions/`;
+      - `package.py`: YouTube, Instagram, TikTok, X, Bluesky, a pinned comment, per language;
+        lengths, hashtags, no invented handles or links, and never her name's meaning, checked;
+      - `long_video.py outline | script | voice | edit`: the monthly video in stages for ✋ gates,
+        from the month's moments, `CHANGELOG.md`, the commits and the owner's notes; the edit
+        is timed to the recorded voice-over;
+      - `weekly_report.py`: the week's numbers counted in code, Claude's short read on top.
+- [x] **How they call Claude** (`km/llm/client.py`): structured outputs (`output_config.format`)
+      against `schemas/llm/*.schema.json`, kept inside the API's limits (every field required, no
+      ranges, no unions; a test checks), then the rules the schema can't hold (`km/drafts.py`:
+      shot lengths against trim and speed, overlays inside scenes, the hook at 0 not repeating the
+      voice, lines sayable in their time, ids that exist) with **one repair round**; the style
+      guide and the game reference (`prompts/style.md`, `reference.md`) cached at the front of
+      every request; `fallbacks: "default"` for refusals, and a refusal stops the step and tells
+      the owner; streaming; no prefill; Opus's thinking left adaptive.
+- [x] **Cost:** every call to `logs/llm_costs.csv` (tokens, cache reads and writes, dollars,
+      priced per model, a fallback priced by the model that answered). Before a call: this
+      month's spend + a high estimate against **$15** (`KEHAI_LLM_MONTHLY_USD`); past it nothing
+      is sent and the owner is told (`state/alerts.jsonl`, to Telegram in Phase 7); a warning at
+      80%. **Dry run** on every step (the request saved with its estimate); **replay**
+      (`KEHAI_LLM_REPLAY`) answers from files.
+- [x] **The voice** (`km/tts/`, `voice.py`): Azure neural voices (SSML with rate, pitch and style;
+      word timings from `WordBoundary`; 429 retried; F0's 0.5M characters a month tracked and
+      capped), ElevenLabs (word timings from its character alignment), and macOS `say` as the
+      stand-in (word timings estimated from the silences). Aiko has her own voice. Voices per
+      language and role in `brand.json`. Lines cached by what's said and who says it; lines
+      that would overlap move later; behind the heavy-job lock. The edit gained `script` (the
+      voice-over as written; `voice` is what the renderer plays).
+- [x] **Where Aiko is in a shot** (`ShotTrack.cs`): every render now records where she and you
+      are in the picture, ten times a second, in the shot's `.json` (`track`). The writer sees
+      it once a second; an arrow or circle with `target: aiko` is placed from it exactly
+      (trim, speed ramps and zoom included) and **follows her** through its time on screen (the
+      editor's new `follow` keys).
+- [x] **Silence:** every Unity batch run (tests, bot shifts, renders) plays nothing out loud:
+      `SoundSettings.Audible` keeps the listener at 0 in batch mode (the owner heard the earlier
+      runs). A shot's sound is mixed offline, so it loses nothing.
+- [x] **Fixes found on the way:** the end card's call to action ran off the screen in Russian
+      (now wrapped inside the safe area, and capped at 32 characters in English); monthly totals
+      counted rows from other months.
+- [x] **Verified 2026-10-02:**
+      - `uv run pytest`: **103** (the client, prices, the cap and its alerts, replays, the repair
+        round, refusals, cut-off answers, the schemas' limits, prompts free of hard-coded names;
+        drafts and every check; translations carried over; targets and following marks; SSML,
+        alignments, word estimates, fitting, quotas, the lock; every step script end to end with
+        replayed answers, the long video's four stages included). `npm test` 11, `tsc` clean;
+      - C# compiles offline with 0 warnings; **EditMode 78/78** on a clone (2 new ShotTrack tests;
+        the end-to-end test checks her place in the picture and the silence);
+      - for real, with replayed answers: a 5-minute bot shift → `pick_moments` → `render_picks`
+        rendered 2 tracked shots through Unity (16.4 s each, about 22 s per render) →
+        `write_short` → `translate` → `voice` (say) → `render.mjs` EN + RU. The track matched
+        the frames; circles and an arrow followed her; the shots kept their sound (peak level 0.55);
+      - the API path with a deliberately wrong key: the SDK takes the request; the 401 becomes
+        "check the key" (exit 3) with nothing logged.
+- **Not verified yet:** a real Claude answer (no key), Azure and ElevenLabs voices (no keys), so
+  real costs and prompt quality are untested. The first sample render once stopped at 30% with
+  no error (49 s in); it didn't happen again in seven renders since.
+- [ ] PR. ✋
+
+**Budget estimate**, Opus 5.5 at the efforts above ($4 / $20 per M tokens, cache reads $0.20,
+cache writes 1.25×), from the dry runs' high guesses: a pick about $0.15, a short about $0.27, a
+translation or a package about $0.08, a revision about $0.20, the report about $0.06; a week with
+three revisions ≈ **$2**, and a long video ≈ $2–3 a month: **≈ $10–11 a month**, inside $15 but
+with less room than Sonnet would leave. The ledger will show the real figure within two weeks;
+the levers are lower effort, or `KEHAI_LLM_MODEL=claude-sonnet-5-5` (the owner's call).
 
 ## Phase 7 — n8n (self-hosted, npm, localhost) ✋
 
@@ -463,8 +527,8 @@ TTS audio: kept with its draft · logs: 90 days.
 
 ## Owner setup checklist
 
-Nothing here is needed before Phase 5. Put secrets **only** in `tools/marketing/.env`
-(created later from `.env.example`, gitignored) or in n8n's credential store.
+Put secrets **only** in `tools/marketing/.env` (copy `tools/marketing/.env.example`; gitignored)
+or in n8n's credential store. Phase 6's steps are waiting on the first two.
 
 - [ ] **Anthropic API** (console.anthropic.com): create a workspace (e.g. `tokenlimit-marketing`),
       set its **monthly spend limit to $15**, create an API key in it → `ANTHROPIC_API_KEY`.
@@ -512,9 +576,10 @@ handles and links still to come).
    Cloudflare R2 bucket (free tier, needs a Cloudflare account).
 9. **X or Bluesky** for the third Buffer channel (Free plan = 3)? Or a paid Buffer plan for both.
 10. **Voices.** English narrator, Russian narrator, and Aiko. *Recommend:* 3–4 Azure samples of
-    each in Phase 6 for you to pick (e.g. EN: Andrew / Ava; RU: Dmitry / Svetlana; Aiko: a calm,
+    each for you to pick (e.g. EN: Andrew / Ava; RU: Dmitry / Svetlana; Aiko: a calm,
     formal female voice, possibly a Japanese voice speaking English). Should Aiko ever speak
-    Japanese with subtitles?
+    Japanese with subtitles? *Ready:* once the Azure key is in `.env`, `uv run voice_samples.py`
+    makes 13 samples (`audio/samples/`).
 11. ~~**brand.json**~~ *Answered: crimson, soft black, white, soft fonts; handles and links when the accounts exist.* It needs: handle(s), website, Discord/Steam links (if any yet), colours, fonts.
     *Recommend as defaults:* colours from the shift report (`#0f1116` bg, `#ff5454` Aiko,
     `#4dd2ff` you, `#ffd640` her guess); fonts **Inter** (Latin + Cyrillic) and **Noto Sans JP**
@@ -544,6 +609,10 @@ handles and links still to come).
 | 2026-09-30 | Drive through rclone with the `drive.file` scope; assets only through `add_asset.py` | owner (Q7) |
 | 2026-09-30 | Brand: crimson #DC143C, soft black #151518, white; Nunito + M PLUS Rounded 1c | owner (Q11) + Phase 5 |
 | 2026-09-30 | Remotion's bundled ffmpeg replaces Homebrew's; ReplayRender pipes PNG frames | Phase 5 (for review) |
+| 2026-10-02 | Phase 6 built without keys (owner: "proceed building"): replayed answers and the macOS voice stand in until the keys exist | owner |
+| 2026-10-02 | Every Claude step on Opus 5.5, effort per step; Sonnet 5.5 only if the owner chooses it (`KEHAI_LLM_MODEL`) | Phase 6 (for review) |
+| 2026-10-02 | Claude writes drafts in a small schema of its own; the code turns them into edits and checks what the schema can't | Phase 6 (for review) |
+| 2026-10-02 | Unity batch runs are silent (the owner heard them); shots record where Aiko and you are on screen, and marks follow her | owner + Phase 6 |
 | 2026-09-30 | Heavy jobs share one lock, `~/TokenLimit/marketing/state/heavy.lock` (a directory holding the owner's pid); a job that finds it held exits 75 | Phase 4 (for review) |
 
 ## Changelog
@@ -561,3 +630,5 @@ handles and links still to come).
   Aiko's mind, and unattended shot renders; PR #16.
 - 2026-09-30 — Phase 5 started (`feat/editor`): brand.json, the edit schema, the Remotion editor,
   the asset library.
+- 2026-10-02 — Phase 5 PR #17 opened. Phase 6 built (`feat/voice-writing`): the Claude steps,
+  the cost ledger and cap, the voice, shot tracks and following marks, silent batch runs.

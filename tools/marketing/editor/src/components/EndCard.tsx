@@ -5,7 +5,7 @@ import { brand } from '../brand.ts';
 import { FONT, JAPANESE } from '../fonts.ts';
 import { textFor } from '../lib/timeline.ts';
 import type { Language, Text } from '../lib/types.ts';
-import { Emphasis, useUnit } from '../style.tsx';
+import { Emphasis, SAFE, useUnit } from '../style.tsx';
 
 export const EndCard: React.FC<{ lang: Language; cta?: Text; showHandles?: boolean }> = ({ lang, cta, showHandles = true }) => {
   const frame = useCurrentFrame();
@@ -28,8 +28,9 @@ export const EndCard: React.FC<{ lang: Language; cta?: Text; showHandles?: boole
         {brand.game.tagline[lang]}
       </div>
       {action && (
-        <div style={{ marginTop: 20 * unit, padding: `${16 * unit}px ${40 * unit}px`, borderRadius: 999, backgroundColor: brand.colours.crimson,
-          color: brand.colours.paper, fontFamily: FONT, fontWeight: 900, fontSize: 50 * unit, transform: `scale(${later})` }}>
+        <div style={{ marginTop: 20 * unit, padding: `${16 * unit}px ${40 * unit}px`, borderRadius: 48 * unit, backgroundColor: brand.colours.crimson,
+          color: brand.colours.paper, fontFamily: FONT, fontWeight: 900, fontSize: 50 * unit, lineHeight: 1.15, textAlign: 'center',
+          maxWidth: `${(1 - 2 * SAFE.side) * 100}%`, boxSizing: 'border-box', transform: `scale(${later})` }}>
           <Emphasis text={action} accent={brand.colours.ink} />
         </div>
       )}

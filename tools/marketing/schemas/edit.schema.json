@@ -30,6 +30,11 @@
       }
     },
     "scenes": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/scene" } },
+    "script": {
+      "type": "array",
+      "description": "The voice-over as written, before it is spoken: voice.py speaks each line in each language into `voice`. The renderer plays `voice` and ignores this.",
+      "items": { "$ref": "#/$defs/scriptLine" }
+    },
     "voice": {
       "type": "object",
       "description": "Voice-over per language.",
@@ -259,7 +264,8 @@
         "from_x": { "$ref": "#/$defs/fraction" }, "from_y": { "$ref": "#/$defs/fraction" },
         "to_x": { "$ref": "#/$defs/fraction" }, "to_y": { "$ref": "#/$defs/fraction" },
         "color": { "$ref": "#/$defs/colour" },
-        "curve": { "type": "number", "minimum": -1, "maximum": 1, "default": 0.25 }
+        "curve": { "type": "number", "minimum": -1, "maximum": 1, "default": 0.25 },
+        "follow": { "$ref": "#/$defs/follow", "description": "The point it points at, moving: it follows someone through the shot." }
       }
     },
     "circle": {
@@ -272,7 +278,18 @@
         "type": { "const": "circle" },
         "x": { "$ref": "#/$defs/fraction" }, "y": { "$ref": "#/$defs/fraction" },
         "radius": { "type": "number", "exclusiveMinimum": 0, "maximum": 0.5, "description": "Fraction of the frame's width." },
-        "color": { "$ref": "#/$defs/colour" }
+        "color": { "$ref": "#/$defs/colour" },
+        "follow": { "$ref": "#/$defs/follow", "description": "Its centre, moving: it stays around someone through the shot." }
+      }
+    },
+    "follow": {
+      "type": "array",
+      "description": "Where a mark's point is over time, in seconds from when the mark appears (tools/marketing places these from a shot's track); straight lines between keys.",
+      "items": {
+        "type": "object",
+        "required": ["at", "x", "y"],
+        "additionalProperties": false,
+        "properties": { "at": { "type": "number", "minimum": 0 }, "x": { "$ref": "#/$defs/fraction" }, "y": { "$ref": "#/$defs/fraction" } }
       }
     },
     "meme": {
@@ -322,6 +339,17 @@
         "text": { "type": "string", "minLength": 1 },
         "start": { "type": "number", "minimum": 0, "description": "Seconds into the clip." },
         "end": { "type": "number", "minimum": 0 }
+      }
+    },
+    "scriptLine": {
+      "type": "object",
+      "required": ["id", "speaker", "at", "text"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_-]{0,39}$", "description": "Names the line's audio: audio/<edit id>/<language>/<id>.wav." },
+        "speaker": { "enum": ["narrator", "aiko"] },
+        "at": { "type": "number", "minimum": 0, "description": "Seconds into the video the line should start (voice.py moves it later if the line before runs long)." },
+        "text": { "$ref": "#/$defs/text" }
       }
     },
     "voiceClip": {
