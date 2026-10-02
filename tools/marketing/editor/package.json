@@ -1,0 +1,31 @@
+{
+  "name": "kehai-editor",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Kehai's video editor: one Remotion composition driven by edit.json (see ../BUILD_PLAN.md, Phase 5).",
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "node render.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@remotion/bundler": "4.0.530",
+    "@remotion/cli": "4.0.530",
+    "@remotion/gif": "4.0.530",
+    "@remotion/google-fonts": "4.0.530",
+    "@remotion/lottie": "4.0.530",
+    "@remotion/renderer": "4.0.530",
+    "@remotion/transitions": "4.0.530",
+    "ajv": "^8.17.1",
+    "lottie-web": "^5.12.2",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "remotion": "4.0.530"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.0",
+    "typescript": "^5.9.2"
+  }
+}

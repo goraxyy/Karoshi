@@ -1,0 +1,594 @@
+{
+  "$schema": "../../schemas/edit.schema.json",
+  "version": 1,
+  "id": "sample-short-catch",
+  "kind": "short",
+  "format": "9:16",
+  "fps": 30,
+  "languages": [
+    "en",
+    "ru"
+  ],
+  "title": {
+    "en": "I hid. She knew.",
+    "ru": "Я спрятался. Она знала."
+  },
+  "source": {
+    "stem": "bot shift (sample)",
+    "moments": [
+      1
+    ],
+    "notes": "Phase 5 sample: every feature of the editor in one short."
+  },
+  "scenes": [
+    {
+      "id": "hook",
+      "duration": 3.6,
+      "visual": {
+        "type": "shot",
+        "src": "shots/sample/v_m1_chase.mp4",
+        "trim": 2,
+        "zoom": [
+          {
+            "at": 0,
+            "scale": 1.0
+          },
+          {
+            "at": 3.6,
+            "scale": 1.18,
+            "x": 0.5,
+            "y": 0.55
+          }
+        ]
+      },
+      "overlays": [
+        {
+          "type": "hook",
+          "text": {
+            "en": "I hid. She *knew*.",
+            "ru": "Я спрятался. Она *знала*."
+          }
+        }
+      ],
+      "sfx": [
+        {
+          "src": "assets/sfx/sample-whoosh.wav",
+          "at": 0,
+          "volume": 0.7
+        }
+      ]
+    },
+    {
+      "id": "cctv",
+      "duration": 4.2,
+      "transition": {
+        "type": "slide",
+        "duration": 0.35,
+        "direction": "from-right"
+      },
+      "visual": {
+        "type": "shot",
+        "src": "shots/sample/v_m1_cctv.mp4",
+        "trim": 5,
+        "volume": 0.8
+      },
+      "overlays": [
+        {
+          "type": "label",
+          "text": {
+            "en": "CAM 04",
+            "ru": "КАМЕРА 04"
+          },
+          "x": 0.2,
+          "y": 0.14,
+          "style": "ink",
+          "size": "s"
+        },
+        {
+          "type": "arrow",
+          "from_x": 0.2,
+          "from_y": 0.3,
+          "to_x": 0.46,
+          "to_y": 0.46,
+          "from": 0.8,
+          "curve": 0.3
+        },
+        {
+          "type": "label",
+          "text": {
+            "en": "her",
+            "ru": "она"
+          },
+          "x": 0.2,
+          "y": 0.27,
+          "from": 0.8
+        }
+      ]
+    },
+    {
+      "id": "mind",
+      "duration": 5.2,
+      "transition": {
+        "type": "fade",
+        "duration": 0.4
+      },
+      "visual": {
+        "type": "shot",
+        "src": "shots/sample/v_m1_top.mp4",
+        "trim": 8,
+        "speed": [
+          {
+            "at": 0,
+            "rate": 1
+          },
+          {
+            "at": 1.8,
+            "rate": 0.35
+          },
+          {
+            "at": 4.2,
+            "rate": 1
+          }
+        ]
+      },
+      "pip": {
+        "src": "shots/sample/v_m1_mind.webm",
+        "trim": 8,
+        "transparent": true,
+        "corner": "top-left",
+        "size": 0.5,
+        "label": {
+          "en": "What she *thinks*",
+          "ru": "Что она *думает*"
+        }
+      },
+      "overlays": [
+        {
+          "type": "circle",
+          "x": 0.5,
+          "y": 0.5,
+          "radius": 0.16,
+          "from": 1.8,
+          "to": 4.4
+        }
+      ]
+    },
+    {
+      "id": "caught",
+      "duration": 3.6,
+      "transition": {
+        "type": "wipe",
+        "duration": 0.3,
+        "direction": "from-left"
+      },
+      "visual": {
+        "type": "shot",
+        "src": "shots/sample/v_m1_pov.mp4",
+        "trim": 11,
+        "zoom": [
+          {
+            "at": 1.55,
+            "scale": 1
+          },
+          {
+            "at": 1.85,
+            "scale": 1.35,
+            "x": 0.5,
+            "y": 0.45
+          },
+          {
+            "at": 3.6,
+            "scale": 1.4,
+            "x": 0.5,
+            "y": 0.45
+          }
+        ]
+      },
+      "overlays": [
+        {
+          "type": "meme",
+          "template": "pov",
+          "text": {
+            "en": "you thought the shelves would hide you",
+            "ru": "ты думал, полки тебя спрячут"
+          }
+        }
+      ],
+      "sfx": [
+        {
+          "src": "assets/sfx/sample-boom.wav",
+          "at": 1.6
+        }
+      ]
+    },
+    {
+      "id": "expectation",
+      "duration": 3.4,
+      "transition": {
+        "type": "flip",
+        "duration": 0.4,
+        "direction": "from-bottom"
+      },
+      "visual": {
+        "type": "split",
+        "direction": "column",
+        "a": {
+          "type": "shot",
+          "src": "shots/sample/v_m1_chase.mp4",
+          "trim": 0,
+          "volume": 0
+        },
+        "b": {
+          "type": "shot",
+          "src": "shots/sample/v_m1_pov.mp4",
+          "trim": 12,
+          "volume": 0.6
+        }
+      },
+      "overlays": [
+        {
+          "type": "meme",
+          "template": "expectation-reality"
+        }
+      ]
+    }
+  ],
+  "voice": {
+    "en": [
+      {
+        "src": "audio/sample/sample-short-catch.en.01.wav",
+        "at": 0.35,
+        "duration": 1.309,
+        "speaker": "narrator",
+        "words": [
+          {
+            "text": "I",
+            "start": 0.009,
+            "end": 0.119
+          },
+          {
+            "text": "hid",
+            "start": 0.119,
+            "end": 0.304
+          },
+          {
+            "text": "behind",
+            "start": 0.304,
+            "end": 0.599
+          },
+          {
+            "text": "the",
+            "start": 0.599,
+            "end": 0.783
+          },
+          {
+            "text": "shelves.",
+            "start": 0.783,
+            "end": 1.143
+          }
+        ]
+      },
+      {
+        "src": "audio/sample/sample-short-catch.en.02.wav",
+        "at": 3.55,
+        "duration": 2.112,
+        "speaker": "narrator",
+        "words": [
+          {
+            "text": "She",
+            "start": 0.012,
+            "end": 0.214
+          },
+          {
+            "text": "wasn't",
+            "start": 0.214,
+            "end": 0.536
+          },
+          {
+            "text": "looking.",
+            "start": 0.536,
+            "end": 0.941
+          },
+          {
+            "text": "She",
+            "start": 1.061,
+            "end": 1.262
+          },
+          {
+            "text": "was",
+            "start": 1.262,
+            "end": 1.464
+          },
+          {
+            "text": "listening.",
+            "start": 1.464,
+            "end": 1.949
+          }
+        ]
+      },
+      {
+        "src": "audio/sample/sample-short-catch.en.03.wav",
+        "at": 7.45,
+        "duration": 1.832,
+        "speaker": "narrator",
+        "words": [
+          {
+            "text": "Every",
+            "start": 0.006,
+            "end": 0.265
+          },
+          {
+            "text": "sound",
+            "start": 0.265,
+            "end": 0.524
+          },
+          {
+            "text": "I",
+            "start": 0.524,
+            "end": 0.636
+          },
+          {
+            "text": "made",
+            "start": 0.636,
+            "end": 0.858
+          },
+          {
+            "text": "went",
+            "start": 0.858,
+            "end": 1.08
+          },
+          {
+            "text": "on",
+            "start": 1.08,
+            "end": 1.228
+          },
+          {
+            "text": "her",
+            "start": 1.228,
+            "end": 1.414
+          },
+          {
+            "text": "map.",
+            "start": 1.414,
+            "end": 1.627
+          }
+        ]
+      },
+      {
+        "src": "audio/sample/sample-short-catch.en.04.wav",
+        "at": 13.95,
+        "duration": 1.199,
+        "speaker": "aiko",
+        "words": [
+          {
+            "text": "There",
+            "start": 0.001,
+            "end": 0.239
+          },
+          {
+            "text": "you",
+            "start": 0.239,
+            "end": 0.409
+          },
+          {
+            "text": "are.",
+            "start": 0.409,
+            "end": 0.595
+          }
+        ]
+      },
+      {
+        "src": "audio/sample/sample-short-catch.en.05.wav",
+        "at": 15.45,
+        "duration": 2.004,
+        "speaker": "narrator",
+        "words": [
+          {
+            "text": "Next",
+            "start": 0.007,
+            "end": 0.286
+          },
+          {
+            "text": "shift,",
+            "start": 0.286,
+            "end": 0.677
+          },
+          {
+            "text": "I'm",
+            "start": 0.797,
+            "end": 1.029
+          },
+          {
+            "text": "wearing",
+            "start": 1.029,
+            "end": 1.447
+          },
+          {
+            "text": "socks.",
+            "start": 1.447,
+            "end": 1.838
+          }
+        ]
+      }
+    ],
+    "ru": [
+      {
+        "src": "audio/sample/sample-short-catch.ru.01.wav",
+        "at": 0.35,
+        "duration": 1.658,
+        "speaker": "narrator",
+        "words": [
+          {
+            "text": "Я",
+            "start": 0.007,
+            "end": 0.162
+          },
+          {
+            "text": "спрятался",
+            "start": 0.162,
+            "end": 0.73
+          },
+          {
+            "text": "за",
+            "start": 0.73,
+            "end": 0.937
+          },
+          {
+            "text": "полками.",
+            "start": 0.937,
+            "end": 1.489
+          }
+        ]
+      },
+      {
+        "src": "audio/sample/sample-short-catch.ru.02.wav",
+        "at": 3.55,
+        "duration": 2.111,
+        "speaker": "narrator",
+        "words": [
+          {
+            "text": "Она",
+            "start": 0.003,
+            "end": 0.255
+          },
+          {
+            "text": "не",
+            "start": 0.255,
+            "end": 0.457
+          },
+          {
+            "text": "смотрела.",
+            "start": 0.457,
+            "end": 1.042
+          },
+          {
+            "text": "Она",
+            "start": 1.162,
+            "end": 1.414
+          },
+          {
+            "text": "слушала.",
+            "start": 1.414,
+            "end": 1.949
+          }
+        ]
+      },
+      {
+        "src": "audio/sample/sample-short-catch.ru.03.wav",
+        "at": 7.45,
+        "duration": 2.098,
+        "speaker": "narrator",
+        "words": [
+          {
+            "text": "Каждый",
+            "start": 0.005,
+            "end": 0.354
+          },
+          {
+            "text": "мой",
+            "start": 0.354,
+            "end": 0.572
+          },
+          {
+            "text": "звук",
+            "start": 0.572,
+            "end": 0.834
+          },
+          {
+            "text": "попадал",
+            "start": 0.834,
+            "end": 1.227
+          },
+          {
+            "text": "на",
+            "start": 1.227,
+            "end": 1.402
+          },
+          {
+            "text": "её",
+            "start": 1.402,
+            "end": 1.576
+          },
+          {
+            "text": "карту.",
+            "start": 1.576,
+            "end": 1.937
+          }
+        ]
+      },
+      {
+        "src": "audio/sample/sample-short-catch.ru.04.wav",
+        "at": 13.95,
+        "duration": 0.901,
+        "speaker": "aiko",
+        "words": [
+          {
+            "text": "Вот",
+            "start": 0.008,
+            "end": 0.243
+          },
+          {
+            "text": "ты",
+            "start": 0.243,
+            "end": 0.43
+          },
+          {
+            "text": "где.",
+            "start": 0.43,
+            "end": 0.733
+          }
+        ]
+      },
+      {
+        "src": "audio/sample/sample-short-catch.ru.05.wav",
+        "at": 15.45,
+        "duration": 1.933,
+        "speaker": "narrator",
+        "words": [
+          {
+            "text": "В",
+            "start": 0.029,
+            "end": 0.17
+          },
+          {
+            "text": "следующую",
+            "start": 0.17,
+            "end": 0.684
+          },
+          {
+            "text": "смену",
+            "start": 0.684,
+            "end": 1.011
+          },
+          {
+            "text": "надену",
+            "start": 1.011,
+            "end": 1.385
+          },
+          {
+            "text": "носки.",
+            "start": 1.385,
+            "end": 1.779
+          }
+        ]
+      }
+    ]
+  },
+  "music": {
+    "src": "assets/music/sample-night-shift.wav",
+    "volume": 0.4,
+    "duck": 0.12
+  },
+  "captions": {
+    "mode": "words",
+    "position": "bottom",
+    "maxWords": 3
+  },
+  "endCard": {
+    "duration": 2.8,
+    "cta": {
+      "en": "Follow for *more shifts*",
+      "ru": "Подпишись на *новые смены*"
+    }
+  }
+}

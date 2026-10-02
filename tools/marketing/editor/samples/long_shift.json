@@ -1,0 +1,1054 @@
+{
+  "$schema": "../../schemas/edit.schema.json",
+  "version": 1,
+  "id": "sample-long-shift",
+  "kind": "long",
+  "format": "16:9",
+  "fps": 30,
+  "languages": [
+    "en"
+  ],
+  "title": "One night shift with Aiko",
+  "source": {
+    "stem": "bot shift (sample)",
+    "moments": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "notes": "Phase 5 sample: a two-minute long video."
+  },
+  "scenes": [
+    {
+      "id": "title",
+      "duration": 5,
+      "visual": {
+        "type": "color",
+        "color": "ink"
+      },
+      "overlays": [
+        {
+          "type": "label",
+          "text": "SHIFT 3",
+          "x": 0.5,
+          "y": 0.4,
+          "style": "crimson",
+          "size": "l"
+        },
+        {
+          "type": "label",
+          "text": "One night. One manager who *never* stops learning.",
+          "x": 0.5,
+          "y": 0.56,
+          "style": "paper",
+          "size": "m",
+          "from": 0.8
+        },
+        {
+          "type": "lottie",
+          "src": "assets/lottie/sample-pulse.json",
+          "x": 0.5,
+          "y": 0.4,
+          "width": 0.34,
+          "enter": "fade"
+        }
+      ]
+    },
+    {
+      "id": "learned",
+      "duration": 18,
+      "transition": {
+        "type": "fade",
+        "duration": 0.6
+      },
+      "visual": {
+        "type": "shot",
+        "src": "shots/sample/h_m4_chase.mp4",
+        "trim": 1
+      },
+      "overlays": [
+        {
+          "type": "lowerThird",
+          "title": "She *learned* my route",
+          "subtitle": "Moment 4 · the PA calls, then she's there",
+          "from": 1,
+          "to": 7
+        }
+      ]
+    },
+    {
+      "id": "blink",
+      "duration": 12,
+      "transition": {
+        "type": "slide",
+        "duration": 0.5,
+        "direction": "from-right"
+      },
+      "visual": {
+        "type": "shot",
+        "src": "shots/sample/h_m3_cctv.mp4",
+        "trim": 0,
+        "speed": [
+          {
+            "at": 0,
+            "rate": 1
+          },
+          {
+            "at": 4,
+            "rate": 0.5
+          },
+          {
+            "at": 8,
+            "rate": 1
+          }
+        ],
+        "zoom": [
+          {
+            "at": 3,
+            "scale": 1
+          },
+          {
+            "at": 5,
+            "scale": 1.3,
+            "x": 0.55,
+            "y": 0.5
+          },
+          {
+            "at": 9,
+            "scale": 1.3,
+            "x": 0.55,
+            "y": 0.5
+          },
+          {
+            "at": 11,
+            "scale": 1
+          }
+        ]
+      },
+      "overlays": [
+        {
+          "type": "label",
+          "text": "CAM 02",
+          "x": 0.08,
+          "y": 0.08,
+          "style": "ink",
+          "size": "s"
+        },
+        {
+          "type": "arrow",
+          "from_x": 0.25,
+          "from_y": 0.25,
+          "to_x": 0.5,
+          "to_y": 0.45,
+          "from": 4,
+          "to": 9
+        }
+      ],
+      "sfx": [
+        {
+          "src": "assets/sfx/sample-whoosh.wav",
+          "at": 0
+        }
+      ]
+    },
+    {
+      "id": "catch",
+      "duration": 20,
+      "transition": {
+        "type": "wipe",
+        "duration": 0.5,
+        "direction": "from-left"
+      },
+      "visual": {
+        "type": "shot",
+        "src": "shots/sample/h_m1_top.mp4",
+        "trim": 0
+      },
+      "pip": {
+        "src": "shots/sample/h_m1_mind.webm",
+        "transparent": true,
+        "corner": "top-right",
+        "size": 0.34,
+        "label": "Her belief map"
+      },
+      "overlays": [
+        {
+          "type": "lowerThird",
+          "title": "The *catch*",
+          "subtitle": "She was sure where I was before she could see me",
+          "from": 2,
+          "to": 9
+        },
+        {
+          "type": "circle",
+          "x": 0.5,
+          "y": 0.5,
+          "radius": 0.09,
+          "from": 11,
+          "to": 15
+        }
+      ],
+      "sfx": [
+        {
+          "src": "assets/sfx/sample-boom.wav",
+          "at": 12.6
+        }
+      ]
+    },
+    {
+      "id": "loud",
+      "duration": 12,
+      "transition": {
+        "type": "clock",
+        "duration": 0.6
+      },
+      "visual": {
+        "type": "shot",
+        "src": "shots/sample/h_m2_orbit.mp4",
+        "trim": 0
+      },
+      "overlays": [
+        {
+          "type": "meme",
+          "template": "nobody",
+          "text": "*…I heard that.*",
+          "from": 3,
+          "to": 9
+        }
+      ]
+    },
+    {
+      "id": "near-misses",
+      "duration": 12,
+      "transition": {
+        "type": "fade",
+        "duration": 0.5
+      },
+      "visual": {
+        "type": "split",
+        "direction": "row",
+        "a": {
+          "type": "shot",
+          "src": "shots/sample/h_m5_chase.mp4",
+          "trim": 0,
+          "label": "Near miss 1"
+        },
+        "b": {
+          "type": "shot",
+          "src": "shots/sample/h_m6_cctv.mp4",
+          "trim": 0,
+          "volume": 0,
+          "label": "Near miss 2"
+        }
+      }
+    },
+    {
+      "id": "still",
+      "duration": 8,
+      "transition": {
+        "type": "fade",
+        "duration": 0.5
+      },
+      "visual": {
+        "type": "image",
+        "src": "assets/images/sample-store.png",
+        "zoom": [
+          {
+            "at": 0,
+            "scale": 1.05,
+            "x": 0.3,
+            "y": 0.5
+          },
+          {
+            "at": 8,
+            "scale": 1.3,
+            "x": 0.7,
+            "y": 0.45
+          }
+        ]
+      },
+      "overlays": [
+        {
+          "type": "meme",
+          "template": "caption-bar",
+          "text": "Me, restocking cereal at 3 a.m., thinking I'm *alone*"
+        },
+        {
+          "type": "gif",
+          "src": "assets/gifs/sample-blink.gif",
+          "x": 0.82,
+          "y": 0.66,
+          "width": 0.24,
+          "from": 1.5
+        }
+      ]
+    },
+    {
+      "id": "outro",
+      "duration": 30,
+      "transition": {
+        "type": "slide",
+        "duration": 0.5,
+        "direction": "from-bottom"
+      },
+      "visual": {
+        "type": "shot",
+        "src": "shots/sample/h_outro_top.mp4",
+        "trim": 0,
+        "speed": 0.9,
+        "volume": 0.5
+      },
+      "overlays": [
+        {
+          "type": "meme",
+          "template": "top-bottom",
+          "top": "Clocked in",
+          "bottom": "Never *really* clocked out",
+          "from": 18
+        }
+      ]
+    }
+  ],
+  "voice": {
+    "en": [
+      {
+        "src": "audio/sample/sample-long-shift.en.01.wav",
+        "at": 0.8,
+        "duration": 4.736,
+        "speaker": "narrator",
+        "words": [
+          {
+            "text": "This",
+            "start": 0.012,
+            "end": 0.274
+          },
+          {
+            "text": "is",
+            "start": 0.274,
+            "end": 0.449
+          },
+          {
+            "text": "Kehai.",
+            "start": 0.449,
+            "end": 0.81
+          },
+          {
+            "text": "You",
+            "start": 0.93,
+            "end": 1.148
+          },
+          {
+            "text": "work",
+            "start": 1.148,
+            "end": 1.411
+          },
+          {
+            "text": "the",
+            "start": 1.411,
+            "end": 1.629
+          },
+          {
+            "text": "night",
+            "start": 1.629,
+            "end": 1.935
+          },
+          {
+            "text": "shift.",
+            "start": 1.935,
+            "end": 2.296
+          },
+          {
+            "text": "Your",
+            "start": 2.416,
+            "end": 2.678
+          },
+          {
+            "text": "manager,",
+            "start": 2.678,
+            "end": 3.127
+          },
+          {
+            "text": "Aiko,",
+            "start": 3.247,
+            "end": 3.564
+          },
+          {
+            "text": "is",
+            "start": 3.684,
+            "end": 3.859
+          },
+          {
+            "text": "always",
+            "start": 3.859,
+            "end": 4.208
+          },
+          {
+            "text": "there.",
+            "start": 4.208,
+            "end": 4.569
+          }
+        ]
+      },
+      {
+        "src": "audio/sample/sample-long-shift.en.02.wav",
+        "at": 6.5,
+        "duration": 5.532,
+        "speaker": "narrator",
+        "words": [
+          {
+            "text": "By",
+            "start": 0.01,
+            "end": 0.184
+          },
+          {
+            "text": "shift",
+            "start": 0.184,
+            "end": 0.488
+          },
+          {
+            "text": "three,",
+            "start": 0.488,
+            "end": 0.845
+          },
+          {
+            "text": "she",
+            "start": 0.965,
+            "end": 1.182
+          },
+          {
+            "text": "has",
+            "start": 1.182,
+            "end": 1.399
+          },
+          {
+            "text": "learned",
+            "start": 1.399,
+            "end": 1.79
+          },
+          {
+            "text": "my",
+            "start": 1.79,
+            "end": 1.964
+          },
+          {
+            "text": "route.",
+            "start": 1.964,
+            "end": 2.322
+          },
+          {
+            "text": "She",
+            "start": 2.442,
+            "end": 2.659
+          },
+          {
+            "text": "calls",
+            "start": 2.659,
+            "end": 2.963
+          },
+          {
+            "text": "me",
+            "start": 2.963,
+            "end": 3.136
+          },
+          {
+            "text": "over",
+            "start": 3.136,
+            "end": 3.397
+          },
+          {
+            "text": "the",
+            "start": 3.397,
+            "end": 3.614
+          },
+          {
+            "text": "PA,",
+            "start": 3.614,
+            "end": 3.841
+          },
+          {
+            "text": "then",
+            "start": 3.961,
+            "end": 4.222
+          },
+          {
+            "text": "she's",
+            "start": 4.222,
+            "end": 4.526
+          },
+          {
+            "text": "already",
+            "start": 4.526,
+            "end": 4.916
+          },
+          {
+            "text": "waiting.",
+            "start": 4.916,
+            "end": 5.361
+          }
+        ]
+      },
+      {
+        "src": "audio/sample/sample-long-shift.en.03.wav",
+        "at": 23.0,
+        "duration": 3.526,
+        "speaker": "narrator",
+        "words": [
+          {
+            "text": "Here",
+            "start": 0.035,
+            "end": 0.261
+          },
+          {
+            "text": "I",
+            "start": 0.261,
+            "end": 0.375
+          },
+          {
+            "text": "made",
+            "start": 0.375,
+            "end": 0.602
+          },
+          {
+            "text": "a",
+            "start": 0.602,
+            "end": 0.715
+          },
+          {
+            "text": "noise.",
+            "start": 0.715,
+            "end": 1.011
+          },
+          {
+            "text": "She",
+            "start": 1.131,
+            "end": 1.32
+          },
+          {
+            "text": "heard",
+            "start": 1.32,
+            "end": 1.584
+          },
+          {
+            "text": "it,",
+            "start": 1.584,
+            "end": 1.766
+          },
+          {
+            "text": "and",
+            "start": 1.886,
+            "end": 2.075
+          },
+          {
+            "text": "she",
+            "start": 2.075,
+            "end": 2.264
+          },
+          {
+            "text": "moved",
+            "start": 2.264,
+            "end": 2.529
+          },
+          {
+            "text": "while",
+            "start": 2.529,
+            "end": 2.793
+          },
+          {
+            "text": "I",
+            "start": 2.793,
+            "end": 2.907
+          },
+          {
+            "text": "blinked.",
+            "start": 2.907,
+            "end": 3.278
+          }
+        ]
+      },
+      {
+        "src": "audio/sample/sample-long-shift.en.04.wav",
+        "at": 35.0,
+        "duration": 4.399,
+        "speaker": "narrator",
+        "words": [
+          {
+            "text": "This",
+            "start": 0.012,
+            "end": 0.265
+          },
+          {
+            "text": "is",
+            "start": 0.265,
+            "end": 0.433
+          },
+          {
+            "text": "the",
+            "start": 0.433,
+            "end": 0.644
+          },
+          {
+            "text": "part",
+            "start": 0.644,
+            "end": 0.897
+          },
+          {
+            "text": "I",
+            "start": 0.897,
+            "end": 1.024
+          },
+          {
+            "text": "love.",
+            "start": 1.024,
+            "end": 1.325
+          },
+          {
+            "text": "Top",
+            "start": 1.445,
+            "end": 1.656
+          },
+          {
+            "text": "right",
+            "start": 1.656,
+            "end": 1.951
+          },
+          {
+            "text": "is",
+            "start": 1.951,
+            "end": 2.12
+          },
+          {
+            "text": "her",
+            "start": 2.12,
+            "end": 2.331
+          },
+          {
+            "text": "belief",
+            "start": 2.331,
+            "end": 2.668
+          },
+          {
+            "text": "map:",
+            "start": 2.668,
+            "end": 2.928
+          },
+          {
+            "text": "where",
+            "start": 3.048,
+            "end": 3.343
+          },
+          {
+            "text": "she",
+            "start": 3.343,
+            "end": 3.554
+          },
+          {
+            "text": "thinks",
+            "start": 3.554,
+            "end": 3.891
+          },
+          {
+            "text": "I",
+            "start": 3.891,
+            "end": 4.018
+          },
+          {
+            "text": "am.",
+            "start": 4.018,
+            "end": 4.235
+          }
+        ]
+      },
+      {
+        "src": "audio/sample/sample-long-shift.en.05.wav",
+        "at": 44.0,
+        "duration": 1.822,
+        "speaker": "narrator",
+        "words": [
+          {
+            "text": "She",
+            "start": 0.012,
+            "end": 0.192
+          },
+          {
+            "text": "was",
+            "start": 0.192,
+            "end": 0.371
+          },
+          {
+            "text": "sure",
+            "start": 0.371,
+            "end": 0.587
+          },
+          {
+            "text": "before",
+            "start": 0.587,
+            "end": 0.875
+          },
+          {
+            "text": "she",
+            "start": 0.875,
+            "end": 1.054
+          },
+          {
+            "text": "could",
+            "start": 1.054,
+            "end": 1.306
+          },
+          {
+            "text": "see",
+            "start": 1.306,
+            "end": 1.486
+          },
+          {
+            "text": "me.",
+            "start": 1.486,
+            "end": 1.654
+          }
+        ]
+      },
+      {
+        "src": "audio/sample/sample-long-shift.en.06.wav",
+        "at": 48.5,
+        "duration": 4.511,
+        "speaker": "aiko",
+        "words": [
+          {
+            "text": "There",
+            "start": 0.001,
+            "end": 0.396
+          },
+          {
+            "text": "you",
+            "start": 0.396,
+            "end": 0.678
+          },
+          {
+            "text": "are.",
+            "start": 0.678,
+            "end": 1.065
+          },
+          {
+            "text": "We",
+            "start": 1.185,
+            "end": 1.41
+          },
+          {
+            "text": "need",
+            "start": 1.41,
+            "end": 1.749
+          },
+          {
+            "text": "to",
+            "start": 1.749,
+            "end": 1.974
+          },
+          {
+            "text": "talk",
+            "start": 1.974,
+            "end": 2.312
+          },
+          {
+            "text": "about",
+            "start": 2.312,
+            "end": 2.707
+          },
+          {
+            "text": "your",
+            "start": 2.707,
+            "end": 3.045
+          },
+          {
+            "text": "productivity.",
+            "start": 3.045,
+            "end": 3.94
+          }
+        ]
+      },
+      {
+        "src": "audio/sample/sample-long-shift.en.07.wav",
+        "at": 54.5,
+        "duration": 2.075,
+        "speaker": "narrator",
+        "words": [
+          {
+            "text": "I",
+            "start": 0.009,
+            "end": 0.141
+          },
+          {
+            "text": "dropped",
+            "start": 0.141,
+            "end": 0.536
+          },
+          {
+            "text": "something.",
+            "start": 0.536,
+            "end": 1.074
+          },
+          {
+            "text": "Loud",
+            "start": 1.194,
+            "end": 1.457
+          },
+          {
+            "text": "mistake.",
+            "start": 1.457,
+            "end": 1.908
+          }
+        ]
+      },
+      {
+        "src": "audio/sample/sample-long-shift.en.08.wav",
+        "at": 58.5,
+        "duration": 1.359,
+        "speaker": "aiko",
+        "words": [
+          {
+            "text": "I",
+            "start": 0.0,
+            "end": 0.134
+          },
+          {
+            "text": "heard",
+            "start": 0.134,
+            "end": 0.446
+          },
+          {
+            "text": "that.",
+            "start": 0.446,
+            "end": 0.771
+          }
+        ]
+      },
+      {
+        "src": "audio/sample/sample-long-shift.en.09.wav",
+        "at": 65.5,
+        "duration": 2.219,
+        "speaker": "narrator",
+        "words": [
+          {
+            "text": "Two",
+            "start": 0.005,
+            "end": 0.221
+          },
+          {
+            "text": "near",
+            "start": 0.221,
+            "end": 0.479
+          },
+          {
+            "text": "misses.",
+            "start": 0.479,
+            "end": 0.877
+          },
+          {
+            "text": "Left,",
+            "start": 0.997,
+            "end": 1.308
+          },
+          {
+            "text": "and",
+            "start": 1.428,
+            "end": 1.644
+          },
+          {
+            "text": "right.",
+            "start": 1.644,
+            "end": 1.998
+          }
+        ]
+      },
+      {
+        "src": "audio/sample/sample-long-shift.en.10.wav",
+        "at": 77.0,
+        "duration": 3.212,
+        "speaker": "narrator",
+        "words": [
+          {
+            "text": "Restocking",
+            "start": 0.006,
+            "end": 0.457
+          },
+          {
+            "text": "cereal",
+            "start": 0.457,
+            "end": 0.758
+          },
+          {
+            "text": "at",
+            "start": 0.758,
+            "end": 0.908
+          },
+          {
+            "text": "three",
+            "start": 0.908,
+            "end": 1.171
+          },
+          {
+            "text": "in",
+            "start": 1.171,
+            "end": 1.322
+          },
+          {
+            "text": "the",
+            "start": 1.322,
+            "end": 1.51
+          },
+          {
+            "text": "morning.",
+            "start": 1.51,
+            "end": 1.878
+          },
+          {
+            "text": "You",
+            "start": 1.998,
+            "end": 2.186
+          },
+          {
+            "text": "think",
+            "start": 2.186,
+            "end": 2.45
+          },
+          {
+            "text": "you're",
+            "start": 2.45,
+            "end": 2.75
+          },
+          {
+            "text": "alone.",
+            "start": 2.75,
+            "end": 3.044
+          }
+        ]
+      },
+      {
+        "src": "audio/sample/sample-long-shift.en.11.wav",
+        "at": 85.5,
+        "duration": 3.921,
+        "speaker": "narrator",
+        "words": [
+          {
+            "text": "Every",
+            "start": 0.006,
+            "end": 0.294
+          },
+          {
+            "text": "shift",
+            "start": 0.294,
+            "end": 0.582
+          },
+          {
+            "text": "she",
+            "start": 0.582,
+            "end": 0.788
+          },
+          {
+            "text": "learns",
+            "start": 0.788,
+            "end": 1.118
+          },
+          {
+            "text": "a",
+            "start": 1.118,
+            "end": 1.241
+          },
+          {
+            "text": "little",
+            "start": 1.241,
+            "end": 1.571
+          },
+          {
+            "text": "more.",
+            "start": 1.571,
+            "end": 1.863
+          },
+          {
+            "text": "Every",
+            "start": 1.983,
+            "end": 2.271
+          },
+          {
+            "text": "shift,",
+            "start": 2.271,
+            "end": 2.604
+          },
+          {
+            "text": "I",
+            "start": 2.724,
+            "end": 2.848
+          },
+          {
+            "text": "try",
+            "start": 2.848,
+            "end": 3.054
+          },
+          {
+            "text": "something",
+            "start": 3.054,
+            "end": 3.507
+          },
+          {
+            "text": "new.",
+            "start": 3.507,
+            "end": 3.758
+          }
+        ]
+      },
+      {
+        "src": "audio/sample/sample-long-shift.en.12.wav",
+        "at": 101.5,
+        "duration": 2.135,
+        "speaker": "narrator",
+        "words": [
+          {
+            "text": "Clocked",
+            "start": 0.005,
+            "end": 0.372
+          },
+          {
+            "text": "in.",
+            "start": 0.372,
+            "end": 0.578
+          },
+          {
+            "text": "Never",
+            "start": 0.698,
+            "end": 0.984
+          },
+          {
+            "text": "really",
+            "start": 0.984,
+            "end": 1.31
+          },
+          {
+            "text": "clocked",
+            "start": 1.31,
+            "end": 1.677
+          },
+          {
+            "text": "out.",
+            "start": 1.677,
+            "end": 1.924
+          }
+        ]
+      }
+    ]
+  },
+  "music": {
+    "src": "assets/music/sample-night-shift.wav",
+    "volume": 0.35,
+    "duck": 0.1,
+    "fadeOut": 3
+  },
+  "captions": {
+    "mode": "lines",
+    "position": "bottom"
+  },
+  "endCard": {
+    "duration": 5,
+    "cta": "Follow the *development*"
+  }
+}

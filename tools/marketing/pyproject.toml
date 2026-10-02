@@ -1,0 +1,15 @@
+[project]
+name = "kehai-marketing"
+version = "0.1.0"
+description = "Kehai's marketing pipeline: schema validators and the asset library (later: voice, writing, publishing). See BUILD_PLAN.md."
+requires-python = ">=3.12"
+dependencies = ["jsonschema>=4.23"]
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

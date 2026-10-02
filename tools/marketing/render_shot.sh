@@ -13,6 +13,7 @@
 #
 # Exit codes: 0 done · 1 bad arguments · 2 the render failed · 3 can't render here (the editor
 # is open, no ffmpeg, no graphics) · 75 another heavy job holds the lock (try again later).
+# ffmpeg: the one Remotion installs with the editor (tools/marketing/editor) is enough.
 #
 # Environment: KEHAI_PROJECT (default ~/Developer/Kehai), KEHAI_UNITY (the editor binary),
 # KEHAI_MARKETING (default ~/TokenLimit/marketing: the lock is in state/, logs in logs/),
@@ -58,10 +59,16 @@ if [ -e "$PROJECT/Temp/UnityLockfile" ] && lsof -t "$PROJECT/Temp/UnityLockfile"
   fail 3 "Unity has the project open ($PROJECT). Close the editor first: renders run only when it's closed."
 fi
 
+# ffmpeg: KEHAI_FFMPEG, the system's, or the one that comes with the editor's Remotion
+# (tools/marketing/editor after npm install); Unity is told which through KEHAI_FFMPEG.
+if [ -z "${KEHAI_FFMPEG:-}" ]; then
+  for f in "$(command -v ffmpeg 2>/dev/null)" /opt/homebrew/bin/ffmpeg /usr/local/bin/ffmpeg "$(dirname "$0")"/editor/node_modules/@remotion/compositor-*/ffmpeg; do
+    if [ -n "$f" ] && [ -x "$f" ]; then export KEHAI_FFMPEG="$f"; break; fi
+  done
+fi
 case "$out" in
   */) ;;
-  *) command -v ffmpeg >/dev/null 2>&1 || [ -x /opt/homebrew/bin/ffmpeg ] || [ -x /usr/local/bin/ffmpeg ] || [ -n "${KEHAI_FFMPEG:-}" ] ||
-       fail 3 "ffmpeg isn't installed (brew install ffmpeg); a folder/ for -out renders PNG frames without it" ;;
+  *) [ -n "${KEHAI_FFMPEG:-}" ] || fail 3 "no ffmpeg: run npm install in tools/marketing/editor (or brew install ffmpeg); a folder/ for -out renders PNG frames without it" ;;
 esac
 
 # ---- one heavy job at a time -----------------------------------------------------------------

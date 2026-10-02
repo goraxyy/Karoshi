@@ -1,0 +1,33 @@
+{
+  "$schema": "./schemas/brand.schema.json",
+  "version": 1,
+  "studio": "TokenLimit",
+  "game": {
+    "name": "Kehai",
+    "japanese": "気配",
+    "tagline": { "en": "The sense that someone is there.", "ru": "Ощущение, что кто-то рядом." }
+  },
+  "antagonist": { "name": "Aiko", "japanese": "愛子", "pronoun": "she" },
+  "handles": { "youtube": null, "instagram": null, "tiktok": null, "x": null, "bluesky": null },
+  "links": { "website": null, "steam": null, "discord": null },
+  "colours": {
+    "crimson": "#DC143C",
+    "ink": "#151518",
+    "inkSoft": "#2A2A30",
+    "paper": "#FFFFFF",
+    "mist": "#B8B5B2",
+    "game": { "aiko": "#FF5454", "you": "#4DD2FF", "guess": "#FFD640" }
+  },
+  "fonts": {
+    "display": { "family": "Nunito", "weight": 900 },
+    "body": { "family": "Nunito", "weight": 700 },
+    "japanese": { "family": "M PLUS Rounded 1c", "weight": 800 },
+    "source": "Google Fonts (SIL Open Font License), loaded at render time; never committed"
+  },
+  "voices": {
+    "proposed": true,
+    "note": "Q10 is open: these are the recommended Azure neural voices until the owner picks from samples in Phase 6.",
+    "en": { "narrator": "en-US-AndrewNeural", "aiko": "en-US-AvaNeural" },
+    "ru": { "narrator": "ru-RU-DmitryNeural", "aiko": "ru-RU-SvetlanaNeural" }
+  }
+}

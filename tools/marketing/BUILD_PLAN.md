@@ -8,9 +8,9 @@
 
 | | |
 |---|---|
-| **Current phase** | Phase 4 (replay player, cameras, shot render) built and verified — branch `feat/replay-player`, worktree `~/Developer/kehai-player`, stacked on Phase 3 (PR #15, open) ✋ |
-| **Next action** | Owner: review and merge PR #15, then the Phase 4 PR (GitHub moves it onto `main` when #15's branch is deleted). Then Phase 5 |
-| **Blocked on owner** | `brew install ffmpeg` (video files; PNG frames work without it); answers to Q7–Q12 and Q14; the rest of the [owner setup checklist](#owner-setup-checklist) from Phase 5 on |
+| **Current phase** | Phase 5 (Remotion editor) built and verified — branch `feat/editor`, worktree `~/Developer/kehai-editor`, stacked on Phase 4 (PR #16), which is stacked on Phase 3 (PR #15) ✋ |
+| **Next action** | Owner: watch the samples in `~/TokenLimit/marketing/drafts/`; review and merge #15, then #16, then the Phase 5 PR (each moves onto `main` as the one below merges). Then Phase 6 |
+| **Blocked on owner** | Answers to Q8–Q10, Q12 and Q14; the rest of the [owner setup checklist](#owner-setup-checklist) (rclone for Drive now; the rest from Phase 6) |
 | **Last updated** | 2026-09-30 |
 
 **How to resume (for a later session).**
@@ -79,7 +79,7 @@ Done 2026-09-29. What later phases still need from it:
 | Node 25.9 / npm 11.12 (Homebrew) | ✓ for Remotion; ✗ for n8n | Phase 5 (Remotion), Phase 7 (n8n needs `node@22`) |
 | Python 3.9.6 (Apple CLT), uv 0.12.7 | ✓ uv will provide Python 3.12 in a project venv | Phase 6 |
 | dotnet 7.0.317, jq 1.7.1, Homebrew 6.0.22 | ✓ | tools |
-| **ffmpeg / ffprobe** | ✗ (`brew install ffmpeg`, 9.0.2) | Phase 4 on |
+| **ffmpeg / ffprobe** | ✗, but Remotion's own (7.1, in `editor/node_modules`) does the job | Phase 4 on |
 | **rclone** | ✗ (`brew install rclone`, 1.75.1) | Drive, Phase 5 on |
 | **n8n** | ✗ (npm, on `node@22` 22.23.3) | Phase 7 |
 | Telegram.app | ✓ installed | approvals |
@@ -243,7 +243,7 @@ wall's width, the fog's radius and "the last coffee" as their state.
       `-krec -moment|-from/-to -shot -subject -layers -alpha -dof -size -fps -out -dry-run`
 
       - fixed timestep (1/fps, `Time.captureFramerate`), 8 warm-up frames;
-      - frames go raw RGBA to ffmpeg: H.264 `.mp4`, VP9 `.webm` (with alpha), or ProRes `.mov`
+      - frames go to ffmpeg (PNG through a pipe since Phase 5): H.264 `.mp4`, VP9 `.webm` (with alpha), or ProRes `.mov`
         (4444 with alpha). A folder `-out` gets PNGs instead;
       - the WAV is mixed from the event track as heard at the camera, then muxed in;
       - a `<out>.json` sidecar (schema `shot.schema.json`).
@@ -282,8 +282,8 @@ wall's width, the fog's radius and "the last coffee" as their state.
       - the refusals: the editor open (a process holding the lockfile) exits 3; the lock busy
         exits 75; `.mp4` without ffmpeg exits 3. The dry run works.
 - **Not yet verified:**
-  - Real encoding: ffmpeg isn't installed; the owner checklist has `brew install ffmpeg`. The
-    first real `.mp4`/`.webm` render after that confirms the codecs.
+  - Real encoding: ffmpeg wasn't installed. Phase 5 found that Remotion's own ffmpeg is enough
+    and switched the pipe to PNG frames; the sample shots are the first real encodes.
   - The POV eyelids: bot shifts never close them. The bot's blinks feed Aiko's blink sense, not
     the eyelids on screen, so this needs a shift played with the webcam or **B**.
   - The interactive player's mouse and keys (scrubbing, free fly): tested only through the same
@@ -292,16 +292,102 @@ wall's width, the fog's radius and "the last coffee" as their state.
 
 ## Phase 5 — Editor (Remotion, `tools/marketing/editor`) ✋
 
-- [ ] One composition driven by `edit.json` + JSON Schema (`tools/marketing/schemas/edit.schema.json`,
-      shared with the Python validators): 9:16 and 16:9.
-- [ ] Shots with trims, speed ramps, zoom/pan, split screen, picture-in-picture of Aiko's mind.
-- [ ] Voice-over track per language; music ducked under voice; word-timed captions.
-- [ ] Text (hooks, labels, lower thirds, end card); images, GIFs, Lottie, animated
-      arrows/circles/zooms; meme templates as components; transitions; SFX. Reads `brand.json`.
-- [ ] Asset library on Drive + `assets/manifest.json` (file, type, mood tags, source, licence
-      required; music must be cleared for YouTube, TikTok and Instagram). Assets enter through
-      `add_asset.py`, which refuses a file without a licence.
-- [ ] Render a sample short and a 2-minute sample long video. ✋
+Branch `feat/editor`, worktree `~/Developer/kehai-editor`, stacked on `feat/replay-player`. Remotion
+4.0.530, React 19, TypeScript; Python 3.12 through uv (`tools/marketing/pyproject.toml`). Only code,
+schemas and docs are committed (`tools/marketing/.gitignore` keeps media, `node_modules` and `.venv`
+out). `editor/README.md` explains an edit.
+
+- [x] **`brand.json`** (Q11): crimson `#DC143C`, soft black `#151518`, white; the game's own palette
+      for her and you; soft rounded fonts: **Nunito** (English and Russian) and **M PLUS Rounded
+      1c** (only the glyphs 気配 and 愛子), both from Google Fonts at render time. Handles and links
+      are `null` until the accounts exist. Voices hold the recommended Azure voices, marked
+      `proposed` (Q10). A test checks the names against `GameNames.cs`.
+- [x] **`edit.json`** + `schemas/edit.schema.json`, shared by the renderer (ajv) and Python
+      (`km/schemas.py`, jsonschema); both accept the samples and reject the same mistakes.
+      9:16 (1080×1920) and 16:9 (1920×1080), 24–60 fps, one video per language. Scene times are in
+      seconds; transitions overlap scenes; voice and music run on the video's clock. Paths are
+      relative to the working folder; absolute paths and `..` are refused.
+- [x] **One composition** (`editor/src/EditVideo.tsx`):
+      - shots: trim, constant speed or smooth ramps (constant pieces), zoom and pan keys, split
+        screen (row or column), picture in picture (with alpha: Aiko's mind from
+        `render_shot.sh -alpha`), images, flat colours;
+      - transitions: fade, slide, wipe, flip, clock;
+      - sound: voice per language, music that ducks under the voice (0.25 s ramps, fades in and
+        out), the game's own sound (70% by default, down to 35% under the voice), sound effects;
+        every video is mastered to **-14 LUFS, peaks under -1.5 dBTP** (two-pass `loudnorm`,
+        what the platforms play at);
+      - word-timed captions: a few words at a time with the spoken one in crimson, or whole lines;
+        Aiko's lines in her colour;
+      - text: hook, labels, lower thirds, and an end card (気配, KEHAI, the tagline, a call to
+        action, the handles). `*Starred words*` come out in crimson;
+      - pictures: images, GIFs, Lottie;
+      - marks that draw themselves: arrows and circles;
+      - memes as components: pov, top-bottom, nobody, caption-bar, expectation-reality;
+      - vertical safe areas that keep text clear of the platforms' buttons.
+- [x] **`editor/render.mjs`**:
+      - validates the edit; checks every file exists, and that every shot is long enough for its
+        trim and speed;
+      - takes the heavy-job lock (`<root>/state/heavy.lock`, shared with `render_shot.sh`; busy:
+        exit 75);
+      - bundles with only the edit's files (hard links);
+      - renders H.264/AAC, concurrency 1 (at most 2);
+      - writes `drafts/<id>.<lang>.mp4` and a `.json` beside each;
+      - options: `--dry-run`, `--scale`, `--frames`.
+- [x] **Asset library** (Q7: `drive.file` scope; assets come in through `add_asset.py`):
+      - where it lives: `<root>/assets/<kind>/` and `assets/manifest.json`
+        (`schemas/asset-manifest.schema.json`), recording file, kind, sha256, licence, source,
+        author, attribution, clearances, mood and tags;
+      - what it refuses: a file without a licence or a source, music not cleared for YouTube,
+        TikTok and Instagram, and the wrong file type for its kind; the same file twice gets one
+        entry;
+      - Drive: rclone uploads each asset and the manifest to `TokenLimit Marketing/assets/`.
+        Until rclone is set up, entries stay `pending` and `--sync` uploads them later;
+      - `--dry-run` and `--list`.
+
+      `validate.py` checks any pipeline JSON against its schema (`--files` also checks an
+      edit's files exist).
+- [x] **ffmpeg:** Remotion's own build (in `editor/node_modules`) is enough, so
+      `brew install ffmpeg` isn't needed. It can't read raw frames from a pipe, so `ReplayRender`
+      now pipes PNG frames (encoded on worker threads). `render_shot.sh` finds that ffmpeg itself
+      and runs it from its own folder, where it finds its libraries.
+- [x] Tests: `npm test` (9: timing, transitions, speed ramps, zoom easing, ducking, captions, text
+      fallback, the samples, and what the schema refuses); `uv run pytest` (20: the schemas, the
+      samples, `brand.json` against `GameNames.cs`, and the library's refusals, copies, duplicates,
+      dry run and Drive wait); `tsc` clean; C# compiles with 0 warnings.
+- [x] **Verified with test clips** (frame numbers burned in, rendered EN + RU at 1080×1920, 14 s,
+      about 50 s per language):
+      - trims exact (source frames 63 and 87);
+      - a 1× → 0.25× → 1× ramp exact (frame 25);
+      - picture in picture with alpha exact (189 over 39);
+      - a split, with the 9-frame wipe, exact (27 and 327);
+      - hook, labels, lower third, arrow, circle, memes, Lottie, word captions, the end card with
+        気配, and Russian text all rendered.
+
+      Found and fixed along the way: captions ran together when the spoken word was scaled up;
+      the Japanese font loaded 119 files (now one); on 16:9 the lower third covered the captions;
+      a transparent picture in picture was hard to read over a busy shot (it now has a dark glass
+      panel); the first sample mix clipped (game sound at full volume under everything: now
+      staged, ducked and mastered).
+- [x] **The samples**, rendered 2026-10-01 into `~/TokenLimit/marketing/drafts/`:
+      - **Footage:** a bot shift recorded on the clone (6 min, 16 moments). `render_shot.sh` made
+        15 shots (13 videos, 2 still sets; 202 MB) through Remotion's ffmpeg, 44–86 s each with
+        Unity's start.
+      - **`sample-short-catch.en/ru.mp4`:** 9:16, 21.4 s, about 29 MB, about 2 minutes each.
+        Moment 1, the catch: hook and word captions, a CCTV cut with a label and an arrow, top-down
+        with her mind as a glass picture in picture, a slow-motion ramp and a circle, your POV
+        with a zoom punch on the catch and her line in her colour, an expectation/reality split,
+        the end card.
+      - **`sample-long-shift.en.mp4`:** 16:9, 1:58, 171 MB, about 8 minutes. A Lottie title card,
+        lower thirds, a CCTV ramp with a zoom and an arrow, the catch from above with her belief
+        map, the "Nobody:" meme, a split of two near misses, a still with a slow zoom, the
+        caption-bar meme and a GIF, a top-bottom meme, the end card.
+      - **Sound:** before mastering, peaks are -3.1 dBTP (short) and -1.4 dBTP (long). Finished:
+        -14.2 to -14.5 LUFS, true peaks -0.9 to -1.3 dBTP after AAC.
+      - **Stand-ins:** the voice is macOS `say` (Samantha, Shelley; Milena for Russian) with
+        estimated word timings, until Phase 6's Azure voices. The music, sound effects, Lottie,
+        GIF and still are our own, entered through `add_asset.py`. They wait for Drive (rclone).
+      - **Re-check:** EditMode 76/76 on the clone afterwards.
+- [ ] PR. ✋
 - Licence note: Remotion is free for individuals and companies of up to 3 people.
 
 ## Phase 6 — Voice and writing (Python, `tools/marketing`) ✋
@@ -393,7 +479,8 @@ Nothing here is needed before Phase 5. Put secrets **only** in `tools/marketing/
       `publish.buffer.com/settings/api` → `BUFFER_API_KEY`.
 - [ ] **Google Drive:** `brew install rclone`, then `rclone config` → new remote `gdrive`, type
       `drive`, scope per Q7, sign in in the browser. Create a Drive folder `TokenLimit Marketing`.
-- [ ] **ffmpeg:** `brew install ffmpeg` (needed now: Phase 4 renders video files through it).
+- [x] **ffmpeg:** not needed. `npm install` in `tools/marketing/editor` brings Remotion's own, and
+      `render_shot.sh` uses it (Phase 5). `brew install ffmpeg` still works if you want it anyway.
 - [ ] **Node for n8n:** `brew install node@22` (keg-only; your Node 25 stays the default).
 - [ ] *(Later, for weekly_report)* a Google Cloud project with **YouTube Data API v3** enabled and
       an API key (read-only public stats) → `YOUTUBE_API_KEY`, plus your channel id.
@@ -410,9 +497,13 @@ out of `~/Desktop` · Q6 repo renamed `goraxyy/Kehai` · Q15 the migration and i
 code that names the old game. **2026-09-30:** Q13 the player body will have idle, walk,
 crouch-walk, run and carry animations; a capsule until then (path as proposed, Humanoid rig).
 
+**2026-09-30 (later):** Q7 the recommended `drive.file` scope, with assets entering through
+`add_asset.py` · Q11 crimson red, soft black and white, soft fonts (Nunito and M PLUS Rounded 1c;
+handles and links still to come).
+
 **Open** (each has a recommendation; answer "ok" to take it):
 
-7. **Drive scope for rclone.** *Recommend:* `drive.file` (rclone only sees files it created) and
+7. ~~**Drive scope for rclone.**~~ *Answered: as recommended.* *Recommend:* `drive.file` (rclone only sees files it created) and
    assets enter the library through `add_asset.py` from a local inbox (it also records the licence).
    Alternative: full `drive` scope limited to one folder, so you can drop assets in via the web.
 8. **Public URL for Buffer.** Buffer fetches videos from a public URL. *Recommend:* for each
@@ -424,7 +515,7 @@ crouch-walk, run and carry animations; a capsule until then (path as proposed, H
     each in Phase 6 for you to pick (e.g. EN: Andrew / Ava; RU: Dmitry / Svetlana; Aiko: a calm,
     formal female voice, possibly a Japanese voice speaking English). Should Aiko ever speak
     Japanese with subtitles?
-11. **brand.json** needs: handle(s), website, Discord/Steam links (if any yet), colours, fonts.
+11. ~~**brand.json**~~ *Answered: crimson, soft black, white, soft fonts; handles and links when the accounts exist.* It needs: handle(s), website, Discord/Steam links (if any yet), colours, fonts.
     *Recommend as defaults:* colours from the shift report (`#0f1116` bg, `#ff5454` Aiko,
     `#4dd2ff` you, `#ffd640` her guess); fonts **Inter** (Latin + Cyrillic) and **Noto Sans JP**
     for 気配/愛子. Handle: is `@kehaigame` free where you want it? (You check; Claude can't sign up.)
@@ -450,6 +541,9 @@ crouch-walk, run and carry animations; a capsule until then (path as proposed, H
 | 2026-09-30 | Phase 4 stacked on the open Phase 3 PR: the owner said to continue before #15 was merged | owner ("continue") |
 | 2026-09-30 | The replay drives the store's own objects where the recording matches them, and builds puppets for the rest; the game's scripts are switched off, not removed | Phase 4 (for review) |
 | 2026-09-30 | Shots: H.264 `.mp4`; alpha as VP9 `.webm` (ProRes 4444 `.mov` if asked); a folder gives PNGs; sound as a WAV beside the video, also muxed in | Phase 4 (for review) |
+| 2026-09-30 | Drive through rclone with the `drive.file` scope; assets only through `add_asset.py` | owner (Q7) |
+| 2026-09-30 | Brand: crimson #DC143C, soft black #151518, white; Nunito + M PLUS Rounded 1c | owner (Q11) + Phase 5 |
+| 2026-09-30 | Remotion's bundled ffmpeg replaces Homebrew's; ReplayRender pipes PNG frames | Phase 5 (for review) |
 | 2026-09-30 | Heavy jobs share one lock, `~/TokenLimit/marketing/state/heavy.lock` (a directory holding the owner's pid); a job that finds it held exits 75 | Phase 4 (for review) |
 
 ## Changelog
@@ -464,4 +558,6 @@ crouch-walk, run and carry animations; a capsule until then (path as proposed, H
 - 2026-09-30 — Phase 2: clip markers built in `feat/clip-markers`; PR #14 merged.
 - 2026-09-30 — Phase 3 started (`feat/replay-recorder`); PR #15 opened.
 - 2026-09-30 — Phase 4 built on top of it (`feat/replay-player`): the 3D replay, its cameras and
-  Aiko's mind, and unattended shot renders.
+  Aiko's mind, and unattended shot renders; PR #16.
+- 2026-09-30 — Phase 5 started (`feat/editor`): brand.json, the edit schema, the Remotion editor,
+  the asset library.

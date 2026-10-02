@@ -1,6 +1,9 @@
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using Process = System.Diagnostics.Process;
@@ -23,8 +26,10 @@ namespace Kehai.Replay
     //   -out <file.mp4 | .webm | .mov | folder/>
     //   -dry-run                             check everything, say what would be rendered, render nothing
     //
-    // Every frame is a fixed step of the recording (1/fps), rendered off screen and piped to
-    // ffmpeg as raw RGBA (or written as PNGs into a folder). The sound is mixed from the
+    // Every frame is a fixed step of the recording (1/fps), rendered off screen, encoded as PNG
+    // on worker threads and piped to ffmpeg in order (or written into a folder). PNG rather
+    // than raw pixels because the ffmpeg that ships with the editor (Remotion's) reads PNGs from
+    // a pipe but not raw video. The sound is mixed from the
     // recording's events as heard at the camera, written as a WAV beside the video and muxed
     // in. A <out>.json beside it says what was rendered, for the editor (Phase 5).
     public sealed class ReplayRender
@@ -50,7 +55,9 @@ namespace Kehai.Replay
         readonly List<Pose> ears = new List<Pose>();
         RenderTexture target, resolved;
         Texture2D readback;
-        byte[] buffer;
+        readonly ConcurrentBag<byte[]> buffers = new ConcurrentBag<byte[]>();
+        readonly Queue<(int index, Task<byte[]> png)> encoding = new Queue<(int, Task<byte[]>)>();
+        int maxEncoding;
         Camera sceneCam, mindCam;
         Process encoder;
         Stream pipe;
@@ -215,6 +222,10 @@ namespace Kehai.Replay
             places.Add("/usr/local/bin/ffmpeg");
             foreach (string dir in (System.Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator))
                 if (dir.Length > 0) places.Add(Path.Combine(dir, "ffmpeg"));
+            // The one that comes with the editor's Remotion (tools/marketing/editor, npm install).
+            string remotion = Path.Combine(Directory.GetParent(Application.dataPath).FullName, "tools", "marketing", "editor", "node_modules", "@remotion");
+            if (Directory.Exists(remotion))
+                foreach (string dir in Directory.GetDirectories(remotion, "compositor-*")) places.Add(Path.Combine(dir, "ffmpeg"));
             foreach (string p in places) if (File.Exists(p)) return p;
             return null;
         }
@@ -246,7 +257,7 @@ namespace Kehai.Replay
             resolved = new RenderTexture(s.Width, s.Height, 0, RenderTextureFormat.ARGB32) { name = "Replay frame (resolved)" };
             resolved.Create();
             readback = new Texture2D(s.Width, s.Height, TextureFormat.RGBA32, false);
-            buffer = new byte[s.Width * s.Height * 4];
+            maxEncoding = Mathf.Clamp(System.Environment.ProcessorCount - 2, 2, 6);
             // The target stays on the camera, so everything placed by the picture's shape (her
             // thought log, the eyelids) sees the frame's aspect, not the screen's.
             sceneCam.targetTexture = target;
@@ -291,7 +302,7 @@ namespace Kehai.Replay
                     codec = "-c:v libx264 -preset medium -crf 17 -pix_fmt yuv420p -movflags +faststart";
                     break;
             }
-            string args = $"-y -hide_banner -loglevel error -f rawvideo -pix_fmt rgba -s {s.Width}x{s.Height} -r {s.Fps} -i - -vf vflip {codec} \"{VideoOnly}\"";
+            string args = $"-y -hide_banner -loglevel error -f image2pipe -framerate {s.Fps} -c:v png -i - {codec} \"{VideoOnly}\"";
             encoder = Run(ffmpeg, args, stdin: true);
             pipe = encoder.StandardInput.BaseStream;
         }
@@ -300,9 +311,12 @@ namespace Kehai.Replay
 
         Process Run(string exe, string args, bool stdin)
         {
+            // From its own folder: the ffmpeg that comes with Remotion finds its libraries there
+            // (every path it's given is absolute).
             var psi = new ProcessStartInfo(exe, args)
             {
-                UseShellExecute = false, RedirectStandardInput = stdin, RedirectStandardError = true, RedirectStandardOutput = true, CreateNoWindow = true
+                UseShellExecute = false, RedirectStandardInput = stdin, RedirectStandardError = true, RedirectStandardOutput = true, CreateNoWindow = true,
+                WorkingDirectory = Path.GetDirectoryName(exe) ?? ""
             };
             var p = new Process { StartInfo = psi };
             p.ErrorDataReceived += (_, e) => { if (e.Data != null) lock (encoderLog) { encoderLog.Enqueue(e.Data); if (encoderLog.Count > 40) encoderLog.Dequeue(); } };
@@ -364,22 +378,36 @@ namespace Kehai.Replay
             }
         }
 
+        // The frame goes to a worker to be encoded; finished frames leave in order, a few frames
+        // behind the renderer, so the encoding runs alongside the next frames' rendering.
         void Write(int index)
         {
             Unity.Collections.NativeArray<byte> pixels = readback.GetRawTextureData<byte>();
-            if (s.Alpha) Unpremultiply(pixels);
-            if (output == Output.Frames)
+            if (!buffers.TryTake(out byte[] raw) || raw.Length != pixels.Length) raw = new byte[pixels.Length];
+            pixels.CopyTo(raw);
+            bool alpha = s.Alpha;
+            uint w = (uint)s.Width, h = (uint)s.Height;
+            encoding.Enqueue((index, Task.Run(() =>
             {
-                File.WriteAllBytes(Path.Combine(video, $"frame_{index + 1:000000}.png"), readback.EncodeToPNG());
-                return;
-            }
-            pixels.CopyTo(buffer);
-            pipe.Write(buffer, 0, buffer.Length);
+                if (alpha) Unpremultiply(raw);
+                byte[] png = ImageConversion.EncodeArrayToPNG(raw, GraphicsFormat.R8G8B8A8_UNorm, w, h);
+                buffers.Add(raw);
+                return png;
+            })));
+            while (encoding.Count > maxEncoding) Flush();
+        }
+
+        void Flush()
+        {
+            (int index, Task<byte[]> task) = encoding.Dequeue();
+            byte[] png = task.Result;
+            if (output == Output.Frames) File.WriteAllBytes(Path.Combine(video, $"frame_{index + 1:000000}.png"), png);
+            else pipe.Write(png, 0, png.Length);
         }
 
         // Blending over a transparent background leaves colour multiplied by alpha; video with
         // alpha wants it straight.
-        static void Unpremultiply(Unity.Collections.NativeArray<byte> p)
+        static void Unpremultiply(byte[] p)
         {
             for (int i = 0; i < p.Length; i += 4)
             {
@@ -395,6 +423,7 @@ namespace Kehai.Replay
 
         void Finish()
         {
+            while (encoding.Count > 0) Flush();
             if (encoder != null)
             {
                 pipe.Flush();
