@@ -57,22 +57,24 @@ def _take(lock: Path, job: str) -> bool:
     return True
 
 
-def holder(root: Path) -> str:
+def holder(root: Path, name: str = "heavy") -> str:
     try:
-        return (root / "state" / "heavy.lock" / "job").read_text().strip()
+        return (root / "state" / f"{name}.lock" / "job").read_text().strip()
     except OSError:
         return "unknown"
 
 
 @contextmanager
-def heavy(root: Path, job: str, wait: float | None = None):
-    lock = root / "state" / "heavy.lock"
+def heavy(root: Path, job: str, wait: float | None = None, name: str = "heavy"):
+    """`name` "heavy" is the one lock for Unity, Remotion and voice; run_job.py also takes
+    "pipeline", so two runs don't take the same video along at once."""
+    lock = root / "state" / f"{name}.lock"
     if wait is None:
         wait = float(os.environ.get("KEHAI_LOCK_WAIT", "0") or 0)
     waited = 0.0
     while not _take(lock, job):
         if waited >= wait:
-            raise Busy(f"another heavy job is running ({holder(root)}); try again later")
+            raise Busy(f"another {'heavy job' if name == 'heavy' else name + ' run'} is running ({holder(root, name)}); try again later")
         time.sleep(5)
         waited += 5
     try:

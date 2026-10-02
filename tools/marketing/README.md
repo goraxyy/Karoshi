@@ -33,6 +33,31 @@ Azure voices so the owner can choose (Q10).
 Every path above is in the working folder, `~/TokenLimit/marketing` (or `KEHAI_MARKETING`, or
 `--root`). Shift records are read from the game's data folder (`KEHAI_SHIFT_RECORDS`).
 
+## Running it on its own (`run_job.py`, Phase 7)
+
+n8n starts `run_job.py` jobs on a schedule ([`n8n/README.md`](n8n/README.md)); each job works out
+what to do from the state in `state/pipeline.db` and the files on disk, so a run that stopped
+carries on where it was.
+
+- **produce** (nightly): announces new shifts in Telegram; on `pick_day` picks the week's shorts;
+  takes each short along its steps (shots → write → translate → voice → render → package) and
+  sends it for approval. A step that fails is tried again on later runs; one blocked by a missing
+  key or the monthly cap waits, and the owner hears once a day.
+- **telegram** (every minute): the owner's ✅ ❌ ✏️ 🇷🇺 ↩️ and replies. ✏️ asks what to change;
+  the reply becomes a `revise` job. Only the owner's chat is listened to.
+- **work** (every 5 minutes): revisions and undos (then the chain again, and a new preview), the
+  long video's stages.
+- **publish** (posting days): the next approved short to each Buffer channel's queue from a
+  public copy (Buffer refuses Drive links); TikTok, and anything Buffer can't take yet, comes to
+  Telegram with the text ready and a "Posted ✅" button.
+- **housekeeping** (daily): Buffer's post statuses, the Drive archive, retention
+  (`pipeline.json`, Q12: only reports until `retention.apply` is on), the storage budget.
+- **report** (Sundays) and **long** (monthly, with ✋ gates for the outline, the script and the
+  rough cut, then the final files on Drive for YouTube Studio).
+
+`pipeline.json` holds the schedule's settings: shorts per week, the pick day, posting days and
+channels, YouTube and Instagram post settings, retention, the storage budget.
+
 ## How the Claude steps work (`km/llm/`)
 
 - **Claude Opus 5.5** for every step; the effort (low to high) is set per step in `km/llm/steps.py`.

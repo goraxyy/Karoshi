@@ -171,7 +171,7 @@ class ReplayTransport:
         if not file.exists():
             file = self.folder / f"{name}.json"
         if not file.exists():
-            raise FileNotFoundError(f"no replay answer for {name} in {self.folder} ({name}.json or {name}.{n}.json)")
+            raise ApiError(f"no replay answer for {name} in {self.folder} ({name}.json or {name}.{n}.json)")
         data = json.loads(file.read_text(encoding="utf-8"))
         stop = "end_turn"
         details = None

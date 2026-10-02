@@ -6,15 +6,15 @@
 
 Each line becomes audio/<id>/<lang>/<line>.wav with word timings for the captions; lines already
 spoken with the same voice and text are reused. Lines that would overlap move later. The
-backend is brand.json's `voices.backend` (azure) unless --backend says otherwise; `say` is the
-macOS stand-in that needs no key. Exit codes: see km/cli.py.
+backend is brand.json's `voices.backend` (azure) unless --backend or KEHAI_TTS_BACKEND (.env)
+says otherwise; `say` is the macOS stand-in that needs no key. Exit codes: see km/cli.py.
 """
 from __future__ import annotations
 
 import argparse
 import json
 
-from km import edits, paths, voicing
+from km import edits, env, paths, voicing
 from km.cli import BadInput, run
 
 
@@ -34,7 +34,7 @@ def main() -> int:
     if not edit.get("script"):
         raise BadInput(f"{path} has no script to speak")
     brand = json.loads(paths.BRAND.read_text(encoding="utf-8"))
-    backend = a.backend or brand["voices"]["backend"]
+    backend = a.backend or env.get("KEHAI_TTS_BACKEND") or brand["voices"]["backend"]
     langs = a.lang.split(",") if a.lang else edit["languages"]
     unknown = [l for l in langs if l not in edit["languages"]]
     if unknown:

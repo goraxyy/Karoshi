@@ -1,0 +1,87 @@
+{
+  "id": "kehaiProduce0001",
+  "name": "Kehai · produce",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 1,3,5 * * *"
+            }
+          ]
+        }
+      },
+      "id": "6964a44f-eae5-522a-b8a3-e269bda3bfdb",
+      "name": "Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "c72a12d2-3261-52e6-8e22-c6b25576bb57",
+      "name": "Run now",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "executeOnce": true,
+        "command": "\"$KEHAI_TOOLS/n8n/job.sh\" produce"
+      },
+      "id": "ce85da68-e5f2-5cae-8722-3fe4c43a09db",
+      "name": "run_job produce",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        240,
+        0
+      ],
+      "notes": "At 1, 3 and 5 a.m.: new shifts, the week's picks (on pick_day), each short along its steps; Unity renders only while the editor is closed.",
+      "notesInFlow": true
+    }
+  ],
+  "connections": {
+    "Schedule": {
+      "main": [
+        [
+          {
+            "node": "run_job produce",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run now": {
+      "main": [
+        [
+          {
+            "node": "run_job produce",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/New_York",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "all",
+    "saveManualExecutions": true
+  },
+  "active": false,
+  "pinData": {},
+  "tags": []
+}

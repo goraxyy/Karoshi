@@ -8,9 +8,9 @@
 
 | | |
 |---|---|
-| **Current phase** | Phase 6 (voice and writing) built and verified without keys — branch `feat/voice-writing`, worktree `~/Developer/kehai-voice`, stacked on Phase 5 (PR #17) ✋ |
-| **Next action** | Owner: review and merge #15, #16, #17, then the Phase 6 PR; add the Anthropic and Azure keys to `tools/marketing/.env`, then `uv run voice_samples.py` for Q10. Then Phase 7 |
-| **Blocked on owner** | The keys (Anthropic with the $15 limit, Azure Speech F0); answers to Q8–Q10, Q12 and Q14; the rest of the [owner setup checklist](#owner-setup-checklist) |
+| **Current phase** | Phase 7 (n8n) built and verified end to end without keys — branch `feat/n8n`, worktree `~/Developer/kehai-n8n`, stacked on Phase 6 (PR #18). All seven phases are built ✋ |
+| **Next action** | Owner: merge #15 → #16 → #17 → #18 → the Phase 7 PR; then the keys and accounts (checklist) and `tools/marketing/n8n/setup.sh --launch-agent` from `~/Developer/Kehai`; set `KEHAI_DRY_RUN=0` in `~/TokenLimit/n8n/env` |
+| **Blocked on owner** | The keys and accounts (Anthropic, Azure, Telegram bot, Buffer, a public host for Q8, rclone/Drive); answers to Q8–Q10, Q12, Q14 and Q16 |
 | **Last updated** | 2026-10-02 |
 
 **How to resume (for a later session).**
@@ -55,13 +55,14 @@ Done 2026-09-29. What later phases still need from it:
 
 - **Buffer's API** (developers.buffer.com, GraphQL, API key from `publish.buffer.com/settings/api`)
   supports Instagram, Threads, LinkedIn, X, Facebook, Google Business, Mastodon, YouTube,
-  Pinterest and Bluesky, **not TikTok** (fine: TikTok is by hand). **Video must be a public
+  Pinterest and Bluesky, and (2026-10-02) TikTok too; TikTok stays by hand (`posting.tiktok`). **Video must be a public
   URL** (`createPost` → `assets.video.url`), so approved files need a public host → Q8.
   Free plan: 1 API key, 100 requests/15 min, 250/day, 3,000/30 days, 3 channels. Per-channel
   video support and YouTube title metadata get tested in Phase 7.
-- **n8n needs Node 20.19–24.x**; this Mac has Node 25.9 (Homebrew). Plan: `node@22` (keg-only,
-  doesn't replace Node 25) just for n8n. n8n 2.x disables the Execute Command and Local File
-  Trigger nodes by default; we re-enable Execute Command via env and poll folders on a schedule.
+- **n8n** 2.41.6 needs **Node 24+** (its docs still say 20.19–24.x; found 2026-10-02): Homebrew's
+  `node@24` (keg-only, doesn't replace Node 25) runs it. n8n 2.x disables the Execute Command and
+  Local File Trigger nodes by default; we re-enable Execute Command (`NODES_EXCLUDE=[]`) and poll
+  folders on a schedule.
 - **macOS privacy (TCC):** background jobs can't read `~/Desktop`; the project now lives at
   `~/Developer/Kehai` for that reason.
 - **Belief grid size:** the store map uses 1.5 m cells over ~150×150 m (≤10,000 cells). At 2 Hz
@@ -81,7 +82,7 @@ Done 2026-09-29. What later phases still need from it:
 | dotnet 7.0.317, jq 1.7.1, Homebrew 6.0.22 | ✓ | tools |
 | **ffmpeg / ffprobe** | ✗, but Remotion's own (7.1, in `editor/node_modules`) does the job | Phase 4 on |
 | **rclone** | ✗ (`brew install rclone`, 1.75.1) | Drive, Phase 5 on |
-| **n8n** | ✗ (npm, on `node@22` 22.23.3) | Phase 7 |
+| **n8n** | 2.41.6 in `~/TokenLimit/n8n` on `node@24` 24.21.0 (installed 2026-10-02) | Phase 7 |
 | Telegram.app | ✓ installed | approvals |
 
 ## Phase 1 — Rename to Kehai / Aiko ✅
@@ -466,7 +467,7 @@ and the macOS stand-in voice, and switches to Claude and Azure when `.env` has t
 - **Not verified yet:** a real Claude answer (no key), Azure and ElevenLabs voices (no keys), so
   real costs and prompt quality are untested. The first sample render once stopped at 30% with
   no error (49 s in); it didn't happen again in seven renders since.
-- [ ] PR. ✋
+- [x] PR #18, opened 2026-10-02 (not merged yet). ✋
 
 **Budget estimate**, Opus 5.5 at the efforts above ($4 / $20 per M tokens, cache reads $0.20,
 cache writes 1.25×), from the dry runs' high guesses: a pick about $0.15, a short about $0.27, a
@@ -477,38 +478,84 @@ the levers are lower effort, or `KEHAI_LLM_MODEL=claude-sonnet-5-5` (the owner's
 
 ## Phase 7 — n8n (self-hosted, npm, localhost) ✋
 
-n8n 2.x on `node@22`, `N8N_HOST=127.0.0.1`, LaunchAgent; workflows exported to
-`tools/marketing/n8n/` without credentials. Every step calls `tools/marketing` scripts through
-one `run_job.py` wrapper (lock, dry-run, logging, `caffeinate -i` around heavy jobs).
+Branch `feat/n8n`, worktree `~/Developer/kehai-n8n`, stacked on `feat/voice-writing` (PR #18).
+Built without keys (owner: "go to phase 7 without them"): with no Telegram bot the messages go to
+an outbox file and the owner's taps are played with `run_job.py fake`; with no Buffer, no public
+host and no Drive, posting comes to Telegram to do by hand and nothing is archived (the owner is
+told once). `tools/marketing/README.md` and `n8n/README.md` explain it.
 
-- [ ] 1. **New shift:** schedule polls `shift_records/` for new `.markers.json` → pick moments →
-      queue shot renders overnight (only when the editor is closed) → write 3 shorts → TTS EN + RU →
-      render drafts.
-- [ ] 2. **Approval:** Telegram `getUpdates` polling on a schedule (no webhook), only the owner's
-      chat id accepted. Each draft: preview, caption, ✅ / ❌ / ✏️. ✏️ reply → revise → re-render →
-      new preview. Version history; "undo" restores the previous version. Files > 50 MB → Drive link.
-- [ ] 3. **Publish:** approved shorts to Buffer's queue (YouTube Shorts, Instagram, X or Bluesky)
-      Mon/Wed/Fri. Test video support per channel; where missing, send the file + a one-tap
-      checklist. TikTok file + caption to Telegram, posted by hand.
-- [ ] 4. **Long video, monthly:** ✋ gates in Telegram after outline, script, rough cut, packaging;
-      English master + Russian audio track + subtitles; final files to Drive for YouTube Studio.
-- [ ] 5. **Housekeeping:** archive to Drive, delete rejects after 7 days, enforce the local budget,
-      weekly report to Telegram.
-- [ ] End-to-end dry run: a batch-mode bot shift ends with a draft short in Telegram. ✋
+- [x] **n8n 2.41.6** in `~/TokenLimit/n8n` on Homebrew's `node@24` (it needs Node 24+, not the
+      22 the docs suggested), listening on 127.0.0.1 only, `NODES_EXCLUDE=[]` for the Execute
+      Command node. `n8n/setup.sh` installs it (pinned), writes its settings, imports and
+      publishes the workflows (`--launch-agent` to start at login: not installed yet); `n8n/run.sh`
+      starts it. **7 workflows** in `n8n/workflows/` (no secrets), each a schedule and a "Run now"
+      trigger calling `n8n/job.sh <job>` → `run_job.py`: Telegram every minute, work every 5 min,
+      produce at 1/3/5 a.m., publish at 9, housekeeping at 4:30, the report Sundays at 8 p.m., the
+      long video daily at 10 (it starts on `long.day`). `KEHAI_DRY_RUN=1` in n8n's settings
+      until the keys are in.
+- [x] **`run_job.py`** (one entry point; one JSON line for n8n; caffeinate and a `pipeline` lock for
+      the long jobs), **`pipeline.json`** (shorts per week, pick day, posting days and channels,
+      YouTube/Instagram post settings, retention, storage) and **`state/pipeline.db`** (SQLite:
+      every video's status, the job queue, posts, Telegram's bookkeeping).
+- [x] 1. **New shift → drafts:** produce announces new shifts; on the pick day (Saturday's 1 a.m.
+      run) picks the week's shorts; takes each along shots (Unity, only while the editor is
+      closed) → write → translate → voice → render → package → preview. Each step looks at
+      the files, so a stopped run carries on; failures retry (3×) then wait for the owner;
+      a missing key or the cap blocks and the owner hears once a day; production waits when the
+      working folder passes 10 GB or the disk 3 GB free.
+- [x] 2. **Approval in Telegram** (polled, only the owner's chat): the English video with ✅ ❌ ✏️
+      🇷🇺, and ↩️ once there's an earlier version; buttons carry their version, so old ones do
+      nothing. ✏️ asks what to change; the reply is revised, re-voiced, re-rendered and comes back
+      as the next version (unchanged lines keep their audio). ↩️ brings back exactly the version
+      shown before. Files over 50 MB go as a smaller preview. /status /costs /report /retry /help.
+      Decisions go to `state/approvals.jsonl`; alerts (the cap, quotas, failures) to Telegram.
+- [x] 3. **Publish** on posting days (Mon/Wed/Fri): the oldest approved short to each Buffer
+      channel's queue (YouTube with its title and category, Instagram as a reel, X), from a public
+      copy (Q8: Buffer refuses Drive links and fetches when it posts); housekeeping asks Buffer
+      how each post did. TikTok, and anything Buffer can't take, comes to Telegram with the text
+      ready and a "Posted ✅" button per platform. The Buffer calls follow its GraphQL schema
+      (checked 2026-10-02) and are tested against a mock; never against Buffer itself (no key).
+- [x] 4. **The long video, monthly:** ✋ gates in Telegram for the outline, the script and the rough
+      cut (✏️ does the stage again with the note); then the package, the Russian audio as its own
+      track, English and Russian subtitles (from the word timings), all to Drive for YouTube Studio
+      with a checklist, and "Uploaded ✅".
+- [x] 5. **Housekeeping:** Buffer statuses; archive to Drive (videos, then the recordings whose
+      moments were used); public copies down after posting; retention as proposed in Q12, only
+      **reported** until `retention.apply` is turned on; the storage budget. Weekly report to
+      Telegram.
+- [x] **Found and fixed on the way:** n8n's CLI needs a manual trigger to run a workflow; a published
+      workflow can't be re-imported until it's unpublished; httpx wasn't installed (the Anthropic
+      SDK 1.x no longer brings it: ElevenLabs needed it too); `KEHAI_TTS_BACKEND` in `.env` was
+      ignored; undo would have restored a translation snapshot instead of the version shown; a
+      restored version kept its old file time, so it wouldn't have been rendered again; one
+      malformed Telegram update stopped the whole poll and lost the rest.
+- [x] **Verified 2026-10-02:** `uv run pytest` **147** (Phase 7: the store, every button and reply,
+      stale versions, strangers ignored, a bad update, the chain from what's on disk, exit codes,
+      retries and blocks, posting by hand and through a mocked Buffer, statuses, retention reported
+      and applied, nothing outside the working folder touched, subtitles, the long video's gates,
+      the workflow files). **End to end, through n8n** (`n8n execute`), with replayed answers and
+      the `say` voice: a 5-minute bot shift on a clone → produce picked the blink moment, rendered
+      3 tracked shots with Unity (145 s), wrote, translated, voiced, rendered EN + RU and packaged
+      → **a draft short in Telegram** (the outbox) → ✏️ and a note → work revised it → v2 → ✅ →
+      publish (Friday) sent it to post by hand → "Posted ✅" on four platforms → 🎉; housekeeping
+      and the weekly report ran. Sample: `drafts/sample-blink.{en,ru}.mp4`.
+- **Not verified yet:** a real Telegram bot, Buffer, R2 and Drive (no accounts yet), the
+  LaunchAgent (not installed: n8n isn't running), and a real Claude or Azure answer.
+- [ ] PR. ✋
 
----
-
-## Architecture (planned)
+## Architecture
 
 ```
-Unity (C#)                           tools/marketing (Python 3.12 via uv)        Remotion (TS)
- ShiftRecorder ─► <stem>.json/.html   run_job.py  (lock, dry-run, logs)          editor/
- ClipMarkers   ─► <stem>.markers.json llm/ pick_moments write_short translate     edit.json ─► mp4
- ReplayRecorder─► <stem>.krec             revise long_video package weekly_report
- ReplayRender  ◄─ shot request ────── tts/ azure, elevenlabs                     brand.json
-               ─► shot.mov + .wav     drive.py (rclone) telegram.py buffer.py
-                                      housekeeping.py  schemas/*.json  prompts/*.md
-                         n8n (node@22, 127.0.0.1) schedules and chains the jobs
+Unity (C#)                           tools/marketing (Python 3.12 via uv)             Remotion (TS)
+ ShiftRecorder ─► <stem>.json/.html   run_job.py ◄── n8n (node@24, 127.0.0.1) schedules  editor/
+ ClipMarkers   ─► <stem>.markers.json  produce · telegram · work · publish ·              edit.json ─► mp4
+ ReplayRecorder─► <stem>.krec          housekeeping · report · long                        brand.json
+ ReplayRender  ◄─ render_shot.sh ◄──── render_picks.py
+               ─► shot.mp4 + .json     pick_moments write_short translate revise
+                  (with its track)     package long_video weekly_report   (km/llm: Claude)
+                                       voice.py (km/tts: Azure, ElevenLabs, say)
+                                       km/telegram · km/buffer · km/media (Drive, public host)
+                                       km/housekeeping · km/store (state/pipeline.db)
 ```
 
 Shift records (and the `.markers.json` files) are written to
@@ -545,7 +592,12 @@ or in n8n's credential store. Phase 6's steps are waiting on the first two.
       `drive`, scope per Q7, sign in in the browser. Create a Drive folder `TokenLimit Marketing`.
 - [x] **ffmpeg:** not needed. `npm install` in `tools/marketing/editor` brings Remotion's own, and
       `render_shot.sh` uses it (Phase 5). `brew install ffmpeg` still works if you want it anyway.
-- [ ] **Node for n8n:** `brew install node@22` (keg-only; your Node 25 stays the default).
+- [x] **Node for n8n:** `node@24` installed 2026-10-02 (keg-only; Node 25 stays the default), and
+      n8n with it (`tools/marketing/n8n/setup.sh`).
+- [ ] **A public host for Buffer** (Q8): a Cloudflare account and an R2 bucket with public access,
+      added to rclone (`rclone config` → new remote `r2`, type s3, provider Cloudflare) →
+      `KEHAI_PUBLIC_REMOTE=r2:<bucket>` and `KEHAI_PUBLIC_URL=https://pub-….r2.dev`.
+- [ ] **n8n's owner account:** the first visit to http://127.0.0.1:5678 asks for one (local only).
 - [ ] *(Later, for weekly_report)* a Google Cloud project with **YouTube Data API v3** enabled and
       an API key (read-only public stats) → `YOUTUBE_API_KEY`, plus your channel id.
 - [ ] *(Optional)* ElevenLabs API key → `ELEVENLABS_API_KEY`, if you want that backend.
@@ -570,10 +622,13 @@ handles and links still to come).
 7. ~~**Drive scope for rclone.**~~ *Answered: as recommended.* *Recommend:* `drive.file` (rclone only sees files it created) and
    assets enter the library through `add_asset.py` from a local inbox (it also records the licence).
    Alternative: full `drive` scope limited to one folder, so you can drop assets in via the web.
-8. **Public URL for Buffer.** Buffer fetches videos from a public URL. *Recommend:* for each
-   approved short, a Drive "anyone with the link" share that the pipeline revokes once Buffer has
-   the post; tested per channel in Phase 7. Fallback if Buffer won't take Drive links: a
-   Cloudflare R2 bucket (free tier, needs a Cloudflare account).
+8. **Public URL for Buffer.** Buffer fetches videos from a public URL **when the post goes out**
+   (hours or days after queuing), and its docs say Drive or Dropbox share links don't work
+   (checked 2026-10-02, so the earlier "Drive link, revoked after queuing" idea is out).
+   *Recommend:* a **Cloudflare R2** bucket with public access (free tier: 10 GB stored, free
+   egress; needs a Cloudflare account): rclone uploads each approved short, and housekeeping
+   deletes it a few days after it's posted. Alternative: Cloudinary's free tier. Until then,
+   posting days send everything to Telegram to post by hand.
 9. **X or Bluesky** for the third Buffer channel (Free plan = 3)? Or a paid Buffer plan for both.
 10. **Voices.** English narrator, Russian narrator, and Aiko. *Recommend:* 3–4 Azure samples of
     each for you to pick (e.g. EN: Andrew / Ava; RU: Dmitry / Svetlana; Aiko: a calm,
@@ -588,6 +643,11 @@ handles and links still to come).
     themselves (n8n, Remotion + its Chrome, ffmpeg, Python venv, node@22, rclone) take roughly
     2–3 GB, leaving ~14 GB free before any media.
 14. **Posting times** for Mon/Wed/Fri: set in Buffer's queue (EDT). Any preference?
+16. **The Russian versions.** Every short is made in English and Russian, but Buffer's channels
+    get one language. *Recommend:* English to Buffer for now (`posting.languages`), the Russian
+    file in Telegram with its text (🇷🇺 under each preview) to post where you like; later,
+    Russian accounts as their own Buffer channels (a paid plan beyond 3 channels). For the long
+    video, the Russian audio is a second audio track on the same YouTube video (done).
 
 ---
 
@@ -613,6 +673,9 @@ handles and links still to come).
 | 2026-10-02 | Every Claude step on Opus 5.5, effort per step; Sonnet 5.5 only if the owner chooses it (`KEHAI_LLM_MODEL`) | Phase 6 (for review) |
 | 2026-10-02 | Claude writes drafts in a small schema of its own; the code turns them into edits and checks what the schema can't | Phase 6 (for review) |
 | 2026-10-02 | Unity batch runs are silent (the owner heard them); shots record where Aiko and you are on screen, and marks follow her | owner + Phase 6 |
+| 2026-10-02 | Phase 7 built without keys (owner: "go to phase 7 without them"); node@24 and n8n installed with the owner's OK | owner |
+| 2026-10-02 | n8n only schedules: every decision is in run_job.py; posting falls back to Telegram by hand while Buffer isn't ready | Phase 7 (for review) |
+| 2026-10-02 | Picks on Saturday's 1 a.m. run, so the weekend is for approving; retention only reports until Q12 is answered | Phase 7 (for review) |
 | 2026-09-30 | Heavy jobs share one lock, `~/TokenLimit/marketing/state/heavy.lock` (a directory holding the owner's pid); a job that finds it held exits 75 | Phase 4 (for review) |
 
 ## Changelog
@@ -632,3 +695,6 @@ handles and links still to come).
   the asset library.
 - 2026-10-02 — Phase 5 PR #17 opened. Phase 6 built (`feat/voice-writing`): the Claude steps,
   the cost ledger and cap, the voice, shot tracks and following marks, silent batch runs.
+- 2026-10-02 — Phase 6 PR #18 opened. Phase 7 built (`feat/n8n`): run_job.py, pipeline.json and its
+  state, Telegram approvals, posting, housekeeping, the long video's gates, n8n with 7 workflows;
+  verified end to end through n8n from a bot shift to a posted short.

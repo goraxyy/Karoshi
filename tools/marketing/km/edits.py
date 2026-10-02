@@ -7,6 +7,7 @@
   translations.json    {lang: {English: translation}}, so a revision only translates what changed
   package.json         titles, captions and posts per platform (package.py)
   versions/v001/…      every earlier edit.json and draft.json; undo puts the last one back
+  shown/v001/…         each version the owner was shown in Telegram (↩️ there goes back to one)
 """
 from __future__ import annotations
 
@@ -86,11 +87,36 @@ def undo(edit_folder: Path) -> Path:
     for name in VERSIONED:
         src = last / name
         if src.exists():
-            shutil.copy2(src, edit_folder / name)
+            shutil.copy(src, edit_folder / name)          # a fresh time: what was rendered from the other version is stale
         elif (edit_folder / name).exists() and name != "edit.json":
             (edit_folder / name).unlink()
     shutil.rmtree(last)
     return last
+
+
+def remember_shown(edit_folder: Path, version: int) -> None:
+    """Keeps the files of a version the owner was shown, so ↩️ can bring exactly that back."""
+    target = edit_folder / "shown" / f"v{version:03d}"
+    target.mkdir(parents=True, exist_ok=True)
+    for name in VERSIONED:
+        if (edit_folder / name).exists():
+            shutil.copy2(edit_folder / name, target / name)
+
+
+def shown(edit_folder: Path, version: int) -> Path | None:
+    target = edit_folder / "shown" / f"v{version:03d}"
+    return target if (target / "edit.json").exists() else None
+
+
+def restore_shown(edit_folder: Path, version: int) -> None:
+    """Puts back a version the owner was shown (keeping the current one as a version first)."""
+    source = shown(edit_folder, version)
+    if source is None:
+        raise BadInput(f"{edit_folder.name} has no v{version} to go back to")
+    snapshot(edit_folder, f"back to v{version}")
+    for name in VERSIONED:
+        if (source / name).exists():
+            shutil.copy(source / name, edit_folder / name)   # a fresh time, so it renders again
 
 
 def translations(edit_folder: Path) -> dict:

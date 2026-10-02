@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """The monthly long video, in stages the owner approves one by one (BUILD_PLAN.md, Phases 6–7).
 
-    uv run long_video.py outline --month 2026-10 [--dry-run] [--root DIR]   sections, beats, shots to render
-    uv run long_video.py script  --month 2026-10 [--dry-run]                the voice-over, section by section
+    uv run long_video.py outline --month 2026-10 [--note "…"] [--dry-run] [--root DIR]   sections, beats, shots to render
+    uv run long_video.py script  --month 2026-10 [--note "…"] [--dry-run]                the voice-over, section by section
     uv run long_video.py voice   --month 2026-10 [--backend say] [--dry-run]  speaks it (English), to time the edit
     uv run long_video.py edit    --month 2026-10 [--dry-run]                the edit, timed to the voice
 
@@ -54,6 +54,16 @@ def notes(root, month: str) -> str:
         if f.exists():
             return f.read_text(encoding="utf-8")[:20000]
     return ""
+
+
+def redo(previous, note: str | None) -> list[str]:
+    """The last answer and the owner's note on it, when a stage is done again."""
+    if not note:
+        return []
+    if not previous.exists():
+        raise BadInput(f"--note needs an earlier answer to revise, and there's no {previous.name}")
+    return [prompts.data_block("previous", read_json(previous, "previous answer")["answer"]),
+            prompts.data_block("owner_note", note.strip())]
 
 
 def folder(root, month: str):
@@ -111,6 +121,7 @@ def main() -> int:
     ap.add_argument("stage", choices=("outline", "script", "voice", "edit"))
     ap.add_argument("--month", default=dt.date.today().strftime("%Y-%m"))
     ap.add_argument("--backend", choices=("azure", "elevenlabs", "say"))
+    ap.add_argument("--note", help="outline or script again, with the owner's note on the last one")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--root")
     a = ap.parse_args()
@@ -135,7 +146,8 @@ def main() -> int:
             prompts.data_block("changes", changes(a.month)),
             prompts.data_block("owner_notes", notes(root, a.month) or "(none this month)"),
             prompts.data_block("shifts", digest),
-            "Outline this month's long video."])
+            *redo(here / "outline.json", a.note),
+            "Outline this month's long video." + (" Revise the previous outline as the owner's note asks." if a.note else "")])
         request = client.Request(step=step("long_outline"), system=prompts.system("long_outline"), user=user,
                                  schema=client.schema("long_outline"), ref=a.month)
         ans = client.ask(request, root, lambda x: outline_checks(x, by_ref), dry_run=a.dry_run)
@@ -164,7 +176,8 @@ def main() -> int:
             prompts.data_block("outline", outline), prompts.data_block("moments", material),
             prompts.data_block("changes", changes(a.month)),
             prompts.data_block("owner_notes", notes(root, a.month) or "(none this month)"),
-            "Write the voice-over for this outline."])
+            *redo(here / "script.json", a.note),
+            "Write the voice-over for this outline." + (" Revise the previous script as the owner's note asks." if a.note else "")])
         request = client.Request(step=step("long_script"), system=prompts.system("long_script"), user=user,
                                  schema=client.schema("long_script"), ref=a.month)
         ans = client.ask(request, root, lambda x: script_checks(x, outline), dry_run=a.dry_run)

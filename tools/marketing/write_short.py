@@ -28,6 +28,7 @@ def main() -> int:
     ap.add_argument("--shots", type=Path, help="a folder of rendered shots (instead of a pick)")
     ap.add_argument("--brief", help="with --shots: what the short is about")
     ap.add_argument("--moment", help="with --shots: the moment's ref, for its events")
+    ap.add_argument("--id", help="the edit's id, whatever the draft says (the pipeline names videos <week>-<pick>)")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--root")
     a = ap.parse_args()
@@ -87,14 +88,14 @@ def main() -> int:
         prompts.data_block("brief", {**brief, "length": "15 to 40 seconds, end card included", "format": "9:16 vertical",
                                      "recent_hooks": writing.recent_hooks(root)}),
         writing.material(ctx),
-        "Write the short." + (f" Use the id {base_id!r} if it fits." if base_id else ""),
+        "Write the short." + (f" Use the id {a.id or base_id!r}." if (a.id or base_id) else ""),
     ])
     request = client.Request(step=step("write_short"), system=prompts.system("write_short"), user=user,
                              schema=client.schema("draft"), ref=base_id or a.brief[:40])
     draft = client.ask(request, root, lambda d: drafts.problems(d, ctx), dry_run=a.dry_run)
     if draft is None:
         return 0
-    draft["id"] = writing.unique_id(root, draft["id"])
+    draft["id"] = a.id if a.id else writing.unique_id(root, draft["id"])
     path, _ = writing.save(root, draft, ctx, f"written {dt.datetime.now():%Y-%m-%d}")
     edit = read_json(path, "edit")
     print(f"write_short: {draft['id']}: {draft['title']} — {len(draft['scenes'])} scenes, "

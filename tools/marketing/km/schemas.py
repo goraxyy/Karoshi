@@ -19,6 +19,7 @@ KINDS = {
     "shot-path": "shot-path.schema.json",
     "brand": "brand.schema.json",
     "manifest": "asset-manifest.schema.json",
+    "pipeline": "pipeline.schema.json",
 }
 
 
@@ -40,6 +41,8 @@ def guess_kind(file: Path, data: object) -> str | None:
         return "brand"
     if name == "manifest.json":
         return "manifest"
+    if name == "pipeline.json":
+        return "pipeline"
     if isinstance(data, dict):
         if "scenes" in data:
             return "edit"

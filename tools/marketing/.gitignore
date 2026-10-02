@@ -5,6 +5,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 editor/node_modules
+editor/.remotion/
 editor/out/
 editor/public/
 editor/build/
@@ -22,3 +23,4 @@ editor/build/
 *.otf
 *.woff
 *.woff2
+.remotion/

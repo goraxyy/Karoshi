@@ -1,0 +1,30 @@
+{
+  "$schema": "./schemas/pipeline.schema.json",
+  "version": 1,
+  "timezone": "America/New_York",
+  "production": {
+    "shorts_per_week": 3,
+    "pick_day": "sat",
+    "min_moments": 3,
+    "retries": 3
+  },
+  "posting": {
+    "days": ["mon", "wed", "fri"],
+    "buffer": ["youtube", "instagram", "twitter"],
+    "languages": ["en"],
+    "tiktok": "manual",
+    "youtube": { "categoryId": "20", "privacy": "public", "madeForKids": false, "notifySubscribers": true },
+    "instagram": { "type": "reel", "shouldShareToFeed": true }
+  },
+  "telegram": { "max_upload_mb": 50, "preview_scale": 0.4 },
+  "storage": { "working_gb": 10, "free_floor_gb": 3 },
+  "retention": {
+    "apply": false,
+    "rejected_days": 7,
+    "posted_days": 3,
+    "shots_days": 3,
+    "krec_days": 30,
+    "logs_days": 90
+  },
+  "long": { "day": 1, "preview_scale": 0.4 }
+}
