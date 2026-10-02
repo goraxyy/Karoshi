@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -13,6 +14,8 @@ using Debug = UnityEngine.Debug;
 //         [-kehai-build-out <folder/Kehai.app>] [-kehai-build-dev]
 //
 // The app goes to Builds/macOS/ unless told otherwise, and gets what the editor never needed:
+//   - the shaders the game makes materials from by name (Shader.Find) but no material in the
+//     project uses: a build leaves those out, so they're added to Always Included Shaders;
 //   - the webcam blink helper beside the app, where the game looks for it outside the editor
 //     (tools/blink/mac/build/BlinkVision, if it has been built);
 //   - a camera line in the app's Info.plist: the helper is the game's child process, so macOS
@@ -20,6 +23,9 @@ using Debug = UnityEngine.Debug;
 //   - build.txt beside it, with the version and the commit, for playtesters' bug reports.
 public static class KehaiBuild
 {
+    // GuideMarker's rings and beacons, and Aiko's fog.
+    static readonly string[] RuntimeShaders = { "Universal Render Pipeline/Unlit", "Universal Render Pipeline/Particles/Unlit" };
+
     const string CameraReason = GameNames.Game + " can watch for your blinks through the webcam, if you turn that on " +
                                 "in its settings. Nothing is recorded, and nothing leaves this computer.";
 
@@ -53,6 +59,7 @@ public static class KehaiBuild
             return null;
         }
 
+        IncludeRuntimeShaders();
         Directory.CreateDirectory(Path.GetDirectoryName(appPath));
         var watch = Stopwatch.StartNew();
         BuildReport report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
@@ -73,6 +80,26 @@ public static class KehaiBuild
         Run("codesign", $"--force --deep --sign - \"{appPath}\"", "re-signing the app after its Info.plist changed");
         WriteBuildInfo(appPath, development);
         return report;
+    }
+
+    public static void IncludeRuntimeShaders()
+    {
+        UnityEngine.Object settings = AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/GraphicsSettings.asset").FirstOrDefault();
+        if (settings == null) { Debug.LogWarning("Kehai build: GraphicsSettings not found; runtime shaders may be missing."); return; }
+        var so = new SerializedObject(settings);
+        SerializedProperty list = so.FindProperty("m_AlwaysIncludedShaders");
+        var present = new HashSet<UnityEngine.Object>();
+        for (int i = 0; i < list.arraySize; i++) present.Add(list.GetArrayElementAtIndex(i).objectReferenceValue);
+        foreach (string name in RuntimeShaders)
+        {
+            UnityEngine.Shader shader = UnityEngine.Shader.Find(name);
+            if (shader == null) { Debug.LogWarning("Kehai build: shader not found: " + name); continue; }
+            if (present.Contains(shader)) continue;
+            list.InsertArrayElementAtIndex(list.arraySize);
+            list.GetArrayElementAtIndex(list.arraySize - 1).objectReferenceValue = shader;
+            Debug.Log("Kehai build: always including " + name);
+        }
+        if (so.ApplyModifiedPropertiesWithoutUndo()) AssetDatabase.SaveAssets();
     }
 
     static void AddCameraReason(string appPath)

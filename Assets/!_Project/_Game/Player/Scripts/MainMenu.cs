@@ -58,6 +58,8 @@ public sealed class MainMenu : MonoBehaviour
     TextMeshProUGUI status;
     EventSystem ownEvents;
     readonly List<MenuButton> buttons = new List<MenuButton>();
+    readonly List<Canvas> steppedAside = new List<Canvas>();
+    readonly Dictionary<Component, Coroutine> fades = new Dictionary<Component, Coroutine>();
 
     // ---- when it opens ----------------------------------------------------------------------------
 
@@ -96,7 +98,7 @@ public sealed class MainMenu : MonoBehaviour
         bool wanted = showOnNextLoad;
         showOnNextLoad = false;
         if (wanted && Wanted(firstLoad: false)) Show();
-        StartCoroutine(Raise(curtain, 0f, 0.6f, () => { if (!visible) canvas.enabled = false; }));
+        Fade(curtain, 0f, 0.6f, () => { if (!visible) canvas.enabled = false; });
     }
 
     static bool Wanted(bool firstLoad)
@@ -136,7 +138,8 @@ public sealed class MainMenu : MonoBehaviour
         content.alpha = 0f;
         content.interactable = true;
         canvas.enabled = true;
-        StartCoroutine(Raise(content, 1f, 0.7f));
+        HideOtherCanvases();
+        Fade(content, 1f, 0.7f);
     }
 
     void Hide()
@@ -145,6 +148,8 @@ public sealed class MainMenu : MonoBehaviour
         busy = false;
         canvas.enabled = curtain.color.a > 0.001f;
         FullScreenPanel.Set(this, false);
+        foreach (Canvas c in steppedAside) if (c != null) c.enabled = true;
+        steppedAside.Clear();
         GamePause.Set(false);
         if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);
     }
@@ -160,12 +165,16 @@ public sealed class MainMenu : MonoBehaviour
         }
         if (OtherModeRunning) { content.alpha = 0f; Hide(); return; }
         if (!careerRead) ReadCareer();
+        if (Time.frameCount % 15 == 0) HideOtherCanvases();
 
-        // The settings are drawn underneath any canvas, so the menu steps aside for them.
+        // The settings are drawn underneath any canvas, so the menu steps aside for them, and
+        // its buttons stop answering the keyboard until they close.
         bool settings = SettingsOpen;
         if (canvas.enabled == settings)
         {
             canvas.enabled = !settings;
+            content.interactable = !settings && !busy;
+            if (settings && EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);
             if (!settings) Select(null);
         }
         if (settings || busy) return;
@@ -173,6 +182,17 @@ public sealed class MainMenu : MonoBehaviour
         if (confirming && Input.GetKeyDown(KeyCode.Escape)) ShowChoices();
         GameObject selected = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
         if (selected == null && Input.anyKeyDown) Select(null);
+    }
+
+    // The HUD (and anything made after the menu opened) stays out of the way of the menu.
+    void HideOtherCanvases()
+    {
+        foreach (Canvas c in FindObjectsByType<Canvas>())
+            if (c != canvas && c.enabled && c.isRootCanvas && c.renderMode == RenderMode.ScreenSpaceOverlay)
+            {
+                c.enabled = false;
+                steppedAside.Add(c);
+            }
     }
 
     static bool EnterPressed => Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter);
@@ -213,7 +233,7 @@ public sealed class MainMenu : MonoBehaviour
         content.interactable = false;
         ShiftManager shift = FindAnyObjectByType<ShiftManager>();
         if (shift != null) shift.SetShiftNumber(completedShifts);
-        yield return Raise(content, 0f, 0.4f);
+        yield return Fade(content, 0f, 0.4f);
         Hide();
     }
 
@@ -232,13 +252,14 @@ public sealed class MainMenu : MonoBehaviour
         content.interactable = false;
         canvas.enabled = true;
         GamePause.Set(true);
-        StartCoroutine(Raise(curtain, 1f, 0.35f, () =>
+        Fade(curtain, 1f, 0.35f, () =>
         {
             visible = false;
             FullScreenPanel.Set(this, false);
+            steppedAside.Clear();   // the store they belong to is about to go
             showOnNextLoad = menuAfter;
             ShiftRestart.Reload(completedShifts);
-        }));
+        });
     }
 
     static void Quit()
@@ -287,12 +308,12 @@ public sealed class MainMenu : MonoBehaviour
     {
         confirming = true;
         ClearList();
-        var question = MakeText(list, "Question", GameFonts.Body, 38f, Paper, new Vector2(0f, ListTop + 10f), new Vector2(760f, 60f));
+        var question = MakeText(list, "Question", GameFonts.Body, 38f, Paper, new Vector2(0f, ListTop - 4f), new Vector2(760f, 60f));
         question.text = career.over ? "Start a new career?" : "Start a new career? This one ends here.";
-        var detail = MakeText(list, "Detail", GameFonts.Body, 24f, Grey, new Vector2(0f, ListTop - 50f), new Vector2(700f, 80f));
+        var detail = MakeText(list, "Detail", GameFonts.Body, 24f, Grey, new Vector2(0f, ListTop - 64f), new Vector2(700f, 100f));
         detail.text = GameNames.Antagonist + " forgets everything she has learned about you: where you hide, the routes you take, and which of her tricks work on you. Your settings stay.";
-        AddButton("Yes, start over", ListTop - 150f, StartOver);
-        AddButton("No, go back", ListTop - 150f - RowHeight, ShowChoices);
+        AddButton("Yes, start over", ListTop - 190f, StartOver);
+        AddButton("No, go back", ListTop - 190f - RowHeight, ShowChoices);
         Link();
         Select(buttons[1]);
     }
@@ -389,7 +410,7 @@ public sealed class MainMenu : MonoBehaviour
         Image rule = Box(column, "Rule", new Vector2(4f, -482f), new Vector2(72f, 4f)).gameObject.AddComponent<Image>();
         rule.color = Crimson;
         rule.raycastTarget = false;
-        status = MakeText(column, "Status", GameFonts.Body, 24f, DimGrey, new Vector2(2f, -508f), new Vector2(820f, 36f));
+        status = MakeText(column, "Status", GameFonts.Body, 24f, Grey, new Vector2(2f, -508f), new Vector2(820f, 36f));
 
         list = Box(column, "List", Vector2.zero, new Vector2(820f, 0f));
 
@@ -458,6 +479,13 @@ public sealed class MainMenu : MonoBehaviour
         text.raycastTarget = false;
         text.richText = true;
         return text;
+    }
+
+    // One fade at a time on each thing: a new one takes over from the last.
+    Coroutine Fade(Component target, float to, float seconds, Action then = null)
+    {
+        if (fades.TryGetValue(target, out Coroutine running) && running != null) StopCoroutine(running);
+        return fades[target] = StartCoroutine(Raise(target, to, seconds, then));
     }
 
     // Fades a canvas group or an image to `to` over `seconds` of real time (the game is paused).
@@ -532,7 +560,7 @@ public sealed class MenuButton : Button
         button.bar.raycastTarget = false;
 
         button.label = MainMenu.MakeText(rt, "Label", GameFonts.Body, 40f, Idle, Vector2.zero, size);
-        button.label.alignment = TextAlignmentOptions.MidlineLeft;
+        button.label.alignment = TextAlignmentOptions.Left;   // by the font's line, so every row sits the same
         button.label.textWrappingMode = TextWrappingModes.NoWrap;
         button.label.text = text;
         button.Apply();

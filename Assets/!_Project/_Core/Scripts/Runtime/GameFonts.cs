@@ -35,6 +35,16 @@ namespace Kehai
         // Null when this computer has no Japanese font.
         public static TMP_FontAsset Japanese => Find(ref japanese, ref triedJapanese, JapaneseFaces);
 
+        // A font that can draw `text`: `usual`, unless the text has Japanese in it (the burnout
+        // ending's 過労死) and a Japanese font is there to draw it.
+        public static TMP_FontAsset ForText(string text, TMP_FontAsset usual)
+        {
+            if (string.IsNullOrEmpty(text) || Japanese == null) return usual;
+            foreach (char c in text)
+                if ((c >= '\u3000' && c <= '\u9FFF') || (c >= '\uFF00' && c <= '\uFFEF')) return Body;
+            return usual;
+        }
+
         public static string Describe(TMP_FontAsset font) => font == null ? "none" : font.faceInfo.familyName + " " + font.faceInfo.styleName;
 
         static TMP_FontAsset Find(ref TMP_FontAsset cached, ref bool tried, (string family, string style)[] faces)
