@@ -201,7 +201,9 @@ Unity -batchmode -nographics -projectPath . -executeMethod KehaiBuild.MacOS
 
 The app lands in `Builds/macOS/Kehai.app` (`-kehai-build-out <path>` to choose,
 `-kehai-build-dev` for a development build). Beside it go the webcam blink helper, if
-`tools/blink/mac/build.sh` has built it, and `build.txt` with the version and commit. The app
+`tools/blink/mac/build.sh` has built it, and `build.txt` with the version and commit. To share
+it, zip those three; the `_BurstDebugInformation_DoNotShip` folder is for reading crash logs and
+stays with you. The app
 is signed only ad hoc (no Apple developer account), so on another Mac macOS blocks its first
 launch: **System Settings → Privacy & Security → Open Anyway**. The built game runs the eval
 headless too:

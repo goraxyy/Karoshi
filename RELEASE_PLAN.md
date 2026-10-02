@@ -150,11 +150,21 @@ it is about one slice being *finished*.
       notice endings, and Enter from them to the main menu*
 
 ### First build
-- [ ] **Produce a build.** Nothing has been built yet — expect to find problems here
-- [ ] Fix whatever only breaks outside the editor (shader stripping, missing refs,
+- [x] **Produce a build.** Nothing has been built yet — expect to find problems here
+      *2026-10-02: `KehaiBuild.MacOS` → `Builds/macOS/Kehai.app`, 158 MB, universal (Apple
+      silicon and Intel), 10 minutes headless, no errors or warnings. A bot shift played
+      through in the built game (headless) with no errors, and recorded itself.*
+- [~] Fix whatever only breaks outside the editor (shader stripping, missing refs,
       `Resources` paths, script execution order)
+      *found and fixed: two URP shaders the game makes materials from by name were stripped
+      (the build script now always includes them); the webcam helper beside the app, and the
+      camera line macOS needs in Info.plist; Japanese text in banners. Still to see with a
+      person at the screen: the menus in a window, webcam blinking, frame rate*
 - [ ] Windows build target added alongside macOS
-- [ ] Set `applicationIdentifier` (currently empty) and a real version scheme
+      *needs Windows Build Support (Mono) added to the editor in Unity Hub*
+- [~] Set `applicationIdentifier` (currently empty) and a real version scheme
+      *identifier `com.tokenlimit.kehai`; the version is still 0.1.0, and every build writes
+      the commit it came from to `build.txt`*
 
 ---
 
@@ -350,9 +360,13 @@ Ordered by how much damage each can still do.
    switch auto-stashed 549 untracked files and reverted `SampleScene.unity` to a
    two-week-old commit. It was fully recoverable that time, by luck. Either switch the
    project to Force Text serialization and commit the scene, or set up a real backup.
-   This is the single highest-value hour on this list.
+   This is the single highest-value hour on this list. *(2026-10-02: the editor is set to
+   Force Text, but `SampleScene.unity` on disk is still binary, last saved 2026-09-21; and
+   `Assets/_Recovery/0.unity`, a crash-recovery copy from 2026-09-26, is newer and much
+   bigger. Open it before deleting anything.)*
 2. **No build has ever been made.** Every engine has a set of problems that only appear
    outside the editor. Finding them at Milestone 7 is expensive; finding them now is not.
+   *(Addressed 2026-10-02: the first macOS build, with a bot shift played in it.)*
 3. **The antagonist is the game's hook and it is not in the level.** Everything built so
    far is the chore loop. The chore loop is not the pitch. *(Addressed: Aiko is in.)*
 4. **`aiko.md` is much larger than the rest of the project.** It is a genuinely good
