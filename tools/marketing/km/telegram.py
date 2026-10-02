@@ -53,14 +53,16 @@ class Bot:
         self.live = bool(self.token and self.chat)
         self.outbox = root / "state" / "telegram_outbox.jsonl"
         self.inbox = root / "state" / "telegram_inbox.jsonl"
-        if self.live:
+        if self.token:
             import httpx
             self.http = httpx.Client(timeout=120)
 
     # ---- the transport ---------------------------------------------------------------------
 
-    def call(self, method: str, params: dict, file: tuple[str, Path] | None = None) -> dict:
-        if not self.live:
+    def call(self, method: str, params: dict, file: tuple[str, Path] | None = None, token_only: bool = False) -> dict:
+        """A Bot API call; in outbox mode, a line in the outbox. `token_only`: the real API as soon as
+        the token is set, before the chat id is known (telegram-setup finds it)."""
+        if not (self.live or (token_only and self.token)):
             return self._outbox(method, params, file)
         url = API.format(token=self.token, method=method)
         for attempt in range(4):

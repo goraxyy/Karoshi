@@ -521,3 +521,69 @@ def test_each_workflow_runs_one_job_on_a_schedule_and_by_hand(path):
     text = json.dumps(wf)
     for secret in ("TOKEN", "API_KEY", "sk-ant", "Bearer"):
         assert secret not in text
+
+
+# ---- the launchd schedule (setup.sh --launchd) ------------------------------------------------
+
+def _launchd():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("launchd", paths.HERE / "n8n" / "launchd.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_launchd_runs_the_workflows_schedules():
+    launchd = _launchd()
+    planned = {job: keys for job, keys, _ in launchd.jobs()}
+    assert set(planned) == {"produce", "telegram", "work", "publish", "housekeeping", "report", "long"}
+    assert planned["telegram"] == {"StartInterval": 60}
+    assert planned["work"] == {"StartInterval": 300}
+    assert planned["produce"] == {"StartCalendarInterval": [{"Minute": 0, "Hour": h} for h in (1, 3, 5)]}
+    assert planned["report"] == {"StartCalendarInterval": [{"Minute": 0, "Hour": 20, "Weekday": 0}]}
+
+
+def test_launchd_reads_cron_lists_ranges_and_steps():
+    launchd = _launchd()
+    assert len(launchd.calendar("*/30 9-10 * * 1,3,5")) == 12
+    assert launchd.calendar("0 0 4 * * *") == [{"Minute": 0, "Hour": 4}]       # n8n's form with seconds
+    for bad in ("0 24 * * *", "0 1 * *", "0 L * * *", "30 0 1 * * *"):
+        with pytest.raises(launchd.BadSchedule):
+            launchd.calendar(bad)
+
+
+def test_launchd_agents_run_job_sh_and_log_outside_the_repo(tmp_path):
+    launchd = _launchd()
+    doc = launchd.plist("produce", {"StartInterval": 60}, tmp_path)
+    assert doc["Label"] == "com.tokenlimit.kehai.job.produce"
+    assert doc["ProgramArguments"] == ["/bin/bash", str(paths.HERE / "n8n" / "job.sh"), "produce"]
+    assert doc["EnvironmentVariables"]["KEHAI_LOG_DIR"] == str(tmp_path / "scheduled")
+    assert "ProcessType" not in doc                               # renders keep the normal priority
+    assert launchd.plist("telegram", {"StartInterval": 60}, tmp_path)["ProcessType"] == "Background"
+
+
+def test_a_pick_day_the_mac_slept_through_still_picks_that_week():
+    from km.settings import on_or_after
+    sat, sun, mon, fri = dt.date(2026, 10, 3), dt.date(2026, 10, 4), dt.date(2026, 10, 5), dt.date(2026, 10, 2)
+    assert on_or_after(sat, "sat") and on_or_after(sun, "sat")
+    assert not on_or_after(mon, "sat") and not on_or_after(fri, "sat")
+
+
+def test_telegram_setup_asks_telegram_before_the_chat_id_is_known(world, monkeypatch, capsys):
+    root, store, _, _ = world
+    import run_job
+    asked = []
+
+    def handler(request):
+        asked.append(request.url.path)
+        return httpx.Response(200, json={"ok": True, "result": [
+            {"update_id": 5, "message": {"message_id": 1, "text": "/start", "chat": {"id": 4242, "first_name": "Owner"}}}]})
+
+    mock_buffer(monkeypatch, handler)
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123:test")
+    bot = Bot(root, store)
+    assert not bot.live                                   # no chat id yet: everything else stays in the outbox
+    run_job.telegram_setup(bot)
+    assert asked == ["/bot123:test/getUpdates"]
+    assert "TELEGRAM_CHAT_ID=4242" in capsys.readouterr().out
+    assert bot.sent() == []

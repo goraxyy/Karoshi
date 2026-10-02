@@ -32,7 +32,7 @@ from km.approvals import Approvals, send_alerts
 from km.cli import BadInput, run
 from km.longform import Long, due
 from km.publishing import publish, sync
-from km.settings import day_name, now, settings
+from km.settings import now, on_or_after, settings
 from km.store import Store
 from km.telegram import Bot, esc
 
@@ -78,7 +78,7 @@ def produce(root, store, bot, approvals, week: str | None, pick_now: bool, dry_r
     plan = root / "plans" / label / "picks.json"
     s = settings()["production"]
     pick_now = pick_now or os.environ.get("KEHAI_PICK_NOW") == "1"
-    if not plan.exists() and (pick_now or day_name(today) == s["pick_day"] or week):
+    if not plan.exists() and (pick_now or on_or_after(today, s["pick_day"]) or week):
         docs = [moments.load(f) for f in moments.find_files(moments.records(), start, end)]
         count = sum(len(d["moments"]) for d in docs)
         if count < s["min_moments"]:
@@ -180,7 +180,7 @@ def telegram_setup(bot) -> None:
         say("TELEGRAM_BOT_TOKEN isn't set: make a bot with @BotFather and put its token in .env")
         return
     chats = {}
-    for u in bot.call("getUpdates", {"timeout": 0}):
+    for u in bot.call("getUpdates", {"timeout": 0}, token_only=True):
         msg = u.get("message") or {}
         chat = msg.get("chat") or {}
         if chat:
